@@ -26,6 +26,9 @@ void list_adapter_addresses();
 void create_server();
 
 
+void example_test();
+
+
 void create_client(const std::string host = string_functions::get_input("Enter the host to connect to : "), const std::string port = DEFAULT_PORT);
 
 
@@ -55,6 +58,10 @@ int main(int len, char** args) {
 
         else if (string_functions::same_string(args[index], "run_client()") or string_functions::same_string(args[index], "rclt")) {
             create_client();
+        }
+
+        else if (string_functions::same_string(args[index], "example_test()") or string_functions::same_string(args[index], "ex")) {
+            example_test();
         }
 
         else {
@@ -346,4 +353,125 @@ void create_client(const std::string host, const std::string port){
     }
 
     std::printf("Successfully created the client.\n");
+}
+
+
+void example_test() {
+    networking::network_structures::tcp_client client(*networking::resolve_hostname("example.com").begin(), "80");
+    const std::string message = std::string("GET / HTTP/1.1\r\n") +
+                                "Host: " + client.host_name() + ":" + client.port_value() +
+                                "Connection: close\r\n" +
+                                "User-Agent: honpwc web_get 1.0\r\n\r\n";
+    if (client.connect_client()) {
+        ssize_t sent = send(client.get_connection_socket(), message.c_str(), message.length(), 0);
+        std::printf("Sent %li /%lu bytes of headers\n", sent, message.length());
+
+        char response[32768];
+        char *p = response, *q;
+        char *end = response + 32768;
+        char *body = 0;
+
+        enum {length, chunked, connection};
+        int encoding = 0;
+        int remaining = 0;
+
+        std::clock_t start_time = std::clock();
+
+        while (client.client_is_connected()) {
+
+            if ((std::clock() - start_time) / CLOCKS_PER_SEC > 5) {
+                std::fprintf(stderr, "timeout after %.2f seconds.\n", 5.0);
+                std::exit(1);
+            }
+
+            if (p is end) {
+                std::fprintf(stderr, "Out of buffer space.\n");
+                std::exit(1);
+            }
+
+            if (client.server_has_message()) {
+
+                int bytes =recv(client.get_connection_socket(), p, end - p, 0);
+
+                if (bytes < 1) {
+                    if (encoding is connection and body) {
+                        std::printf("%.*s", (int) (end - body), body);
+                    }
+
+                    std::printf("\nConnection closed by peer.\n");
+                    client.disconnect_client();
+                }
+
+                p = p + bytes;
+                *p = 0;
+
+                if (not body and (body = std::strstr(response, "\r\n\r\n"))) {
+                    *body = 0;
+                    body = body + 4;
+
+                    std::printf("Received Headers:\n%s\n", response);
+
+                    q = std::strstr(response, "\nContent-Length: ");
+                    
+                    if (q) {
+                        encoding = length;
+                        q = std::strchr(q, ' ');
+                        q = q + 1;
+                        remaining = std::strtol(q, 0, 16);
+                    }
+
+                    else {
+                        q = std::strstr(response, "\nTransfer-Encoding: chunked");
+                        if (q) {
+                            encoding = chunked;
+                            remaining = 0;
+                        }
+                        else {
+                            encoding = connection;
+                        }
+                    }
+                    std::printf("\nReceived Body:\n");
+                }
+
+                if (body) {
+                    if (encoding is length) {
+                        if (p - body >= remaining) {
+                            std::printf("%.*s", remaining, body);
+                            break;
+                        }
+                    }
+
+                    else if (encoding is connection) {
+                        do {
+
+                            if (remaining is 0) {
+                                if ((q = std::strstr(body, "\r\n"))) {
+                                    remaining = std::strtol(body, 0, 16);
+                                    if (not remaining) goto finish;
+                                    body = q + 2;
+                                }
+                                else {
+                                    break;
+                                }
+                            }
+
+                            if (remaining and p - body >= remaining) {
+                                std::printf("%.*s", remaining, body);
+                                body = body + remaining + 2;
+                                remaining = 0;
+                            }
+
+                        } while (not remaining);
+                    }
+                }
+
+            }
+
+        }
+
+        finish:
+
+        std::printf("Done.\n");
+    }
+    
 }
