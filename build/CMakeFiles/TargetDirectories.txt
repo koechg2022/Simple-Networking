@@ -1,0 +1,6 @@
+/Users/geoffreykoech/Desktop/Personal Projects/Libraries/C++/Networking/Simple Networking/build/CMakeFiles/networking_functions.dir
+/Users/geoffreykoech/Desktop/Personal Projects/Libraries/C++/Networking/Simple Networking/build/CMakeFiles/string_functions.dir
+/Users/geoffreykoech/Desktop/Personal Projects/Libraries/C++/Networking/Simple Networking/build/CMakeFiles/string_tests.dir
+/Users/geoffreykoech/Desktop/Personal Projects/Libraries/C++/Networking/Simple Networking/build/CMakeFiles/network_tests.dir
+/Users/geoffreykoech/Desktop/Personal Projects/Libraries/C++/Networking/Simple Networking/build/CMakeFiles/edit_cache.dir
+/Users/geoffreykoech/Desktop/Personal Projects/Libraries/C++/Networking/Simple Networking/build/CMakeFiles/rebuild_cache.dir
