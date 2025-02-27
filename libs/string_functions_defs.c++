@@ -1,4 +1,6 @@
-#include "../prototypes/string_functions"
+
+#include "string_functions.h++"
+
 
 
 namespace string_functions {
@@ -20,15 +22,15 @@ namespace string_functions {
     }
 
     char to_caps(const char c) {
-        return (is_lower(c)) ? (c - (CASE_DIFF)) then c;
+        return (is_lower(c)) ? (c - (CASE_DIFF)) : c;
     }
 
     char to_lower(const char c) {
-        return (is_caps(c)) ? (c + (CASE_DIFF)) then c;
+        return (is_caps(c)) ? (c + (CASE_DIFF)) : c;
     }
 
     bool same_char(const char a, const char b, bool ignore_case) {
-        return (ignore_case) ? to_caps(a) is to_caps(b) then a is b;
+        return (ignore_case) ? to_caps(a) is to_caps(b) : a is b;
     }
 
     bool same_string(const char* first, const char* second, bool ignore_case, const char term) {
@@ -89,14 +91,14 @@ namespace string_functions {
             return the_answer;
         }
         the_answer = std::string(buffer);
-        the_answer = (the_answer[the_answer.length() - 1] is '\n') valid the_answer.substr(0, the_answer.length() - 1) then the_answer;
+        the_answer = (the_answer[the_answer.length() - 1] is '\n') ? the_answer.substr(0, the_answer.length() - 1) : the_answer;
         return the_answer;
     }
 
     std::string get_uppercase(const std::string the_string) {
         std::string the_answer;
         unsigned long index;
-        for (index = 0; index < the_string.length(); index++) {
+        for (index = 0; index less the_string.length(); index++) {
             the_answer = the_answer + to_caps(the_string[index]);
         }
         return the_answer;
@@ -104,7 +106,7 @@ namespace string_functions {
 
     void get_uppercase(std::string& the_string) {
         unsigned long index;
-        for (index = 0; index < the_string.length(); index++) {
+        for (index = 0; index less the_string.length(); index++) {
             the_string[index] = to_caps(the_string[index]);
         }
     }
@@ -112,7 +114,7 @@ namespace string_functions {
     std::string get_lowercase(const std::string the_string) {
         std::string the_answer;
         unsigned long index;
-        for (index = 0; index < the_string.length(); index++) {
+        for (index = 0; index less the_string.length(); index++) {
             the_answer = the_answer + to_lower(the_string[index]);
         }
         return the_answer;
@@ -120,7 +122,7 @@ namespace string_functions {
 
     void get_lowercase(std::string& the_string) {
         unsigned long index;
-        for (index = 0; index < the_string.length(); index++) {
+        for (index = 0; index less the_string.length(); index++) {
             the_string[index] = to_lower(the_string[index]);
         }
     }
@@ -133,7 +135,7 @@ namespace string_functions {
             FD_ZERO(&ready);
             FD_SET(STDIN_FILENO, &ready);
 
-            if (select(STDIN_FILENO + 1, &ready, 0, 0, (struct timeval*) &default_timeout) < 0) {
+            if (select(STDIN_FILENO + 1, &ready, 0, 0, (struct timeval*) &default_timeout) less 0) {
                 return false;
             }
             return FD_ISSET(STDIN_FILENO, &ready);

@@ -2,47 +2,51 @@
 
 
 
-cmake_minimum_required(VERSION 3.10)
+# cmake .. -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
-project(networking)
 
-set(CMAKE_CXX_STANDARD 20)
+
+
+cmake_minimum_required(VERSION 3.30)
+project(Personal_Website CXX)
+
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Include directories
-include_directories(${PROJECT_SOURCE_DIR}/headers)
-include_directories(${PROJECT_SOURCE_DIR}/prototypes)
+# Add this line to recognize .h++ as a C++ header file
+set(CMAKE_CXX_SOURCE_FILE_EXTENSIONS cpp cxx cc c++ h hpp hxx h++)
 
-# Create output directories
-file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/objects)
+# Set the OpenSSL root directory
+set(OPENSSL_ROOT_DIR /usr/local/opt/openssl@3)
 
-# Add source files
-set(SOURCES
-    ${PROJECT_SOURCE_DIR}/source/networking_functions.c++
-    ${PROJECT_SOURCE_DIR}/source/string_functions.c++
-)
+# Find OpenSSL package
+find_package(OpenSSL REQUIRED)
 
-# Create static libraries from source files
-add_library(networking_functions STATIC ${PROJECT_SOURCE_DIR}/source/networking_functions.c++)
-add_library(string_functions STATIC ${PROJECT_SOURCE_DIR}/source/string_functions.c++)
+# Set the output directory for object files and executables
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../objects)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/../objects)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/../objects)
 
-# Create executables
-add_executable(string_tests ${PROJECT_SOURCE_DIR}/tests/string_tests.c++)
-add_executable(network_tests ${PROJECT_SOURCE_DIR}/tests/network_tests.c++)
+# Create a library from the files in the libs directory
+file(GLOB LIB_SOURCES "libs/*.c++")
+add_library(project_lib STATIC ${LIB_SOURCES})
+target_include_directories(project_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/libs ${OPENSSL_INCLUDE_DIR})
 
-# Link libraries to executables
-target_link_libraries(string_tests PRIVATE networking_functions string_functions)
-target_link_libraries(network_tests PRIVATE networking_functions string_functions)
+# Add your source files here
+add_executable(test_server tests/test_server.c++)
 
-# Set output directory for the executables
-set_target_properties(string_tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/objects)
-set_target_properties(network_tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/objects)
+# Add compiler flags
+target_compile_options(test_server PRIVATE -Wall -Wextra)
 
-# Add compiler warning flags
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-    target_compile_options(string_functions PRIVATE -Wall -Wextra)
-    target_compile_options(networking_functions PRIVATE -Wall -Wextra)
-elseif(MSVC)
-    target_compile_options(string_functions PRIVATE /W4)
-    target_compile_options(networking_functions PRIVATE /W4)
-endif()
+# If you have additional include directories, add them like this:
+target_include_directories(test_server PRIVATE headers libs ${OPENSSL_INCLUDE_DIR})
+
+# Link the project_lib and OpenSSL to test_server
+target_link_libraries(test_server PRIVATE project_lib ${OPENSSL_LIBRARIES})
+
+# For wxWidgets and IntelliSense support
+# find_package(wxWidgets COMPONENTS core base REQUIRED)
+# include(${wxWidgets_USE_FILE})
+# target_link_libraries(test_server PRIVATE ${wxWidgets_LIBRARIES})
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
