@@ -506,6 +506,14 @@
                     bool new_connection(bool accept_new = true);
 
                     /**
+                        @brief Check if there is a new connection request to the tcp server,
+                        and if there is, the new connection is accepted and returned.
+                        @returns `network_structures::connected_host::client` : The new connection 
+                        provided a new connection was extablished, otherwise an invalid new_client is returned.
+                     */
+                    network_structures::connected_host::client new_client();
+
+                    /**
                         @brief Close the connection to the socket passed in,
                         provided that the socket passed in is one of 
                         the connections that is established to this 

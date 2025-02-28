@@ -20,7 +20,7 @@ void test_client();
 int main(int len, char** args) {
 
     int index;
-    std::printf("There are %d arguments:\n", len - 1);
+    // std::printf("There are %d arguments:\n", len - 1);
     if (len <= 1) {
         std::printf("Help. This is for testing the networking library. Use one of the following arguments to test the library:\n");
         std::printf("\t'list_machine_adapters()' | 'la':\tTo see all the current machine's adapters.\n");
@@ -83,26 +83,55 @@ void resolve_hostname() {
 
 void test_server() {
 
-    networking::network_structures::tcp_server server("", DEFAULT_PORT, 10, 0, 100000, true, true);
+    networking::network_structures::tcp_server server("", 
+                                                    DEFAULT_PORT, 
+                                                        10, 
+                                                            0, 
+                                                                100000, 
+                                                                    true, 
+                                                                        true);
     
     if (server.start()) {
         std::printf("Server is listening...\n");
         std::cout << "Connect to the server using:" << std::endl;
         std::cout << "\t" << server.host_name() << " : " << server.port_value() << std::endl;
         std::set<networking::network_structures::connected_host::client> clients;
+        networking::network_structures::connected_host::client new_client;
         char msg[kilo_byte];
         ssize_t msg_len;
         std::string msg_string;
+        int bytes;
+        
         std::memset(msg, 0, kilo_byte);
 
         while (server) {
+            new_client = server.new_client();
             
-            if (server.new_connection()) {
-                std::cout << "New connection accepted. Here are the new clients:" << std::endl;
-                clients = server.get_all_clients();
+            if (valid_socket(new_client.connected_socket)) {
 
-                for (auto client = clients.begin(); client NOT clients.end(); client++) {
-                    std::cout << "\t" << client->hostname << " : " << client->portvalue << std::endl;
+                bytes = SSL_read(new_client.secure_socket, msg, kilo_byte);
+
+                if (bytes < 1) {
+                    std::fprintf(stderr, "Failed to accept a message from the new client.\n");
+                }
+                else {
+                    std::printf("Message from New Client:\n\n%.*s\n", bytes, msg);
+                    std::printf("----------------------------------------\n");
+                }
+
+                msg_string = 
+                        "HTTP/1.1 200 OK\r\n"
+                        "Connection: close\r\n"
+                        "Content-Type: text/plain\r\n"
+                        "Local time is: " + misc_functions::get_current_time() + 
+                        "\r\n";
+                bytes = SSL_write(new_client.secure_socket, msg_string.c_str(), msg_string.length());
+                if (bytes < 1) {
+                    std::fprintf(stderr, "Failed to send %lu bytes. Only sent %d bytes.\n", msg_string.length(), bytes);
+                    server.close_connection(new_client.connected_socket);
+                }
+                else {
+                    std::printf("Successfully sent %d bytes out of %lu bytes.\n", bytes, msg_string.length());
                 }
             }
 

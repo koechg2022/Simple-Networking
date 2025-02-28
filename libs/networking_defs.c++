@@ -887,11 +887,12 @@ namespace networking {
                     }
 
                     SSL_set_fd(new_client.secure_socket, new_client.connected_socket);
-                    if (SSL_accept(new_client.secure_socket) != -1) {
+                    if (SSL_accept(new_client.secure_socket) <= 0) {
                         this->disconnect_client(new_client);
                         (this->del_on_except) ? freeaddrinfo(this->connect_address) : (void) 0;
                         (not this->was_init) ? uninitialize_network() : true;
-                        throw exceptions::accept_failure("Failed to accept a secure connection to client '" + new_client.hostname + "'", true, __FILE__, __LINE__ - 4, __FUNCTION__);
+                        char err_buf[256]; unsigned long err = ERR_get_error(); ERR_error_string_n(err, err_buf, sizeof(err_buf));
+                        throw exceptions::accept_failure("Failed to accept a secure connection to client. Error : " + std::string(err_buf), true, __FILE__, __LINE__ - 5, __FUNCTION__);
                     }
                     this->max_secure_socket = (new_client.secure_socket > this->max_secure_socket) ? new_client.secure_socket : this->max_secure_socket;
                 }
@@ -900,6 +901,70 @@ namespace networking {
             return this->clients.size() > old;
         }
         return FD_ISSET(this->connect_socket, &ready);
+    }
+
+    network_structures::connected_host::client network_structures::tcp_server::new_client() {
+        network_structures::connected_host::client the_answer;
+        the_answer.connected_socket = invalid_socket;
+        the_answer.hostname = the_answer.portvalue = "";
+        the_answer.secure_socket = invalid_secure_socket;
+        the_answer.address_info = {0, 0};
+        the_answer.address_size = sizeof(the_answer.address_info);
+
+        fd_set ready;
+        FD_ZERO(&ready);
+        FD_SET(this->connect_socket, &ready);
+
+        if (select(this->connect_socket, &ready, 0, 0, &this->timeout) < 0) {
+            (this->del_on_except) ? freeaddrinfo(this->connect_address) : (void) 0;
+            (not this->was_init) ? uninitialize_network() : true;
+            throw exceptions::select_failure("Failed to select for the actively listneing socket for new connections. Error number " + std::to_string(get_socket_error()), true, __FILE__, __LINE__ - 2, __FUNCTION__);
+        }
+
+        if (FD_ISSET(this->connect_socket, &ready)) {
+            the_answer.connected_socket = accept(this->connect_socket, (struct sockaddr*) &the_answer.address_info, &the_answer.address_size);
+            if (not valid_socket(the_answer.connected_socket)) {
+                (this->del_on_except) ? freeaddrinfo(this->connect_address) : (void) 0;
+                (not this->was_init) ? uninitialize_network() : true;
+                throw exceptions::create_socket_failure("Failed to create a new connection socket for the new incomming connection. Error number " + std::to_string(get_socket_error()), true, __FILE__, __LINE__ - 4, __FUNCTION__);
+            }
+            
+            char address[buffer_size], service[buffer_size];
+            std::memset(address, 0, buffer_size);
+            std::memset(service, 0, buffer_size);
+
+            if (getnameinfo((struct sockaddr*) &the_answer.address_info, the_answer.address_size, address, buffer_size, service, buffer_size, 0)) {
+                the_answer.hostname = "Unspecified hostname";
+                the_answer.portvalue = "Unspecified port";
+            }
+            else {
+                the_answer.hostname = std::string(address);
+                the_answer.portvalue = std::string(service);
+            }
+
+            the_answer.connected_socket = (the_answer.connected_socket > this->max_socket) ? the_answer.connected_socket : this->max_socket;
+
+            if (this->secure_) {
+                the_answer.secure_socket = SSL_new(this->context);
+                if (not valid_secure_socket(the_answer.secure_socket)) {
+                    (this->del_on_except) ? freeaddrinfo(this->connect_address) : (void) 0;
+                    (not this->was_init) ? uninitialize_network() : true;
+                    throw exceptions::secure_sockets_layer_error("Failed to create a secure connection with the new client", true, __FILE__, __LINE__ - 4, __FUNCTION__);
+                }
+
+                SSL_set_fd(the_answer.secure_socket, the_answer.connected_socket);
+                if (SSL_accept(the_answer.secure_socket) <= 0) {
+                    this->disconnect_client(the_answer);
+                    (this->del_on_except) ? freeaddrinfo(this->connect_address) : (void) 0;
+                    (not this->was_init) ? uninitialize_network() : true;
+                    char err_buf[256]; unsigned long err = ERR_get_error(); ERR_error_string_n(err, err_buf, sizeof(err_buf));
+                    throw exceptions::accept_failure("Failed to accept a secure connection to client. Error : " + std::string(err_buf), true, __FILE__, __LINE__ - 5, __FUNCTION__);
+                }
+                this->max_secure_socket = (the_answer.secure_socket > this->max_secure_socket) ? the_answer.secure_socket : this->max_secure_socket;
+            }
+            this->clients.insert({the_answer.connected_socket, the_answer});
+        }
+        return the_answer;
     }
 
     bool network_structures::tcp_server::close_connection(const socket_type to_close) {
