@@ -573,19 +573,20 @@ namespace networking {
                 std::map<std::string, std::map<std::string, std::vector<std::string> > > adapters = this_machine_adapters();
 
                 for (auto adapter = adapters.begin(); adapter != adapters.end(); adapter++) {
-
+                    
                     if (not string_functions::same_string(adapter->first, rel_adapter)) {
                         continue;
                     }
-
+                    
                     for (auto family = adapter->second.begin(); family != adapter->second.end(); family++) {
-                        if (not string_functions::same_string(family->first, network_address_families::ip_version4_address_family) or 
-                            not string_functions::same_string(family->first, network_address_families::ip_version6_address_family)) {
+                        if (not string_functions::same_string(network_address_families::ip_version4_address_family, family->first) and not string_functions::same_string(network_address_families::ip_version6_address_family, family->first)) {
+                            continue;
+                        }
+
+                        for (auto address = family->second.begin(); address != family->second.end(); address++) {
+                            if (address->empty()) {
                                 continue;
                             }
-                        
-                        // IP4 or IP6
-                        for (auto address = family->second.begin(); address != family->second.end(); address++) {
                             this->hostname = *address;
                             break;
                         }
@@ -598,7 +599,6 @@ namespace networking {
                     if (not this->hostname.empty()) {
                         break;
                     }
-
                 }
             }
 
@@ -610,7 +610,7 @@ namespace networking {
             hints.ai_family = AF_UNSPEC;
             hints.ai_socktype = (this->tcp) ? SOCK_STREAM : SOCK_DGRAM;
             hints.ai_flags = AI_PASSIVE;
-
+            std::printf("The host is '%s'\n", this->hostname.c_str());
             if (getaddrinfo(this->hostname.c_str(), this->portvalue.c_str(), &hints, &this->connect_address)) {
                 (not this->was_init) ? uninitialize_network() : true;
                 throw exceptions::getaddrinfo_failure("Failed to retrieve address information for local machine", true, __FILE__, __LINE__ - 2, __FUNCTION__);
@@ -642,7 +642,7 @@ namespace networking {
             SSL_load_error_strings();
             this->initialized_secure = true;
         }
-        return this->initialized_secure;
+        return (this->secure_) ? this->initialized_secure : not this->initialized_secure;
     }
 
 
@@ -655,7 +655,7 @@ namespace networking {
         if (this->secure_ and not this->context) {
             this->context = SSL_CTX_new(TLS_client_method());
         }
-        return this->context;
+        return (this->secure_) ? valid_context(this->context) : not valid_context(this->context);
     }
 
 
@@ -721,13 +721,13 @@ namespace networking {
 
     
     bool network_structures::tcp_server::create_certificates() {
-        if (not this->certificates) {
+        if (this->secure_ and not this->certificates) {
             this->initialize_secure();
             this->create_context();
-            if (not SSL_CTX_use_certificate_file(this->context, std::string(std::string("..") + std::string(sys_slash)  + "files" + sys_slash + cert_pem_file).c_str(), SSL_FILETYPE_PEM) or (not SSL_CTX_use_PrivateKey_file(this->context, std::string(std::string("..") + std::string(sys_slash) + "files" + sys_slash + key_pem_file).c_str(), SSL_FILETYPE_PEM))) {
-                (this->del_on_except) ? freeaddrinfo(this->connect_address) : (void) 0;
+            if (not SSL_CTX_use_certificate_file(this->context, this->cert_pem_file.c_str(), SSL_FILETYPE_PEM) or not SSL_CTX_use_PrivateKey_file(this->context, this->key_pem_file.c_str(), SSL_FILETYPE_PEM)) {
                 (not this->was_init) ? uninitialize_network() : true;
-                throw exceptions::certificate_or_key_error("Failed to retrieve a new certificate or private key to use as secure signature", true, __FILE__, __LINE__ - 3, __FUNCTION__);
+                char err_buf[256]; unsigned long err = ERR_get_error(); ERR_error_string_n(err, err_buf, sizeof(err_buf));
+                throw exceptions::certificate_or_key_error("Failed to create the certificate or private key for this server. Error '" + std::string(err_buf) + "'", true, __FILE__, __LINE__ - 3, __FUNCTION__);
             }
             this->certificates = true;
         }
@@ -972,17 +972,17 @@ namespace networking {
 
         if (not this->listening) {
 
-            if (not this->initialize_secure()) {
+            if (this->secure_ and not this->initialize_secure()) {
                 (not this->was_init) ? uninitialize_network() : true;
                 throw exceptions::initialize_network_failure("Failed to initialize secure network functions and algorithms", true, __FILE__, __LINE__ - 2, __FUNCTION__);
             }
             
-            if (not this->create_context()) {
+            if (this->secure_ and not this->create_context()) {
                 (not this->was_init) ? uninitialize_network() : true;
                 throw exceptions::create_context_failure("Failed to create the secure network context", true, __FILE__, __LINE__ - 2, __FUNCTION__);
             }
 
-            if (not this->create_certificates()) {
+            if (this->secure_ and not this->create_certificates()) {
                 (not this->was_init) ? uninitialize_network() : true;
                 throw exceptions::certificate_or_key_error("Failed to create the certificates and/or errors for the secure connection", true, __FILE__, __LINE__ - 2, __FUNCTION__);
             }

@@ -83,8 +83,7 @@ void resolve_hostname() {
 
 void test_server() {
 
-    networking::network_structures::tcp_server server;
-    std::printf("Successfully creates the tcp_server.\n");
+    networking::network_structures::tcp_server server("", DEFAULT_PORT, 10, 0, 100000, true, true);
     
     if (server.start()) {
         std::printf("Server is listening...\n");
