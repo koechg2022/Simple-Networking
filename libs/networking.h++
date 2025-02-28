@@ -143,22 +143,27 @@
 
             class certificate_or_key_error : public base_exception {
                 public:
-                    certificate_or_key_error(const std::string msg = "A certificate or key failure occured", bool pirnt = true, const std::string file_name = __FILE__, const int except_line = __LINE__, const std::string function = "Unknown function");
+                    certificate_or_key_error(const std::string msg = "A certificate or key failure occured", bool print = true, const std::string file_name = __FILE__, const int except_line = __LINE__, const std::string function = "Unknown function");
             };
 
             class secure_sockets_layer_error : public base_exception {
                 public:
-                    secure_sockets_layer_error(const std::string msg = "A secure sockets layer error occured", bool pirnt = true, const std::string file_name = __FILE__, const int except_line = __LINE__, const std::string function = "Unknown function");
+                    secure_sockets_layer_error(const std::string msg = "A secure sockets layer error occured", bool print = true, const std::string file_name = __FILE__, const int except_line = __LINE__, const std::string function = "Unknown function");
             };
 
             class certificate_error : public base_exception {
                 public:
-                    certificate_error(const std::string msg = "A certificate error occurred", bool pirnt = true, const std::string file_name = __FILE__, const int except_line = __LINE__, const std::string function = "Unknown function");
+                    certificate_error(const std::string msg = "A certificate error occurred", bool print = true, const std::string file_name = __FILE__, const int except_line = __LINE__, const std::string function = "Unknown function");
             };
 
             class accept_failure : public base_exception {
                 public:
-                    accept_failure(const std::string msg = "An acception error occurred", bool pirnt = true, const std::string file_name = __FILE__, const int except_line = __LINE__, const std::string function = "Unknown function");
+                    accept_failure(const std::string msg = "An acception error occurred", bool print = true, const std::string file_name = __FILE__, const int except_line = __LINE__, const std::string function = "Unknown function");
+            };
+
+            class create_context_failure : public base_exception {
+                public:
+                    create_context_failure(const std::string msg = "Failed to create a network context", bool print = true, const std::string file_name = __FILE__, const int except_line = __LINE__, const std::string function = "Unknown function");
             };
 
         }
@@ -254,21 +259,22 @@
             namespace connected_host {
                 
                 typedef struct client {
-                    std::string hostname, portvalue;
-                    socket_type connected_socket;
-                    secure_sockets_layer_type secure_sockets_layer;
-                    secure_sockets_layer_context_type context;
+                    std::string hostname = "", portvalue = "";
+                    socket_type connected_socket = invalid_socket;
+                    secure_socket_type secure_socket = invalid_secure_socket;
 
                     struct sockaddr_storage address_info;
+                    socklen_t address_size = sizeof(address_info);
 
                     bool operator<(const client& other) const;
                 } client;
 
                 typedef struct server{
-                    std::string hostname, portvalue;
+                    std::string hostname = "", portvalue = "";
+                    secure_socket_context_type context = invalid_context;
+                    secure_socket_type secure_socket = invalid_secure_socket;
+                    
                     struct addrinfo address_info;
-                    secure_sockets_layer_context_type context;
-                    secure_sockets_layer_type secure_socket;
 
                     bool operator<(const server& other) const;
                 } server;
@@ -284,6 +290,13 @@
                     struct addrinfo* connect_address;
                     struct timeval timeout;
                     bool tcp, was_init, del_on_except, secure_;
+                    
+
+                    // for secure
+                    bool initialized_secure;
+                    SSL_CTX* context;
+                    SSL* secure_socket;
+                    bool certificates;
                     
                     
 
@@ -363,7 +376,35 @@
                     */
                     bool create_socket();
 
+
+                    /**
+                        @brief Initialize the secure aspect of the network.
+                        
+                        @returns `true` if the network is successfully initialized, `false` if it's not.
+                     */
+                    bool initialize_secure();
+
+
+                    /**
+                        @brief Create the context that is used for the secure connection
+                        management.
+
+                        @returns `true` if the context is successfully created, `false` if it's not.
+
+                     */
+                    bool create_context();
+
+
                     
+                    /**
+                        @brief Create the secure sockets layer socket that is used for 
+                        TLS/SSL communication with the remote host.
+
+                        @returns `true` if the secure socket is successfully created, `false` if it's not.
+                     */
+                    bool create_secure_socket();
+                    
+
                     /**
                     *
                     *   @brief update the timeout for the select function that is used by the host
@@ -417,7 +458,7 @@
                         @returns The secure_sockets_layer that this host is using 
                             for it's secure connection (provided a secure connection is set up).
                      */
-                    secure_sockets_layer_type get_connection_secure_sockets_layers() const;
+                    secure_socket_type get_secure_connection_socket() const;
 
 
 
@@ -427,32 +468,159 @@
                 private:
 
                     int listen_lim;
-                    bool listening, bound, created_certs;
+                    bool listening, bound;
                     socket_type max_socket;
-                    secure_sockets_layer_type max_secure_socket_layer;
+                    secure_socket_type max_secure_socket;
                     std::map<socket_type, connected_host::client> clients;
                     const std::string cert_pem_file = "cert.pem", key_pem_file = "key.pem";
 
 
-                    bool create_certs_for_server();
+                    bool create_certificates();
+
+
+                    bool disconnect_client(connected_host::client& client);
+
+
+                    bool bind_socket();
+
+                    
+                    bool start_listening();
 
                 public:
 
                     tcp_server(const std::string host = "", const std::string port = DEFAULT_PORT, int listen_limit = 10, long seconds_wait = 0, int micro_sec_wait = 100000, bool will_del = true, bool secure = false);
 
-
+                    
                     ~tcp_server();
+
+                    
+                    operator bool() const;
+
+                    /**
+                        @brief Check if there is a new connection request to the tcp server.
+                        @param accept_new (bool) : Defaults to `true` If this flag is true, the new
+                        connection is automatically accepted.
+                        @returns `true` if there is a new connection 
+                            request to the tcp server. `false` if there isn't one.
+                     */
+                    bool new_connection(bool accept_new = true);
+
+                    /**
+                        @brief Close the connection to the socket passed in,
+                        provided that the socket passed in is one of 
+                        the connections that is established to this 
+                        server.
+                        @param to_close (`const socket_type`) : The socket to close.
+
+                        @returns `true` if the socket is successfully closed and removed, 
+                        `false` if it's not successfully closed and removed.
+                     */
+                    bool close_connection(const socket_type to_close);
+
+
+                    /**
+                        @brief Close the connection to the host and port passed in,
+                        provided that they point to one of 
+                        the connections that is established to this 
+                        server.
+                        
+                        @param hostname The hostname of the client to be disconnected.
+
+                        @param portvalue The port value of the client to disconnected.
+
+                        @returns `true` if the client connected with `hostname` and `portvalue` 
+                        is successfully closed and removed, 
+                        `false` if it's not successfully closed and removed.
+                     */
+                    bool close_connection(const std::string hostname, const std::string portvalue);
+
+
+                    /**
+                        @brief close down the server.
+                        @returns `true` if the server is no longer running,
+                        `false` otherwise.
+                     */
+                    bool close_server();
+
+                    
+                    /**
+                        @brief Update the maximum number of 'listenings' that this server
+                        can listen for at a time.
+
+                        @returns `true` if the maximum was successfully updated, `false` otherwise.
+                     */
+                    bool update_limit(const int listening_limit);
+
+                    
+                    /**
+                        @brief Get the maximum number of 'listenings' that this server
+                        can listen for at a time.
+
+                        @returns The maximum number of 'listenings' the server can listen for at a given moment.
+                     */
+                    int listening_limit() const;
+
+                    
+                    /**
+                        @brief Starts the server. 
+                        @returns `true` if the server was successfully started.
+                     */
+                    bool start();
+
+                    
+                    /**
+                        @brief Check if the server is still running or not.
+                        @returns `true` if the server is still running, `false` if it's not.
+                     */
+                    bool running() const;
+
+                    
+                    /**
+                        @brief Get all the clients that have a message ready to be received.
+                        @note Only the clients that have data to be read from are the ones
+                            that are returned.
+                        @returns A `std::set<connected_host::client>` with all the clients
+                            that have information to be read.
+                     */
+                    std::set<connected_host::client> get_clients();
+
+                    
+                    /**
+                        @brief Get all the clients that are connected to this machine, 
+                        regardless of whether they have a message or not.
+                        @returns A `std::set<connected_host::client>` with all the clients
+                            that are connected to this server.
+                     */
+                    std::set<connected_host::client> get_all_clients();
+                    
+
+                    /**
+                        @brief Get the maximum socket in use by this server for a connection to a client.
+
+                        @returns the maximum socket being used, if there is a least one connection.
+                        @note If there is no connection to this server, an invalid socket is returned.
+                     */
+                    socket_type get_max_socket() const;
+
+                    
+                    /**
+                        @brief Get the maximum secure sockets layer socket in use by this server for 
+                        secure communication with a client.
+                        @note the maximum secure socket doesn't necessarily correlate with the maximum
+                        connection socket.
+                        @returns the maximum secure sockets layer socket being used, 
+                        if there is a least one secure connection. If there are no secure connections, 
+                        then an invalid secure socket is returned.
+                     */
+                    secure_socket_type get_max_secure_socket() const;
+
 
             };
 
             class tcp_client : public host {
                 private:
                     
-                    
-                    bool is_connected;
-
-
-                    bool create_certificate();
+                    bool connected;
 
 
                 public:
@@ -464,6 +632,9 @@
 
 
                     ~tcp_client();
+
+
+                    operator bool();
 
             };
 

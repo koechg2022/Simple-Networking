@@ -2,7 +2,7 @@
 #include "../libs/networking.h++"
 #include "../libs/misc_functions.h++"
 #include "included.h++"
-#include <unistd.h>
+
 
 
 // const std::string UNDER_CONSTRUCTION = "UNDER CONSTRUCTION";
@@ -13,10 +13,19 @@ void list_machine_adapters();
 
 void resolve_hostname();
 
+void test_server();
+
+void test_client();
+
 int main(int len, char** args) {
 
     int index;
     std::printf("There are %d arguments:\n", len - 1);
+    if (len <= 1) {
+        std::printf("Help. This is for testing the networking library. Use one of the following arguments to test the library:\n");
+        std::printf("\t'list_machine_adapters()' | 'la':\tTo see all the current machine's adapters.\n");
+        std::printf("\t'resolve_hostname()' | 'rh':\tTo resolve hostname into an IP address.\n");
+    }
     for (index = 1; index < len; index++) {
         std::printf("\t%d.) %s\n", index, args[index]);
         if (string_functions::same_string(std::string(args[index]), "list_adapters") or string_functions::same_string(std::string(args[index]), "la")) {
@@ -25,6 +34,14 @@ int main(int len, char** args) {
 
         else if (string_functions::same_string(std::string(args[index]), "resolve_host") or string_functions::same_string(std::string(args[index]), "rh")) {
             resolve_hostname();
+        }
+
+        else if (string_functions::same_string(args[index], "test_server") or string_functions::same_string(args[index], "ts")) {
+            test_server();
+        }
+
+        else if (string_functions::same_string(args[index], "test_client") or string_functions::same_string(args[index], "tc")) {
+            test_client();
         }
     }
 
@@ -62,4 +79,195 @@ void resolve_hostname() {
     for (index = 0; index < addresses.size(); index++) {
         std::cout << "\t" << addresses[index] << std::endl;
     }
+}
+
+void test_server() {
+
+    networking::network_structures::tcp_server server;
+    std::printf("Successfully creates the tcp_server.\n");
+    
+    if (server.start()) {
+        std::printf("Server is listening...\n");
+        std::cout << "Connect to the server using:" << std::endl;
+        std::cout << "\t" << server.host_name() << " : " << server.port_value() << std::endl;
+        std::set<networking::network_structures::connected_host::client> clients;
+        char msg[kilo_byte];
+        ssize_t msg_len;
+        std::string msg_string;
+        std::memset(msg, 0, kilo_byte);
+
+        while (server) {
+            
+            if (server.new_connection()) {
+                std::cout << "New connection accepted. Here are the new clients:" << std::endl;
+                clients = server.get_all_clients();
+
+                for (auto client = clients.begin(); client NOT clients.end(); client++) {
+                    std::cout << "\t" << client->hostname << " : " << client->portvalue << std::endl;
+                }
+            }
+
+            // New connected have been accounted for
+            // Are there any new messages from the clients?
+            clients = server.get_clients();
+            for (auto client = clients.begin(); client NOT clients.end(); client++) {
+                const std::string now = misc_functions::get_current_time();
+                std::memset(msg, 0, kilo_byte);
+                msg_len = recv(client->connected_socket, msg, kilo_byte, 0);
+                if (msg_len > 0) {
+                    msg_string = std::string(msg);
+                    std::cout << client->hostname << "(" << now << ") : " << std::endl;
+                    std::cout << "\"" << msg_string << "\"" << std::endl;
+                    continue;
+                }
+                server.close_connection(client->connected_socket);
+            }
+
+            // Control the server from the command line.
+            if (string_functions::has_keyboard_input()) {
+                msg_string = string_functions::get_input();
+                
+                
+                if (string_functions::same_string(msg_string, "exit()") or string_functions::same_string(msg_string, "exit")) {
+                    server.close_server();
+                }
+
+                else if (string_functions::same_string(msg_string, "list_connected_machines()") or string_functions::same_string(msg_string, "lcm")) {
+                    clients = server.get_all_clients();
+                    if (clients.empty()) {
+                        std::cout << "No clients connected to this server..." << std::endl;
+                    }
+                    else {
+                        for (auto client = clients.begin(); client NOT clients.end(); client++) {
+                            std::cout << client->hostname << ":" << std::endl;
+                            std::cout << "\tConnection socket : " << client->connected_socket << std::endl;
+                            std::cout << "\tPort : " << client->portvalue << std::endl;
+                        }
+                    }
+                }
+
+                else if (string_functions::same_string(msg_string, "broadcast()") or string_functions::same_string(msg_string, "brdcst")) {
+                    
+                    msg_string = string_functions::get_input("Message to broadcast: ");
+                    clients = server.get_all_clients();
+                    ssize_t len;
+                    for (auto client = clients.begin(); client NOT clients.end(); client++) {
+                        len = send(client->connected_socket, msg_string.c_str(), msg_string.length(), 0);
+                        if (len < 1) {
+                            std::cerr << "Error sending message to client \"" << client->hostname << "\"" << std::endl;
+                            server.close_connection(client->connected_socket);
+                            continue;
+                        }
+                        if ((unsigned long) len == msg_string.length()) {
+                            std::cout << "Successfully sent message to client \"" << client->hostname << "\"" << std::endl;
+                        }
+                        else {
+                            std::cerr << "Failed to send complete message to client \"" << client->hostname << "\"" << std::endl << "Only sent " << len << " bytes of " << msg_string.length() << " bytes." << std::endl;
+                        }
+                    }
+                }
+
+                else if (string_functions::same_string(msg_string, "message_client()") or string_functions::same_string(msg_string, "msgc")) {
+                    
+                    networking::network_structures::connected_host::client the_client;
+                    the_client.connected_socket = invalid_socket;
+                    the_client.hostname = the_client.portvalue = "";
+                    clients = server.get_all_clients();
+
+                    for (auto client = clients.begin(); client NOT clients.end(); client++) {
+                        std::cout << client->hostname << std::endl;
+                        std::cout << "\t" << client->portvalue << std::endl;
+                        std::cout << "\t" << client->connected_socket << std::endl;
+                        std::cout << "--------------------------------------------------------" << std::endl;
+                    }
+                    msg_string = string_functions::get_input("Client : ");
+
+                    // socket or port
+                    if (string_functions::all_numbers(msg_string.c_str())) {
+                        // socket or port
+                        #if defined(unix_os)
+                            socket_type the_socket = std::stoi(msg_string);
+                        #else
+                            socket_type the_socket = std::stoull(msg_string);
+                        #endif
+
+                        while (not valid_socket(the_client.connected_socket)) {
+                            for (auto client = clients.begin(); client NOT clients.end(); client++) {
+                                if (string_functions::same_string(msg_string, client->portvalue) or the_socket == client->connected_socket) {
+                                    the_client = *client;
+                                    break;
+                                }
+                            }
+
+                            if (not valid_socket(the_client.connected_socket)) {
+                                clients = server.get_all_clients();
+                                for (auto client = clients.begin(); client NOT clients.end(); client++) {
+                                    std::cout << client->hostname << std::endl;
+                                    std::cout << "\t" << client->portvalue << std::endl;
+                                    std::cout << "\t" << client->connected_socket << std::endl;
+                                    std::cout << "--------------------------------------------------------" << std::endl;
+                                }
+                                msg_string = string_functions::get_input("Client : ");
+                            }
+                        }
+                    }
+
+                    // hostname
+                    else if (networking::is_ipstring(msg_string, true) or 
+                                networking::is_ipstring(msg_string, false)) {
+                        while (not valid_socket(the_client.connected_socket)) {
+                            
+                            for (auto client = clients.begin(); client NOT clients.end(); client++) {
+                                if (string_functions::same_string(msg_string, client->hostname)) {
+                                    the_client = *client;
+                                    break;
+                                }
+                            }
+
+                            if (not valid_socket(the_client.connected_socket)) {
+                                clients = server.get_all_clients();
+                                for (auto client = clients.begin(); client NOT clients.end(); client++) {
+                                    std::cout << client->hostname << std::endl;
+                                    std::cout << "\t" << client->portvalue << std::endl;
+                                    std::cout << "\t" << client->connected_socket << std::endl;
+                                    std::cout << "--------------------------------------------------------" << std::endl;
+                                }
+                                msg_string = string_functions::get_input("Client : ");
+                            }
+                        }
+                    }
+                    
+                    // Unrecotnized client passed in
+                    else {
+                        std::cerr << "Unrecognized client passed in " << msg_string << std::endl;
+                        continue;
+                    }
+                    msg_string = string_functions::get_input("Message to send : ");
+                    msg_len = send(the_client.connected_socket, msg_string.c_str(), msg_string.length(), 0);
+                    if (msg_len < 1) {
+                        std::cerr << "Error occurred while trying to send message." << std::endl;
+                        server.close_connection(the_client.connected_socket);
+                        continue;
+                    }
+
+                    std::cout << "Successfully sent " << msg_len << " bytes out of " << msg_string.length() << " bytes" << std::endl;
+                }
+
+                else {
+                    std::cout << "Unrecognized command " << msg_string << std::endl << "Use these are the recognized commands:" << std::endl;
+                    std::cout << "\texit()/exit to close the server" << std::endl;
+                    std::cout << "\tlist_connected_machines()/lcm to list all the clients that are connected to the server" << std::endl;
+                    std::cout << "\tbroadcast()/brdcst to send a message to all connected clients" << std::endl;
+                    std::cout << "\tmessage_client()/msgc to message a specific client only" << std::endl;
+                }
+
+            }
+
+        }
+        std::printf("Server is disconnected...\n");
+    }
+}
+
+void test_client() {
+
 }

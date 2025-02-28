@@ -212,13 +212,13 @@
     #define prev -1
     #define NOT !=
     #define null NULL
-    #define secure_sockets_layer_type SSL*
-    #define secure_sockets_layer_context_type SSL_CTX*
-    #define invalid_secure_sockets_layer_socket null
-    #define invalid_secure_sockets_layer_context null
+    #define secure_socket_type SSL*
+    #define secure_socket_context_type SSL_CTX*
+    #define invalid_secure_socket null
+    #define invalid_context null
     
-    #define valid_secure_sockets_layer_socket(the_socket) (the_socket != invalid_secure_sockets_layer_socket)
-    #define valid_secure_sockets_layer_context(the_context) (the_context != invalid_secure_sockets_layer_context)
+    #define valid_secure_socket(the_socket) (the_socket != invalid_secure_socket)
+    #define valid_context(the_context) (the_context != invalid_context)
 
 
     #define buffer_size 100
