@@ -1047,7 +1047,7 @@ namespace networking {
     }
 
     network_structures::tcp_server::operator bool() const {
-        return this->listening;
+        return this->running();
     }
 
     bool network_structures::tcp_server::new_connection(bool accept_new) {
@@ -1188,13 +1188,13 @@ namespace networking {
         for (auto client = this->clients.begin(); client != this->clients.end(); client++) {
             if (to_close == client->first) {
                 // This is the client to be removed
-                std::printf("Closing secure socket...\n");
+                // std::printf("Closing secure socket...\n");
                 (this->secure_) ? SSL_shutdown(client->second.secure_socket) : 0;
-                std::printf("Closing connection socket...\n");
+                // std::printf("Closing connection socket...\n");
                 (socket_is_connected(client->first)) ? close_socket(client->first) : 0;
-                std::printf("Freeing secure socket...\n");
+                // std::printf("Freeing secure socket...\n");
                 (this->secure_) ? SSL_free(client->second.secure_socket) : (void) 0;
-                std::printf("Removing client from database...\n");
+                // std::printf("Removing client from database...\n");
                 this->clients.erase(client->first);
                 the_answer = true;
                 goto other;
@@ -1215,13 +1215,13 @@ namespace networking {
         for (auto client = this->clients.begin(); client != this->clients.end(); client++) {
             if (string_functions::same_string(client->second.hostname, hostname) and string_functions::same_string(client->second.portvalue, portvalue)) {
                 // This is the client to be removed
-                std::printf("Closing secure socket...\n");
+                // std::printf("Closing secure socket...\n");
                 (this->secure_) ? SSL_shutdown(client->second.secure_socket) : 0;
-                std::printf("Closing connection socket...\n");
+                // std::printf("Closing connection socket...\n");
                 (socket_is_connected(client->first)) ? close_socket(client->first) : 0;
-                std::printf("Freeing secure socket...\n");
+                // std::printf("Freeing secure socket...\n");
                 (this->secure_) ? SSL_free(client->second.secure_socket) : (void) 0;
-                std::printf("Removing client from database...\n");
+                // std::printf("Removing client from database...\n");
                 this->clients.erase(client->first);
                 the_answer = true;
                 goto other;
@@ -1342,7 +1342,7 @@ namespace networking {
     }
 
     bool network_structures::tcp_server::running() const {
-        return this->bound and this->listening and valid_socket(this->connect_socket);
+        return this->bound and this->listening and ((this->secure_ and valid_secure_socket(this->secure_socket)) or (not this->secure_ and valid_socket(this->connect_socket)));
     }
 
     std::set<network_structures::connected_host::client> network_structures::tcp_server::get_clients() {
