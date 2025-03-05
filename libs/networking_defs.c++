@@ -1347,7 +1347,7 @@ namespace networking {
 
     std::set<network_structures::connected_host::client> network_structures::tcp_server::get_clients() {
         std::set<network_structures::connected_host::client> the_answer;
-        if (not this->listening) {
+        if (not this->listening or this->clients.empty()) {
             return the_answer;
         }
         
