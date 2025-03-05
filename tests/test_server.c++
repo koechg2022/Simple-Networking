@@ -17,6 +17,8 @@ void test_server();
 
 void test_client();
 
+void windows_tests();
+
 int main(int len, char** args) {
 
     int index;
@@ -42,6 +44,10 @@ int main(int len, char** args) {
 
         else if (string_functions::same_string(args[index], "test_client") or string_functions::same_string(args[index], "tc")) {
             test_client();
+        }
+
+        else if (string_functions::same_string(args[index], "windows_tests") or string_functions::same_string(args[index], "wt")) {
+            windows_tests();
         }
     }
 
@@ -376,5 +382,25 @@ void test_client() {
             }
         }
 
+    }
+}
+
+
+
+void windows_tests() {
+
+    if (networking::initialize_network()) {
+        std::printf("Successfully initialized entwork.\n");
+    }
+
+    else {
+        std::printf("Failed to initialize network.\n");
+    }
+
+    if (networking::uninitialize_network()) {
+        std::printf("Successfully uninitialize network.\n");
+    }
+    else {
+        std::printf("Failed to uninitialize network.\n");
     }
 }
