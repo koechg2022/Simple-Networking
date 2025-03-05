@@ -276,7 +276,7 @@
                     secure_socket_type secure_socket = invalid_secure_socket;
                     socket_type connect_socket = invalid_socket;
                     
-                    struct addrinfo address_info;
+                    struct addrinfo* address_info;
 
                     bool operator<(const server& other) const;
 
@@ -656,7 +656,6 @@
                 private:
                     
                     bool connected;
-                    char request[2 * kilo_byte];
                     int bytes;
 
 
@@ -678,6 +677,12 @@
                     
 
                     bool disconnect();
+
+                    
+                    connected_host::server get_server_connection() const;
+
+
+                    bool server_has_message();
 
 
             };

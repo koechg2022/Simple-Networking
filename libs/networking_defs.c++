@@ -1038,7 +1038,7 @@ namespace networking {
         FD_ZERO(&ready);
         FD_SET(this->connect_socket, &ready);
 
-        if (select(this->connect_socket + 1, &ready, 0, 0, &timeout) < 0) {
+        if (select(this->connect_socket + 1, &ready, 0, 0, (this->timeout.tv_usec is -1) ? 0 : &this->timeout) < 0) {
             (this->del_on_except) ? freeaddrinfo(this->connect_address) : (void) 0;
             (not this->was_init) ? uninitialize_network() : true;
             throw exceptions::select_failure("Failed to select for the actively listening socket for new connections. Error number " + std::to_string(get_socket_error()), true, __FILE__, __LINE__ - 3, __FUNCTION__);
@@ -1101,7 +1101,7 @@ namespace networking {
         FD_ZERO(&ready);
         FD_SET(this->connect_socket, &ready);
 
-        if (select(this->connect_socket + 1, &ready, 0, 0, &timeout) < 0) {
+        if (select(this->connect_socket + 1, &ready, 0, 0, (this->timeout.tv_usec is -1) ? 0 : &this->timeout) < 0) {
             (this->del_on_except) ? freeaddrinfo(this->connect_address) : (void) 0;
             (not this->was_init) ? uninitialize_network() : true;
             throw exceptions::select_failure("Failed to select for the actively listening socket for new connections. Error number " + std::to_string(get_socket_error()), true, __FILE__, __LINE__ - 3, __FUNCTION__);
@@ -1337,7 +1337,7 @@ namespace networking {
             FD_SET(client->first, &ready);
         }
 
-        if (select(this->max_socket + 1, &ready, 0, 0, &this->timeout) < 0) {
+        if (select(this->max_socket + 1, &ready, 0, 0, (this->timeout.tv_usec is -1) ? 0 : &this->timeout) < 0) {
             (this->del_on_except) ? freeaddrinfo(this->connect_address) : (void) 0;
             (not this->was_init) ? uninitialize_network() : true;
             throw exceptions::select_failure("Failed to select any of the connections that are ready with information. Error " + std::to_string(get_socket_error()), true, __FILE__, __LINE__ - 3, __FUNCTION__);
@@ -1391,14 +1391,12 @@ namespace networking {
     network_structures::tcp_client::tcp_client() : networking::network_structures::host() {
         this->connected = false;
         this->bytes = -1;
-        std::memset(&request, 0, 2 * kilo_byte);
     }
 
     network_structures::tcp_client::tcp_client(const std::string remote_host, const std::string connect_port, const long wait_sec, const int wait_msec, bool will_del, bool secure) :
     networking::network_structures::host(remote_host, connect_port, true, wait_sec, wait_msec, will_del, secure) {
         this->connected = false;
         this->bytes = -1;
-        std::memset(&request, 0, 2 * kilo_byte);
     }
 
     network_structures::tcp_client::~tcp_client() {
@@ -1460,6 +1458,7 @@ namespace networking {
             this->connect_socket = invalid_socket;
             this->context = invalid_context;
             (this->certificate) ? X509_free(this->certificate) : (void) 0;
+            this->certificate = null;
             this->connected = false;
         }
         else {
@@ -1470,8 +1469,27 @@ namespace networking {
             }
         }
         this->bytes = -1;
-        std::memset(&request, 0, 2 * kilo_byte);
         return this->connected;
+    }
+
+    network_structures::connected_host::server network_structures::tcp_client::get_server_connection() const {
+        return {this->hostname, 
+                    this->portvalue, 
+                            this->context, 
+                            this->secure_socket, 
+                                this->connect_socket, 
+                                        this->connect_address};
+    }
+
+    bool network_structures::tcp_client::server_has_message() {
+        fd_set ready;
+        FD_ZERO(&ready);
+        FD_SET(this->connect_socket, &ready);
+
+        if (select(this->connect_socket + 1, &ready, 0, 0, (this->timeout.tv_usec is -1) ? 0 : &this->timeout) < 0) {
+            throw exceptions::select_failure("Failed to select for active sockets", true, __FILE__, __LINE__ - 1, __FUNCTION__);
+        }
+        return FD_ISSET(this->connect_socket, &ready);
     }
 
 

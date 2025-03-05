@@ -6,7 +6,7 @@
 
 
 // const std::string UNDER_CONSTRUCTION = "UNDER CONSTRUCTION";
-
+const std::string connection_port = "5500";
 
 
 void list_machine_adapters();
@@ -84,7 +84,7 @@ void resolve_hostname() {
 void test_server() {
 
     networking::network_structures::tcp_server server("", 
-                                                    DEFAULT_PORT, 
+                                                    connection_port,
                                                         10, 
                                                             0, 
                                                                 100000, 
@@ -282,7 +282,8 @@ void test_server() {
                 }
 
                 else {
-                    std::cout << "Unrecognized command " << msg_string << std::endl << "Use these are the recognized commands:" << std::endl;
+                    std::cout << "Unrecognized command " << msg_string << std::endl;
+                    std::cout << "Use the recognized commands:" << std::endl;
                     std::cout << "\texit()/exit to close the server" << std::endl;
                     std::cout << "\tlist_connected_machines()/lcm to list all the clients that are connected to the server" << std::endl;
                     std::cout << "\tbroadcast()/brdcst to send a message to all connected clients" << std::endl;
@@ -298,4 +299,74 @@ void test_server() {
 
 void test_client() {
 
+    networking::network_structures::tcp_client client(string_functions::get_input("Enter host to connect to: "), connection_port);
+
+    if (not client.connect()) {
+        std::fprintf(stderr, "Failed to connect to the remote host. Error '%d'\n", get_socket_error());
+        return;
+    }
+
+    std::printf("Connected to '%s'.\n", client.host_name().c_str());
+
+    std::string message;
+    networking::network_structures::connected_host::server server_info;
+    char message_buffer[kilo_byte];
+    int bytes;
+    std::memset(message_buffer, 0, kilo_byte);
+
+    while (client) {
+        
+        
+        if (client.server_has_message()) {
+            std::memset(message_buffer, 0, kilo_byte);
+            bytes = (client.secure_host()) ? 
+                                SSL_read(client.get_secure_connection_socket(), message_buffer, kilo_byte) : 
+                                        recv(client.get_connection_socket(), message_buffer, kilo_byte, 0);
+            if ((client.secure_host() and bytes <= 0 )
+                            or 
+                (not client.secure_host() and bytes < 1)) {
+                std::printf("Connection closed.\n");
+                client.disconnect();
+            }
+            std::printf("Message from server:\n'%.*s'\n", (int) bytes, message_buffer);
+        }
+
+        if (string_functions::has_keyboard_input()) {
+            message = string_functions::get_input();
+
+            if (string_functions::same_string(message, "exit()") or string_functions::same_string(message, "exit")) {
+                client.disconnect();
+            }
+
+            else if (string_functions::same_string(message, "list_connection()") or string_functions::same_string(message, "lc")) {
+                server_info = client.get_server_connection();
+                std::printf("Connection information:\n");
+                std::printf("%s\n", server_info.hostname.c_str());
+                std::printf("\tConnection socket : %s\n", std::to_string(server_info.connect_socket).c_str());
+                std::printf("\tPort : %s\n", server_info.portvalue.c_str());
+            }
+
+            else if (string_functions::same_string(message, "send_message()") or string_functions::same_string(message, "sm")) {
+                message = string_functions::get_input("Enter message to send: ");
+                bytes = (client.secure_host()) ? 
+                                SSL_write(client.get_secure_connection_socket(), message.c_str(), message.length()) : 
+                                    send(client.get_connection_socket(), message.c_str(), message.length(), 0);
+                if ((bytes <= 0 and client.secure_host()) or (bytes < 1 and not client.secure_host())) {
+                    std::printf("Failed to send message to server...\n");
+                    client.disconnect();
+                    continue;
+                }
+                std::printf("Sent '%d' bytes of '%d' bytes.\n", (int) bytes, (int) message.length());
+            }
+
+            else {
+                std::cout << "Unrecognized command '" << message << "'" << std::endl;
+                std::cout << "Use the recognized commands:" << std::endl;
+                std::cout << "\texit()/exit to close the server" << std::endl;
+                std::cout << "\tlist_connecion() to view server connection information" << std::endl;
+                std::cout << "\tsend_message() to send a message to the server" << std::endl;
+            }
+        }
+
+    }
 }
