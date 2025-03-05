@@ -726,13 +726,13 @@ namespace networking {
                 (not this->was_init) ? uninitialize_network() : true;
                 throw exceptions::create_socket_failure("Failed to create connection socket for host " + this->hostname + ". Error number " + std::to_string(get_socket_error()), true, __FILE__, __LINE__ - 4, __FUNCTION__);
             }
-            std::printf("Created the connection socket...\n");
+            // std::printf("Created the connection socket...\n");
             #if defined(unix_os)
                 int reuse = 1;
             #else
                 char reuse = 1;
             #endif
-            std::printf("setting socket options...\n");
+            // std::printf("setting socket options...\n");
             if (setsockopt(this->connect_socket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse))) {
                 std::fprintf(stderr, "Failed to set reusable socket.\n");
             }
