@@ -1,11 +1,20 @@
 #include "misc_functions.h++"
+#include "included.h++"
 
 
 
 const std::string misc_functions::get_current_time() {
+    // std::time_t now = std::time(nullptr);
+    // std::string the_answer = (const std::string) (std::ctime(&now));
+    // return the_answer.substr(0, the_answer.length() - 1);
     std::time_t now = std::time(nullptr);
-    std::string the_answer = (const std::string) (std::ctime(&now));
-    return the_answer.substr(0, the_answer.length() - 1);
+    char buffer[buffer_size];
+    errno_t result = ctime_s(buffer, sizeof(buffer), &now);
+    if (result == 0) {
+        std::string the_answer(buffer);
+        return the_answer.substr(0, the_answer.length() - 1);
+    }
+    return "Error getting time";
 }
 
 
