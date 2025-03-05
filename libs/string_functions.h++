@@ -1,13 +1,13 @@
 
 
-#include "../headers/included.h++"
 
 
 
 
 #if not defined(_STRING_FUNC_)
-    #define _STRING_FUNC_
-    
+#define _STRING_FUNC_
+
+    #include "../headers/included.h++"
 
     namespace string_functions {
 

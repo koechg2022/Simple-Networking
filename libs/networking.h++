@@ -1,10 +1,10 @@
-#include "../headers/included.h++"
-#include "string_functions.h++"
 
 
 #if not defined(_NETWORKING_FUNC_)
-    #define _NETWORKING_FUNC_
+#define _NETWORKING_FUNC_
 
+    #include "../headers/included.h++"
+    #include "string_functions.h++"
 
     namespace networking {
 
