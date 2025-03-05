@@ -18,7 +18,7 @@
                 const bool is_init = true;
                 #if defined(mac_os)
                     const std::string rel_adapter = "en0";
-                #elif
+                #else
                     const std::string rel_adapter = "enp0s8";
                 #endif
             #endif
