@@ -315,14 +315,14 @@ namespace networking {
         std::string adapter_name, address_family, address_name;
         std::memset(buffer, 0, buffer_size);
         for (this_adapter = all_adapters; this_adapter; this_adapter = ifaddrs_get_next_adapter(this_adapter)) {
-            std::printf("Retrieving adapter_name\n");
+            // std::printf("Retrieving adapter_name\n");
             adapter_name = ifaddrs_get_adapter_name(this_adapter);
-            std::printf("Retrieved adapter name ('%s')\n", adapter_name.c_str());
+            // std::printf("Retrieved adapter name ('%s')\n", adapter_name.c_str());
 
             for (this_address = ifaddrs_pull_adapter_address(this_adapter); this_address; this_address = ifaddrs_get_next_address(this_address)) {
-                std::printf("\tRetrieving address family\n");
+                // std::printf("\tRetrieving address family\n");
                 address_family = network_address_families::resolve_address_family_to_string(ifaddrs_get_address_family(this_address));
-                std::printf("\tRetrieved address_family ('%s')\n\n", address_family.c_str());
+                // std::printf("\tRetrieved address_family ('%s')\n\n", address_family.c_str());
                 // now to pull the address
                 string_functions::same_char(*buffer, 0, false) ? (void*) 0 : std::memset(buffer, 0, buffer_size);
 
