@@ -706,7 +706,7 @@ namespace networking {
             hints.ai_family = AF_UNSPEC;
             hints.ai_socktype = (this->tcp) ? SOCK_STREAM : SOCK_DGRAM;
             hints.ai_flags = AI_PASSIVE;
-            std::printf("The host is '%s'\n", this->hostname.c_str());
+            // std::printf("The host is '%s'\n", this->hostname.c_str());
             if (getaddrinfo(this->hostname.c_str(), this->portvalue.c_str(), &hints, &this->connect_address)) {
                 (not this->was_init) ? uninitialize_network() : true;
                 throw exceptions::getaddrinfo_failure("Failed to retrieve address information for local machine", true, __FILE__, __LINE__ - 2, __FUNCTION__);
