@@ -185,10 +185,12 @@ namespace networking {
         #if defined(crap_os)
             if (not is_init) {
                 WSADATA d;
+                std::printf("Initializing network...\n");
                 if (WSAStartup(MAKEWORD(2, 2), &d)) {
                     return false;
                 }
                 is_init = true;
+                std::printf("Network is initialized");
             }
         #endif
         return is_init;
@@ -197,10 +199,12 @@ namespace networking {
     bool uninitialize_network() {
         #if defined(crap_os)
             if (is_init) {
+                std::printf("Uninitializing network...\n");
                 if (WSACleanup()) {
                     return is_init;
                 }
                 is_init = false;
+                std::printf("Network is uninitialized...\n");
             }
         #endif
         return is_init is false;
@@ -503,9 +507,7 @@ namespace networking {
         this->timeout = {0, 100000};
         this->tcp = true;
         this->was_init = is_init;
-        if (not this->was_init) {
-            initialize_network();
-        }
+        initialize_network();
         this->del_on_except = true;
         this->secure_ = this->initialized_secure = this->certificates = false;
         this->context = null;
@@ -522,9 +524,7 @@ namespace networking {
         this->timeout = {wait_sec, wait_msec};
         this->tcp = use_tcp;
         this->was_init = is_init;
-        if (not this->was_init) {
-            initialize_network();
-        }
+        initialize_network();
         this->del_on_except = will_del;
         this->secure_ = secure;
         this->initialized_secure = this->certificates = false;
@@ -721,6 +721,8 @@ namespace networking {
         if (not valid_socket(this->connect_socket)) {
             std::printf("creating the connection socket...\n");
             this->connect_socket = socket(this->connect_address->ai_family, this->connect_address->ai_socktype, this->connect_address->ai_protocol);
+            std::printf("Created the connection socket...");
+            std::cout << "Socket is " << this->connect_socket << std::endl;
             if (not valid_socket(this->connect_socket)) {
                 (this->del_on_except) ? freeaddrinfo(this->connect_address) : (void) 0;
                 (not this->was_init) ? uninitialize_network() : true;
