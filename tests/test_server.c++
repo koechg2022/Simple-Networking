@@ -224,7 +224,12 @@ void test_server() {
                     server.close_connection(client.hostname, client.portvalue);
                     continue;
                 }
-                std::printf("Successfully sent '%d' bytes of %lu bytes\n", bytes, message.length());
+                
+                #if defined(unix_os)
+                    std::printf("Successfully sent '%d' bytes of %lu bytes\n", bytes, message.length());
+                #else
+                    std::printf("Successfully sent '%d' bytes of %zu bytes\n", bytes, message.length());
+                #endif
             }
 
             else {
