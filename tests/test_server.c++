@@ -92,7 +92,7 @@ void resolve_hostname() {
 
 void test_server() {
 
-    networking::network_structures::tcp_server server;
+    networking::network_structures::tcp_server server("", connection_port);
 
     if (not server.start()) {
         std::fprintf(stderr, "Failed to start server '%s' on port '%s'\n", server.host_name().c_str(), server.port_value().c_str());
