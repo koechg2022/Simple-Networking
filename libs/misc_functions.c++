@@ -8,13 +8,23 @@ const std::string misc_functions::get_current_time() {
     // std::string the_answer = (const std::string) (std::ctime(&now));
     // return the_answer.substr(0, the_answer.length() - 1);
     std::time_t now = std::time(nullptr);
-    char buffer[buffer_size];
-    errno_t result = ctime_s(buffer, sizeof(buffer), &now);
-    if (result == 0) {
-        std::string the_answer(buffer);
-        return the_answer.substr(0, the_answer.length() - 1);
-    }
-    return "Error getting time";
+    char buffer[26]; // Standard size for ctime output
+
+    #if defined(_WIN32) || defined(_WIN64)
+        // Use ctime_s on Windows
+        errno_t result = ctime_s(buffer, sizeof(buffer), &now);
+        if (result != 0) {
+            return "Error getting time";
+        }
+    #else
+        // Use ctime_r on POSIX systems (Linux, macOS, etc.)
+        if (!std::ctime_r(&now, buffer)) {
+            return "Error getting time";
+        }
+    #endif
+
+    std::string the_answer(buffer);
+    return the_answer.substr(0, the_answer.length() - 1); // Remove trailing newline
 }
 
 
