@@ -1137,9 +1137,9 @@ namespace networking {
 
         network_structures::connected_host::client the_answer = {"", "", invalid_socket, invalid_secure_socket, 
             #if defined(mac_os)
-                {0, 0}
+                {0, 0, {0}}
             #elif defined(linux_os)
-                {0, 0}
+                {0, 0, {0}}
             #else
                 {0, {0, 0}}
             #endif
