@@ -61,10 +61,10 @@
 
     // For dealing with adapters
     #define ifaddrs_adapter_type PIP_ADAPTER_ADDRESSES
-    #define ifaddrs_get_adapter_name(this_adapter) []() -> std::string {\
+    #define ifaddrs_get_adapter_name(this_adapter) [&]() -> std::string {\
             std::string the_answer;\
             char buffer[INET6_ADDRSTRLEN];\
-            std::memset(buffer, 0, INETY_ADDRSTRLEN);\
+            std::memset(buffer, 0, INET6_ADDRSTRLEN);\
             getnameinfo(this_address->Address.lpSockaddr, this_address->Address.iSockaddrLength, buffer, INET6_ADDRSTRLEN, 0, 0, NI_NUMERICHOST);\
             the_answer = std::string(buffer);\
             return the_answer;\

@@ -422,6 +422,7 @@ namespace networking {
             return false;  // Connection closed
         } else if (retval < 0) {
             #if defined(crap_os)
+                int error = 0;
                 error = WSAGetLastError();
                 if (error != WSAEWOULDBLOCK) {
                     return false;  // Error occurred

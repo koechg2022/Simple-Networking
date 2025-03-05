@@ -25,8 +25,11 @@ int main(int len, char** args) {
     // std::printf("There are %d arguments:\n", len - 1);
     if (len <= 1) {
         std::printf("Help. This is for testing the networking library. Use one of the following arguments to test the library:\n");
-        std::printf("\t'list_machine_adapters()' | 'la':\tTo see all the current machine's adapters.\n");
-        std::printf("\t'resolve_hostname()' | 'rh':\tTo resolve hostname into an IP address.\n");
+        std::printf("\t'list_machine_adapters' | 'la':\tTo see all the current machine's adapters.\n");
+        std::printf("\t'resolve_hostname' | 'rh':\tTo resolve hostname into an IP address.\n");
+        std::printf("\ttest_server | 'ts':\tTo run a test server.\n");
+        std::printf("\t'test_client' | 'tc':\tTo run a test client.\n");
+        std::printf("\t'windows_tests' | 'wt':\tTo test windows basics on networking.\n");
     }
     for (index = 1; index < len; index++) {
         std::printf("\t%d.) %s\n", index, args[index]);
