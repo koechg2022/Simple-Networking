@@ -8,7 +8,7 @@
 
     namespace networking {
 
-        bool clean_on_except = true;
+        static bool clean_on_except = true;
 
         namespace {
             #if defined(crap_os)
