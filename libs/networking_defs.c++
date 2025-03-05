@@ -2,6 +2,7 @@
 
 
 
+
 #include "networking.h++"
 
 
@@ -1114,6 +1115,16 @@ namespace networking {
     }
 
     network_structures::connected_host::client network_structures::tcp_server::new_client() {
+        
+        if (not *this) {
+            return {"", "", invalid_socket, invalid_secure_socket, 
+            #if defined(mac_os)
+                {0, 0}
+            #else
+                {0}
+            #endif
+            , sizeof(struct sockaddr_storage)};
+        }
         fd_set ready;
         FD_ZERO(&ready);
         FD_SET(this->connect_socket, &ready);
@@ -1124,14 +1135,20 @@ namespace networking {
             throw exceptions::select_failure("Failed to select for the actively listening socket for new connections. Error number " + std::to_string(get_socket_error()), true, __FILE__, __LINE__ - 3, __FUNCTION__);
         }
 
-        network_structures::connected_host::client the_answer;
-        the_answer.connected_socket = invalid_socket;
-        the_answer.secure_socket = invalid_secure_socket;
-        the_answer.address_info.ss_family = 0;
-        #if defined(unis_os)
-            the_answer.address_info.ss_len = 0;
-        #endif
-        the_answer.hostname = the_answer.portvalue = "";
+        network_structures::connected_host::client the_answer = {"", "", invalid_socket, invalid_secure_socket, 
+            #if defined(mac_os)
+                {0, 0}
+            #else
+                {0}
+            #endif
+            , sizeof(struct sockaddr_storage)};
+        // the_answer.connected_socket = invalid_socket;
+        // the_answer.secure_socket = invalid_secure_socket;
+        // the_answer.address_info.ss_family = 0;
+        // #if defined(mac_os)
+        //     the_answer.address_info.ss_len = 0;
+        // #endif
+        // the_answer.hostname = the_answer.portvalue = "";
         
         if (FD_ISSET(this->connect_socket, &ready)) {
             network_structures::connected_host::client new_client;
