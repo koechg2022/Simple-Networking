@@ -715,19 +715,24 @@ namespace networking {
 
     bool network_structures::host::create_socket() {
 
+        std::printf("Creating the address from within create socket...\n");
         this->create_address();
+        std::printf("created address from within create_socket...\n");
         if (not valid_socket(this->connect_socket)) {
+            std::printf("creating the connection socket...\n");
             this->connect_socket = socket(this->connect_address->ai_family, this->connect_address->ai_socktype, this->connect_address->ai_protocol);
             if (not valid_socket(this->connect_socket)) {
                 (this->del_on_except) ? freeaddrinfo(this->connect_address) : (void) 0;
                 (not this->was_init) ? uninitialize_network() : true;
                 throw exceptions::create_socket_failure("Failed to create connection socket for host " + this->hostname + ". Error number " + std::to_string(get_socket_error()), true, __FILE__, __LINE__ - 4, __FUNCTION__);
             }
+            std::printf("Created the connection socket...\n");
             #if defined(unix_os)
                 int reuse = 1;
             #else
                 char reuse = 1;
             #endif
+            std::printf("setting socket options...\n");
             if (setsockopt(this->connect_socket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse))) {
                 std::fprintf(stderr, "Failed to set reusable socket.\n");
             }
@@ -1440,7 +1445,7 @@ namespace networking {
         this->create_socket();
         std::printf("Successfully created socket");
 
-        
+
         if (connect(this->connect_socket, this->connect_address->ai_addr, this->connect_address->ai_addrlen)) {
             (this->del_on_except) ? this->disconnect() : true;
             (not this->was_init) ? uninitialize_network() : true;

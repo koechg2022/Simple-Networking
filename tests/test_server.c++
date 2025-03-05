@@ -186,15 +186,19 @@ void test_server() {
                     continue;
                 }
 
-                bytes = 1;
-                for (auto this_client = clients.begin(); this_client != clients.end(); this_client++, bytes++) {
-                    std::printf("%d.)\t%s\n", bytes, this_client->hostname.c_str());
-                }
 
-                message = string_functions::get_input("Client to message (enter client name, not number. 'N/A' to cancel message): ");
+                // message = string_functions::get_input("Client to message (enter client name, not number. 'N/A' to cancel message): ");
 
                 client.hostname = "";
                 while (client.hostname.empty()) {
+
+                    bytes = 1;
+                    for (auto this_client = clients.begin(); this_client != clients.end(); this_client++, bytes++) {
+                        std::printf("%d.)\t%s\n", bytes, this_client->hostname.c_str());
+                    }
+
+                    message = string_functions::get_input("Client to message (enter client name, not number. 'N/A' to cancel message): ");
+
                     for (auto this_client = clients.begin(); this_client != clients.end(); this_client++) {
                         if (string_functions::same_string(message, this_client->hostname)) {
                             client = *this_client;
@@ -202,7 +206,6 @@ void test_server() {
                         }
                     }
 
-                    message = string_functions::get_input("Client to message (enter client name, not number. 'N/A' to cancel message): ");
 
                     if (string_functions::same_string(message, "N/A")) {
                         client.hostname = "";
