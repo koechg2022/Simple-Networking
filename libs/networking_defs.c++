@@ -190,7 +190,7 @@ namespace networking {
                     return false;
                 }
                 is_init = true;
-                std::printf("Network is initialized");
+                std::printf("Network is initialized...\n");
             }
         #endif
         return is_init;
