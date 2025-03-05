@@ -324,7 +324,6 @@ void test_client() {
 }
 
 
-
 void windows_tests() {
 
     if (networking::initialize_network()) {
