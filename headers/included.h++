@@ -61,14 +61,7 @@
 
     // For dealing with adapters
     #define ifaddrs_adapter_type PIP_ADAPTER_ADDRESSES
-    #define ifaddrs_get_adapter_name(this_adapter) [&]() -> std::string {\
-            std::string the_answer;\
-            char buffer[INET6_ADDRSTRLEN];\
-            std::memset(buffer, 0, INET6_ADDRSTRLEN);\
-            getnameinfo(this_address->Address.lpSockaddr, this_address->Address.iSockaddrLength, buffer, INET6_ADDRSTRLEN, 0, 0, NI_NUMERICHOST);\
-            the_answer = std::string(buffer);\
-            return the_answer;\
-    }()
+    #define ifaddrs_get_adapter_name(this_adapter) wchar_to_string(this_adapter->FriendlyName)
     #define ifaddrs_get_next_adapter(this_adapter) this_adapter->Next
     #define ifaddrs_pull_adapter_address(this_adapter) this_adapter->FirstUnicastAddress
     #define ifaddrs_free_adapters(these_adapters) std::free(these_adapters)
@@ -278,6 +271,18 @@
     #define DEFAULT_PORT "8080"
     #define TIMEOUT 5.0
 
+        #if defined(crap_os)
+
+        inline std::string wchar_to_string(const wchar_t* wstr) {
+            if (!wstr) return std::string();
+            int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, NULL, 0, NULL, NULL);
+            std::string strTo(size_needed, 0);
+            WideCharToMultiByte(CP_UTF8, 0, wstr, -1, &strTo[0], size_needed, NULL, NULL);
+            strTo.pop_back(); // Remove the null terminator
+            return strTo;
+        }
+
+        #endif
 
 
 #endif
