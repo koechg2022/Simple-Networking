@@ -227,11 +227,14 @@
         *       }
         *
         *
+        *   @param names (`const bool`) : Defaults to false. This is a flag specifying whether names should be retrieved too or not.
+        *
+        *
         *   @returns A `std::map<std::string, std::map<std::string, std::set<std::string> > >` with the adapters,
         *   the adapter's adapter families, and their IP addresses.
         *
         */
-        std::map<std::string, std::map<std::string, std::vector<std::string> > > this_machine_adapters();
+        std::map<std::string, std::map<std::string, std::vector<std::string> > > this_machine_adapters(const bool names = false);
 
 
         /**

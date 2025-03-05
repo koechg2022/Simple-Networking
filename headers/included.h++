@@ -177,6 +177,10 @@
         #include <ctime>
     #endif
 
+    #if (defined(crap_os) and not defined(_CHRONO_))
+        #include <chrono>
+    #endif
+
     #if (defined(mac_os) and not defined(_LIBC_CSTRING)) or (defined(linux_os) and not defined(_GLIBCXX_STRING)) or (defined(crap_os) and not defined(_CSTRING_))
         #include <cstring>
     #endif

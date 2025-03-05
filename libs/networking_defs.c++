@@ -250,232 +250,165 @@ namespace networking {
         return the_answer;
     }
 
-    // std::map<std::string, std::map<std::string, std::vector<std::string> > > this_machine_adapters() {
-    //     bool was_init = is_init;
-        
-    //     if (not was_init) {
-
-    //         if (not initialize_network()) {
-    //             (clean_on_except) ? uninitialize_network() : true;
-    //             throw exceptions::initialize_network_failure("Failed to initialize. ", true, __FILE__, __LINE__ - 2, __FUNCTION__);
-    //         }
-    //     }
-        
-    //     std::map<std::string, std::map<std::string, std::vector<std::string> > > the_answer;
-
-    //     ifaddrs_adapter_type all_adapters;
-    //     #if defined(crap_os)
-
-    //         all_adapters = NULL;
-    //         DWORD memory_size = 20000;
-    //         int this_line;
-            
-    //         while (not all_adapters) {
-                
-    //             all_adapters = (ifaddrs_adapter_type) malloc(memory_size);
-    //             this_line = __LINE__ - 1;
-
-    //             if (not all_adapters) {
-    //                 (clean_on_except) ? uninitialize_network() : true;
-    //                 throw exceptions::memory_exception("Failed to aquire " + std::to_string(memory_size) + " bytes of memory", true, __FILE__, this_line, __FUNCTION__);
-    //             }
-
-    //             int resp = GetAdaptersAddresses(AF_UNSPEC, GAA_FLAG_INCLUDE_PREFIX, 0, all_adapters, &memory_size);
-    //             this_line = __LINE__ - 1;
-
-    //             if (resp is ERROR_BUFFER_OVERFLOW) {
-    //                 ifaddrs_free_adapters(all_adapters);
-    //             }
-
-    //             else if (resp is ERROR_SUCCESS) {
-    //                 break;
-    //             }
-
-    //             else {
-    //                 (clean_on_except) ? uninitialize_network() : true;
-    //                 ifaddrs_free_adapters(all_adapters);
-    //                 throw exceptions::unexpected_exception("An unexpected exception occured while trying to retrieve this machine's network adapter information", true, __FILE__, this_line, __FUNCTION__);
-    //             }
-
-    //         }
-    //         std::printf("Done with the creation of the pointer for all_adapters.\n");
-
-    //     #else
-
-    //         if (getifaddrs(&all_adapters)) {
-    //             (clean_on_except) ? uninitialize_network() : true;
-    //             throw exceptions::getifaddrs_failure("Failed to retrieve adater information", true, __FILE__, __LINE__ - 2, __FUNCTION__);
-    //         }
-
-    //     #endif
-
-    //     ifaddrs_adapter_type this_adapter;
-    //     ifaddrs_address_type this_address;
-    //     char buffer[buffer_size];
-    //     std::string adapter_name, address_family, address_name;
-    //     std::memset(buffer, 0, buffer_size);
-    //     for (this_adapter = all_adapters; this_adapter; this_adapter = ifaddrs_get_next_adapter(this_adapter)) {
-    //         std::printf("Retrieving adapter_name\n");
-    //         adapter_name = ifaddrs_get_adapter_name(this_adapter);
-    //         std::printf("Retrieved adapter name ('%s')\n", adapter_name.c_str());
-
-    //         for (this_address = ifaddrs_pull_adapter_address(this_adapter); this_address; this_address = ifaddrs_get_next_address(this_address)) {
-    //             std::printf("\tRetrieving address family\n");
-    //             address_family = network_address_families::resolve_address_family_to_string(ifaddrs_get_address_family(this_address));
-    //             std::printf("\tRetrieved address_family ('%s')\n\n", address_family.c_str());
-    //             // now to pull the address
-    //             string_functions::same_char(*buffer, 0, false) ? (void*) 0 : std::memset(buffer, 0, buffer_size);
-
-    //             switch (getnameinfo(ifaddrs_get_address_sockaddr(this_address), ifaddrs_get_address_sockaddrlen(this_address), buffer, buffer_size, 0, 0, NI_NUMERICHOST)) {
-
-    //                 case 0 : {
-
-    //                     address_name = std::string(buffer);
-    //                     if (address_name.empty()) {
-    //                         continue;
-    //                     }
-    //                     else if (not the_answer.count(adapter_name)) {
-
-    //                         std::map<std::string, std::vector<std::string> > new_map;
-    //                         std::vector<std::string> new_list;
-    //                         new_list.push_back(address_name);
-    //                         new_map.insert(std::make_pair(address_family, new_list));
-
-    //                         the_answer.insert(std::make_pair(adapter_name, new_map));
-    //                     }
-
-    //                     else if (not the_answer[adapter_name].count(address_family)) {
-
-    //                         std::vector<std::string> new_list;
-    //                         new_list.push_back(address_name);
-
-    //                         the_answer[adapter_name].insert(std::make_pair(address_family, new_list));
-    //                     }
-
-    //                     else {
-    //                         the_answer[adapter_name][address_family].push_back(address_name);
-    //                     }
-    //                 }
-
-
-    //             }
-
-    //             string_functions::same_char(*buffer, 0, false) ? (void*) 0 : std::memset(buffer, 0, buffer_size);
-
-    //             switch (getnameinfo(ifaddrs_get_address_sockaddr(this_address), ifaddrs_get_address_sockaddrlen(this_address), buffer, buffer_size, 0, 0, NI_NAMEREQD)) {
-
-    //                 case 0 : {
-
-    //                     address_name = std::string(buffer);
-    //                     if (address_name.empty()) {
-    //                         continue;
-    //                     }
-    //                     else if (not the_answer.count(adapter_name)) {
-
-    //                         std::map<std::string, std::vector<std::string> > new_map;
-    //                         std::vector<std::string> new_list;
-    //                         new_list.push_back(adapter_name);
-    //                         new_map.insert(std::make_pair(address_family, new_list));
-
-    //                         the_answer.insert(std::make_pair(adapter_name, new_map));
-    //                     }
-
-    //                     else if (not the_answer[adapter_name].count(address_family)) {
-
-    //                         std::vector<std::string> new_list;
-    //                         new_list.push_back(address_name);
-
-    //                         the_answer[adapter_name].insert(std::make_pair(address_family, new_list));
-    //                     }
-                        
-    //                     else {
-    //                         the_answer[adapter_name][address_family].push_back(address_name);
-    //                     }
-    //                 }
-    //             }
-
-
-    //         }
-
-    //     }
-        
-    //     ifaddrs_free_adapters(all_adapters);
-    //     return the_answer;
-
-    // }
-
-    std::map<std::string, std::map<std::string, std::vector<std::string>>> this_machine_adapters() {
+    std::map<std::string, std::map<std::string, std::vector<std::string> > > this_machine_adapters(const bool names) {
         bool was_init = is_init;
         
         if (not was_init) {
+
             if (not initialize_network()) {
                 (clean_on_except) ? uninitialize_network() : true;
                 throw exceptions::initialize_network_failure("Failed to initialize. ", true, __FILE__, __LINE__ - 2, __FUNCTION__);
             }
         }
         
-        std::map<std::string, std::map<std::string, std::vector<std::string>>> the_answer;
-    
-        ifaddrs_adapter_type all_adapters = nullptr;
+        std::map<std::string, std::map<std::string, std::vector<std::string> > > the_answer;
+
+        ifaddrs_adapter_type all_adapters;
         #if defined(crap_os)
-            ULONG memory_size = 15000;  // Start with 15 KB
+
+            all_adapters = NULL;
+            DWORD memory_size = 20000;
             int this_line;
             
             while (not all_adapters) {
-                all_adapters = (ifaddrs_adapter_type)malloc(memory_size);
+                
+                all_adapters = (ifaddrs_adapter_type) malloc(memory_size);
                 this_line = __LINE__ - 1;
-    
+
                 if (not all_adapters) {
                     (clean_on_except) ? uninitialize_network() : true;
-                    throw exceptions::memory_exception("Failed to acquire " + std::to_string(memory_size) + " bytes of memory", true, __FILE__, this_line, __FUNCTION__);
+                    throw exceptions::memory_exception("Failed to aquire " + std::to_string(memory_size) + " bytes of memory", true, __FILE__, this_line, __FUNCTION__);
                 }
-    
+
                 int resp = GetAdaptersAddresses(AF_UNSPEC, GAA_FLAG_INCLUDE_PREFIX, 0, all_adapters, &memory_size);
                 this_line = __LINE__ - 1;
-    
+
                 if (resp is ERROR_BUFFER_OVERFLOW) {
                     ifaddrs_free_adapters(all_adapters);
-                    all_adapters = nullptr;
-                } else if (resp is ERROR_SUCCESS) {
+                }
+
+                else if (resp is ERROR_SUCCESS) {
                     break;
-                } else {
+                }
+
+                else {
                     (clean_on_except) ? uninitialize_network() : true;
                     ifaddrs_free_adapters(all_adapters);
-                    throw exceptions::unexpected_exception("An unexpected exception occurred while trying to retrieve this machine's network adapter information", true, __FILE__, this_line, __FUNCTION__);
+                    throw exceptions::unexpected_exception("An unexpected exception occured while trying to retrieve this machine's network adapter information", true, __FILE__, this_line, __FUNCTION__);
                 }
+
             }
-    
+            std::printf("Done with the creation of the pointer for all_adapters.\n");
+
         #else
+
             if (getifaddrs(&all_adapters)) {
                 (clean_on_except) ? uninitialize_network() : true;
-                throw exceptions::getifaddrs_failure("Failed to retrieve adapter information", true, __FILE__, __LINE__ - 2, __FUNCTION__);
+                throw exceptions::getifaddrs_failure("Failed to retrieve adater information", true, __FILE__, __LINE__ - 2, __FUNCTION__);
             }
+
         #endif
-    
+
+        ifaddrs_adapter_type this_adapter;
+        ifaddrs_address_type this_address;
         char buffer[buffer_size];
-        for (ifaddrs_adapter_type this_adapter = all_adapters; this_adapter; this_adapter = ifaddrs_get_next_adapter(this_adapter)) {
-            std::string adapter_name = ifaddrs_get_adapter_name(this_adapter);
-    
-            for (ifaddrs_address_type this_address = ifaddrs_pull_adapter_address(this_adapter); this_address; this_address = ifaddrs_get_next_address(this_address)) {
-                std::string address_family = network_address_families::resolve_address_family_to_string(ifaddrs_get_address_family(this_address));
-                
-                auto process_address = [&](int flags) {
-                    if (getnameinfo(ifaddrs_get_address_sockaddr(this_address), ifaddrs_get_address_sockaddrlen(this_address), buffer, buffer_size, 0, 0, flags) is 0) {
-                        std::string address_name(buffer);
-                        if (not address_name.empty()) {
-                            the_answer[adapter_name][address_family].push_back(std::move(address_name));
+        std::string adapter_name, address_family, address_name;
+        std::memset(buffer, 0, buffer_size);
+        for (this_adapter = all_adapters; this_adapter; this_adapter = ifaddrs_get_next_adapter(this_adapter)) {
+            std::printf("Retrieving adapter_name\n");
+            adapter_name = ifaddrs_get_adapter_name(this_adapter);
+            std::printf("Retrieved adapter name ('%s')\n", adapter_name.c_str());
+
+            for (this_address = ifaddrs_pull_adapter_address(this_adapter); this_address; this_address = ifaddrs_get_next_address(this_address)) {
+                std::printf("\tRetrieving address family\n");
+                address_family = network_address_families::resolve_address_family_to_string(ifaddrs_get_address_family(this_address));
+                std::printf("\tRetrieved address_family ('%s')\n\n", address_family.c_str());
+                // now to pull the address
+                string_functions::same_char(*buffer, 0, false) ? (void*) 0 : std::memset(buffer, 0, buffer_size);
+
+                switch (getnameinfo(ifaddrs_get_address_sockaddr(this_address), ifaddrs_get_address_sockaddrlen(this_address), buffer, buffer_size, 0, 0, NI_NUMERICHOST)) {
+
+                    case 0 : {
+
+                        address_name = std::string(buffer);
+                        if (address_name.empty()) {
+                            continue;
+                        }
+                        else if (not the_answer.count(adapter_name)) {
+
+                            std::map<std::string, std::vector<std::string> > new_map;
+                            std::vector<std::string> new_list;
+                            new_list.push_back(address_name);
+                            new_map.insert(std::make_pair(address_family, new_list));
+
+                            the_answer.insert(std::make_pair(adapter_name, new_map));
+                        }
+
+                        else if (not the_answer[adapter_name].count(address_family)) {
+
+                            std::vector<std::string> new_list;
+                            new_list.push_back(address_name);
+
+                            the_answer[adapter_name].insert(std::make_pair(address_family, new_list));
+                        }
+
+                        else {
+                            the_answer[adapter_name][address_family].push_back(address_name);
                         }
                     }
-                };
+
+
+                }
+
+                if (names) {
+
+                    string_functions::same_char(*buffer, 0, false) ? (void*) 0 : std::memset(buffer, 0, buffer_size);
+
+                    switch (getnameinfo(ifaddrs_get_address_sockaddr(this_address), ifaddrs_get_address_sockaddrlen(this_address), buffer, buffer_size, 0, 0, NI_NAMEREQD)) {
     
-                process_address(NI_NUMERICHOST);
-                process_address(NI_NAMEREQD);
+                        case 0 : {
+    
+                            address_name = std::string(buffer);
+                            if (address_name.empty()) {
+                                continue;
+                            }
+                            else if (not the_answer.count(adapter_name)) {
+    
+                                std::map<std::string, std::vector<std::string> > new_map;
+                                std::vector<std::string> new_list;
+                                new_list.push_back(adapter_name);
+                                new_map.insert(std::make_pair(address_family, new_list));
+    
+                                the_answer.insert(std::make_pair(adapter_name, new_map));
+                            }
+    
+                            else if (not the_answer[adapter_name].count(address_family)) {
+    
+                                std::vector<std::string> new_list;
+                                new_list.push_back(address_name);
+    
+                                the_answer[adapter_name].insert(std::make_pair(address_family, new_list));
+                            }
+                            
+                            else {
+                                the_answer[adapter_name][address_family].push_back(address_name);
+                            }
+                        }
+                    }
+
+                }
+
+
             }
+
         }
         
         ifaddrs_free_adapters(all_adapters);
         return the_answer;
+
     }
+
+
     
 
     bool socket_is_connected(const socket_type the_socket) {
