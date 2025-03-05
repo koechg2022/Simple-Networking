@@ -125,10 +125,11 @@ void test_server() {
                 if ((server.secure_host() and bytes <= 0) or (not server.secure_host() and bytes < 1)) {
                     std::printf("Connection closed by client '%s'\n", this_client->hostname.c_str());
                     server.close_connection(this_client->hostname, this_client->portvalue);
-                    continue;
+                }
+                else {
+                    std::printf("Message from '%s' (%s) : \n%.*s\n\n", this_client->hostname.c_str(), misc_functions::get_current_time().c_str(), (int) bytes, msg);
                 }
 
-                std::printf("Message from '%s' (%s) : \n%.*s\n\n", this_client->hostname.c_str(), misc_functions::get_current_time().c_str(), (int) bytes, msg);
             }
             clients.clear();
         }
@@ -203,7 +204,7 @@ void test_server() {
                         client.hostname = "";
                         break;
                     }
-                    
+
                     for (auto this_client = clients.begin(); this_client != clients.end(); this_client++) {
                         if (string_functions::same_string(message, this_client->hostname)) {
                             client = *this_client;
@@ -217,6 +218,8 @@ void test_server() {
                 if (client.hostname.empty()) {
                     continue;
                 }
+
+                message = string_functions::get_input("Message to send to " + message + ": ");
 
                 bytes = (server.secure_host()) ? 
                             SSL_write(client.secure_socket, message.c_str(), message.length()) : 
