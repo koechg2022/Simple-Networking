@@ -61,7 +61,14 @@
 
     // For dealing with adapters
     #define ifaddrs_adapter_type PIP_ADAPTER_ADDRESSES
-    #define ifaddrs_get_adapter_name(this_adapter) get_string(this_adapter->FriendlyName)
+    #define ifaddrs_get_adapter_name(this_adapter) []() -> std::string {\
+            std::string the_answer;\
+            char buffer[INET6_ADDRSTRLEN];\
+            std::memset(buffer, 0, INETY_ADDRSTRLEN);\
+            getnameinfo(this_address->Address.lpSockaddr, this_address->Address.iSockaddrLength, buffer, INET6_ADDRSTRLEN, 0, 0, NI_NUMERICHOST);\
+            the_answer = std::string(buffer);\
+            return the_answer;\
+    }()
     #define ifaddrs_get_next_adapter(this_adapter) this_adapter->Next
     #define ifaddrs_pull_adapter_address(this_adapter) this_adapter->FirstUnicastAddress
     #define ifaddrs_free_adapters(these_adapters) std::free(these_adapters)
