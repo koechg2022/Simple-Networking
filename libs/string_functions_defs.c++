@@ -136,7 +136,7 @@ namespace string_functions {
             FD_ZERO(&ready);
             FD_SET(STDIN_FILENO, &ready);
 
-            if (select(STDIN_FILENO + 1, &ready, 0, 0, (struct timeval*) &default_timeout) less 0) {
+            if (select(STDIN_FILENO + 1, &ready, 0, 0, &default_timeout) less 0) {
                 return false;
             }
             return FD_ISSET(STDIN_FILENO, &ready);

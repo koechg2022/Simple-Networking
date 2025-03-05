@@ -863,7 +863,7 @@ namespace networking {
             client.portvalue = "";
         }
 
-        #if defined(unix_os)
+        #if defined(mac_os)
             if (client.address_info.ss_family and client.address_info.ss_len) {
                 client.address_info.ss_family = 0;
                 client.address_info.ss_len = 0;
@@ -888,7 +888,7 @@ namespace networking {
         return not valid_socket(client.connected_socket) and 
                 not valid_secure_socket(client.secure_socket) and
                     not this->clients.contains(client.connected_socket) and
-                    #if defined(unix_os)
+                    #if defined(mac_os)
                         client.address_info.ss_len == 0 and 
                     #endif
                             client.address_info.ss_family == 0 and 
@@ -1845,7 +1845,7 @@ namespace networking {
         }
 
         open_file.close();
-        return total == file_length;
+        return (uintmax_t) total == file_length;
 
     }
 
