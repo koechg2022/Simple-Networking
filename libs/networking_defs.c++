@@ -403,7 +403,7 @@ namespace networking {
     }
 
     bool socket_is_connected(const socket_type the_socket) {
-        int error = 0;
+        // int error = 0;
         // socklen_t len = sizeof(error);
         int retval = 0;
 
