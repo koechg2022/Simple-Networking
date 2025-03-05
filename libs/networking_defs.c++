@@ -1977,7 +1977,7 @@ namespace networking {
         }
 
         open_file.close();
-        return total == file_length;
+        return (uintmax_t) total == file_length;
 
     }
 
