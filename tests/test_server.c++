@@ -199,6 +199,11 @@ void test_server() {
 
                     message = string_functions::get_input("Client to message (enter client name, not number. 'N/A' to cancel message): ");
 
+                    if (string_functions::same_string(message, "N/A")) {
+                        client.hostname = "";
+                        break;
+                    }
+                    
                     for (auto this_client = clients.begin(); this_client != clients.end(); this_client++) {
                         if (string_functions::same_string(message, this_client->hostname)) {
                             client = *this_client;
@@ -206,11 +211,6 @@ void test_server() {
                         }
                     }
 
-
-                    if (string_functions::same_string(message, "N/A")) {
-                        client.hostname = "";
-                        break;
-                    }
                 }
 
                 loop_exit:
