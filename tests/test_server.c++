@@ -124,6 +124,7 @@ void test_server() {
 
                 if ((server.secure_host() and bytes <= 0) or (not server.secure_host() and bytes < 1)) {
                     std::printf("Connection closed by client '%s'\n", this_client->hostname.c_str());
+                    server.close_connection(this_client->hostname, this_client->portvalue);
                     continue;
                 }
 

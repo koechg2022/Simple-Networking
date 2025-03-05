@@ -1186,7 +1186,7 @@ namespace networking {
                 if (to_close == client->first) {
                     // This is the client to be removed
                     (this->secure_) ? SSL_shutdown(client->second.secure_socket) : 0;
-                    close_socket(client->first);
+                    (socket_is_connected(client->first)) ? close_socket(client->first) : 0;
                     (this->secure_) ? SSL_free(client->second.secure_socket) : (void) 0;
                     this->clients.erase(client->first);
                     the_answer = true;
@@ -1210,7 +1210,7 @@ namespace networking {
             if (string_functions::same_string(client->second.hostname, hostname) and string_functions::same_string(client->second.portvalue, portvalue)) {
                 // This is the client to be removed
                 (this->secure_) ? SSL_shutdown(client->second.secure_socket) : 0;
-                close_socket(client->first);
+                (socket_is_connected(client->first)) ? close_socket(client->first) : 0;
                 (this->secure_) ? SSL_free(client->second.secure_socket) : (void) 0;
                 this->clients.erase(client->first);
                 the_answer = true;
