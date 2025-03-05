@@ -1353,11 +1353,7 @@ namespace networking {
         
         fd_set ready;
         FD_ZERO(&ready);
-        this->max_socket = invalid_socket;
-        this->max_secure_socket = invalid_secure_socket;
         for (auto client = this->clients.begin(); client != this->clients.end(); client++) {
-            this->max_socket = (client->first > this->max_socket) ? client->first : this->max_socket;
-            this->max_secure_socket = (client->second.secure_socket > this->max_secure_socket) ? client->second.secure_socket : client->second.secure_socket;
             FD_SET(client->first, &ready);
         }
 
@@ -1367,7 +1363,11 @@ namespace networking {
             throw exceptions::select_failure("Failed to select any of the connections that are ready with information. Error " + std::to_string(get_socket_error()), true, __FILE__, __LINE__ - 3, __FUNCTION__);
         }
 
+        this->max_socket = invalid_socket;
+        this->max_secure_socket = invalid_secure_socket;
         for (auto client = this->clients.begin(); client != this->clients.end(); client++) {
+            this->max_socket = (client->first > this->max_socket) ? client->first : this->max_socket;
+            this->max_secure_socket = (client->second.secure_socket > this->max_secure_socket) ? client->second.secure_socket : client->second.secure_socket;
             if (FD_ISSET(client->first, &ready)) {
                 the_answer.insert(client->second);
             }
