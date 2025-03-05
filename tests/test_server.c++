@@ -248,7 +248,7 @@ void test_client() {
 
     networking::network_structures::tcp_client client(string_functions::get_input("Enter host to connect to: "), connection_port);
 
-    if (not client.connect()) {
+    if (not client.connect_client()) {
         std::fprintf(stderr, "Failed to connect to the remote host. Error '%d'\n", get_socket_error());
         return;
     }

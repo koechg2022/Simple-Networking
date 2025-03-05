@@ -1420,12 +1420,21 @@ namespace networking {
         return this->connected;
     }
 
-    bool network_structures::tcp_client::connect() {
+    bool network_structures::tcp_client::connect_client() {
         if (this->secure_) {
             this->initialize_secure();
             this->create_context();
         }
+        this->create_address();
         this->create_socket();
+        std::printf("Successfully created socket");
+        if (connect(this->connect_socket, this->connect_address->ai_addr, this->connect_address->ai_addrlen)) {
+            (this->del_on_except) ? this->disconnect() : true;
+            (not this->was_init) ? uninitialize_network() : true;
+            throw exceptions::connect_failure("Failed to connect to remote machine. Error " + std::to_string(get_socket_error()), true, __FILE__, __LINE__ - 3, __FUNCTION__);
+        }
+        std::printf("Connected.\n");
+        
         if (this->secure_) {
             this->create_secure_socket();
             if (not valid_secure_socket(this->secure_socket)) {

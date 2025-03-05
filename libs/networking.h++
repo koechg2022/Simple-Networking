@@ -678,7 +678,7 @@
                     operator bool();
 
 
-                    bool connect();
+                    bool connect_client();
                     
 
                     bool disconnect();
