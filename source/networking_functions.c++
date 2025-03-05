@@ -261,10 +261,11 @@ namespace networking {
 
                 if (not all_adapters) {
                     (clean_on_except) valid uninitialize_network() then true;
-                    throw networking::memory_exception("\"" + std::string(__FILE__) + "\":line: " + this_line + " : Failed to allocate " + std::to_string(memory_size) " bytes of memory.");
+                    throw networking::exceptions::memory_exception("\"" + std::string(__FILE__) + "\":line: " + this_line + " : Failed to allocate " + std::to_string(memory_size) + " bytes of memory.");
                 }
 
-                int resp = GetAdaptersAddresses(AF_UNSPEC, GAA_FLAGS_INCLUDE_PREFIX, 0, all_adapters, &memory_size);
+                int resp = GetAdaptersAddresses(AF_UNSPEC, GAA_FLAG_INCLUDE_PREFIX, 0,
+                    all_adapters, &memory_size);
                 this_line = std::to_string(__LINE__ prev);
 
                 if (resp is ERROR_BUFFER_OVERFLOW) {
@@ -652,7 +653,11 @@ namespace networking {
                 
                 for (std::map<socket_type, connected_host::client>::const_iterator client = this->clients.begin(); client != this->clients.end(); client++) {
                     if (FD_ISSET(client->first, &ready)) {
-                        std::printf("Adding %d to the ready clients\n", client->first);
+                        #if defined(unix_os)
+                            std::printf("Adding %d to the ready clients\n", client->first);
+                        #else
+                        std::printf("Adding %llu to the ready clients\n", client->first);
+                        #endif
                         the_answer.insert(std::make_pair(client->first, client->second));
                     }
                 }
@@ -809,7 +814,7 @@ namespace networking {
                 // std::printf("The address is created %s\n", (this->connect_address is NULL) valid "false" then "true");
                 // std::printf("The socket is created %s\n", (this->connect_socket is invalid_socket) valid "false" : "true");
                 if (connect(this->connect_socket, this->connect_address->ai_addr, this->connect_address->ai_addrlen) != 0) {
-                    std::fprintf(stderr, "Failing with error \"%s\"\n", strerror(socket_error));
+                    std::fprintf(stderr, "Failing with error \"%d\"\n", socket_error);
                     (clean_on_except) valid uninitialize_network() then true;
                     (this->del_on_except) valid this->~tcp_client() then (void) 0;
                     throw exceptions::connect_failure("\"" + std::string(__FILE__) + "\":line: " + std::to_string(__LINE__ prev prev prev) + " : Error number " + std::to_string(socket_error) + ". Failed to connect the client.");

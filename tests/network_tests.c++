@@ -130,7 +130,7 @@ void create_server() {
     std::map<socket_type, networking::network_structures::connected_host::client> clients;
     std::string input;
     char buffer[kilo_byte];
-    ssize_t byte_count;
+    int byte_count;
     
     
     if (server.start_listening()) {
@@ -147,7 +147,11 @@ void create_server() {
             else {
                 std::printf("New client connection created. Connected clients are not:\n");
                 for (std::map<socket_type, networking::network_structures::connected_host::client>::const_iterator client = clients.begin(); client != clients.end(); client++) {
-                    std::printf("\t%d\t:\t%s on port %s\n", client->first, client->second.hostname.c_str(), client->second.portvalue.c_str());
+                    #if defined(unix_os)
+                        std::printf("\t%d\t:\t%s on port %s\n", client->first, client->second.hostname.c_str(), client->second.portvalue.c_str());
+                    #else
+                        std::printf("\t%llu\t:\t%s on port %s\n", client->first, client->second.hostname.c_str(), client->second.portvalue.c_str());
+                    #endif
                 }
             }
         }
@@ -191,7 +195,11 @@ void create_server() {
                     std::printf("Choose a client to message:\n");
                     std::printf("\tSOCKET |\tHOSTNAME|\tPORT\n");
                     for (std::map<socket_type, networking::network_structures::connected_host::client>::const_iterator client = clients.begin(); client != clients.end(); client++) {
-                        std::printf("\t%d\t:\t%s on port %s\n", client->first, client->second.hostname.c_str(), client->second.portvalue.c_str());
+                        #if defined(unix_os)
+                            std::printf("\t%d\t:\t%s on port %s\n", client->first, client->second.hostname.c_str(), client->second.portvalue.c_str());
+                        #else
+                            std::printf("\t%llu\t:\t%s on port %s\n", client->first, client->second.hostname.c_str(), client->second.portvalue.c_str());
+                        #endif
                     }
                     while (not valid_socket(choice)) {
                         input = string_functions::get_input("Enter socket of client to message: ");
@@ -222,7 +230,11 @@ void create_server() {
                         const std::string host = clients[choice].hostname;
                         input = string_functions::get_input("Message to send: ");
                         byte_count = send(choice, input.c_str(), input.length(), 0);
-                        std::printf("Successfuly sent %ld bytes of %lu bytes to client %s\n", byte_count, input.length(), host.c_str());
+                        #if defined(unix_os)
+                            std::printf("Successfuly sent %ld bytes of %lu bytes to client %s\n", byte_count, input.length(), host.c_str());
+                        #else
+                            std::printf("Successfuly sent %d bytes of %zu bytes to client %s\n", byte_count, input.length(), host.c_str());
+                        #endif
                     }
 
                 }
@@ -236,16 +248,17 @@ void create_server() {
                     input = string_functions::get_input("Message to broadcast: ");
                     for (std::map<socket_type, networking::network_structures::connected_host::client>::const_iterator client = clients.begin(); client != clients.end(); client++) {
                         byte_count = send(client->first, input.c_str(), input.length(), 0);
-                        if (byte_count is input.length()) {
-                            std::printf("\tSuccessfully sent the message to %s on port %s\n", client->second.hostname.c_str(), client->second.portvalue.c_str());
+                        if (byte_count < 1) {
+                            std::fprintf(stderr, "\tFailed to send the message.\n");
                         }
+                        
+                        // successfully sent data
                         else {
-                            if (byte_count < 0) {
-                                std::fprintf(stderr, "\tFailed to send the message.\n");
-                            }
-                            else {
-                                std::fprintf(stderr, "\tFailed to send message to %s in full. Sent %ld of %lu bytes.\n", client->second.hostname.c_str(), byte_count, input.length());
-                            }
+                            #if defined(unix_os)
+                                std::printf("\tSent %ld of %lu bytes.\n", byte_count, input.length());
+                            #else
+                                std::printf("\tSent %d of %zu bytes.\n", byte_count, input.length());
+                            #endif
                         }
                     }
                 }
@@ -257,7 +270,11 @@ void create_server() {
                 }
                 else {
                     for (std::map<socket_type, networking::network_structures::connected_host::client>::const_iterator client = clients.begin(); client != clients.end(); client++) {
-                        std::printf("\t%d\t:\t%s on port %s\n", client->first, client->second.hostname.c_str(), client->second.portvalue.c_str());
+                        #if defined(unix_os)
+                            std::printf("\t%d\t:\t%s on port %s\n", client->first, client->second.hostname.c_str(), client->second.portvalue.c_str());
+                        #else
+                            std::printf("\t%llu\t:\t%s on port %s\n", client->first, client->second.hostname.c_str(), client->second.portvalue.c_str());
+                        #endif
                     }
                 }
             }
@@ -281,7 +298,7 @@ void create_client(const std::string host, const std::string port){
     networking::network_structures::tcp_client client(host, port);
     std::string input;
     char buffer[kilo_byte];
-    ssize_t byte_count;
+    int byte_count;
 
     client.connect_client();
 
@@ -363,8 +380,12 @@ void example_test() {
                                 "Connection: close\r\n" +
                                 "User-Agent: honpwc web_get 1.0\r\n\r\n";
     if (client.connect_client()) {
-        ssize_t sent = send(client.get_connection_socket(), message.c_str(), message.length(), 0);
-        std::printf("Sent %li /%lu bytes of headers\n", sent, message.length());
+        int sent = send(client.get_connection_socket(), message.c_str(), message.length(), 0);
+        #if defined(unix_os)
+            std::printf("Sent %li /%lu bytes of headers\n", sent, message.length());
+        #else
+            std::printf("Sent %i /%zu bytes of headers\n", sent, message.length());
+        #endif
 
         char response[32768];
         char *p = response, *q;

@@ -2,19 +2,29 @@
 
 #if not defined(_NETWORKING_HEADERS_)
     #define _NETWORKING_HEADERS_
-    #if defined(crap_os)
+    #if defined(_WIN32)
 
         #if not defined(crap_os)
             #define crap_os
+        #endif
+
+        #if not defined(_WIN32_WINNT)
+            #define _WIN32_WINNT 0x600
         #endif
 
         #if not defined(_INC_CONIO)
             #include <conio.h>
         #endif
 
-        #if not defined(_WIN32_WINNT)
-            #define <winsock2.h>
+        #if not defined(_WINSOCK2API_)
+            #include <winsock2.h>
         #endif
+
+        #if not defined(_WS2TCPIP_H_)
+            #include <WS2tcpip.h>
+            #include <ws2tcpip.h>
+        #endif
+
 
         #if not defined(__IPHLPAPI_H__)
             #include <iphlpapi.h>
@@ -42,7 +52,7 @@
         // For dealing with adapters
         #define ifaddrs_adapter_type PIP_ADAPTER_ADDRESSES
         #define ifaddrs_get_adapter_name(this_adapter) get_string(this_adapter->FriendlyName)
-        #define ifaddrs_get_next_adapter(this_adapter) this_address->Next
+        #define ifaddrs_get_next_adapter(this_adapter) this_adapter->Next
         #define ifaddrs_pull_adapter_address(this_adapter) this_adapter->FirstUnicastAddress
         #define ifaddrs_free_adapters(these_adapters) std::free(these_adapters)
 
@@ -61,7 +71,7 @@
         #define socket_type SOCKET
         #define socket_family_type int
         #define invalid_socket INVALID_SOCKET
-        #define valid_socket(this_socket) this_socket != INVALID_SOCKET
+        #define valid_socket(this_socket) (this_socket != INVALID_SOCKET)
         #define close_socket(this_socket) closesocket(this_socket)
         #define sys_slash "\\"
 

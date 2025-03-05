@@ -1,4 +1,7 @@
 #include "../headers/base_headers.hpp"
+#if defined(crap_os)
+    #include "../headers/networking_headers.hpp"
+#endif
 
 #if not defined(_STRING_FUNC_)
     #define _STRING_FUNC_
@@ -7,7 +10,7 @@
     namespace string_functions {
 
         namespace {
-            const struct timeval default_timeout = (const struct timeval) {0, 100000};
+            struct timeval default_timeout = {0, 100000};
         }
 
         /**
