@@ -127,11 +127,19 @@ void test_server() {
                         "\r\n";
                 bytes = SSL_write(new_client.secure_socket, msg_string.c_str(), msg_string.length());
                 if (bytes < 1) {
-                    std::fprintf(stderr, "Failed to send %lu bytes. Only sent %d bytes.\n", msg_string.length(), bytes);
+                    #if defined(unix_os)
+                        std::fprintf(stderr, "Failed to send %lu bytes. Only sent %d bytes.\n", msg_string.length(), bytes);
+                    #else
+                        std::fprintf(stderr, "Failed to send %zu bytes. Only sent %d bytes.\n", msg_string.length(), bytes);
+                    #endif
                     server.close_connection(new_client.connected_socket);
                 }
                 else {
-                    std::printf("Successfully sent %d bytes out of %lu bytes.\n", bytes, msg_string.length());
+                    #if defined(unix_os)
+                        std::printf("Successfully sent %d bytes out of %lu bytes.\n", bytes, msg_string.length());
+                    #else
+                        std::printf("Successfully sent %d bytes out of %zu bytes.\n", bytes, msg_string.length());
+                    #endif
                 }
             }
 

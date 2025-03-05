@@ -12,7 +12,7 @@
     namespace string_functions {
 
         namespace {
-            const struct timeval default_timeout = (const struct timeval) {0, 100000};
+            struct timeval default_timeout = {0, 100000};
         }
 
         const std::string DIRECTORY = "Directory", FILE = "File";

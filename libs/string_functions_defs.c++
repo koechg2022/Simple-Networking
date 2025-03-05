@@ -193,19 +193,44 @@ namespace string_functions {
         return the_answer;
     }
 
-    std::map<std::string, std::vector<std::string> > get_directory_content(const std::string& file_name) {
+    // std::map<std::string, std::vector<std::string> > get_directory_content(const std::string& file_name) {
         
 
-        std::map<std::string, std::vector<std::string> > the_answer = {
-                        {DIRECTORY, std::vector<std::string>() },
-                        {FILE, std::vector<std::string>() }
-                        };
+    //     std::map<std::string, std::vector<std::string> > the_answer = {
+    //                     {DIRECTORY, std::vector<std::string>() },
+    //                     {FILE, std::vector<std::string>() }
+    //                     };
         
+    //     for (const auto& entry : std::filesystem::directory_iterator(file_name)) {
+    //         the_answer[(entry.is_directory()) ? DIRECTORY : FILE].push_back(entry.path().filename());
+    //     }
+    //     return the_answer;
+    // }
+
+
+    std::map<std::string, std::vector<std::string>> get_directory_content(const std::string& file_name) {
+        std::map<std::string, std::vector<std::string>> the_answer = {
+            {DIRECTORY, std::vector<std::string>()},
+            {FILE, std::vector<std::string>()}
+        };
+    
+        std::vector<std::filesystem::directory_entry> entries;
         for (const auto& entry : std::filesystem::directory_iterator(file_name)) {
-            the_answer[(entry.is_directory()) ? DIRECTORY : FILE].push_back(entry.path().filename());
+            entries.push_back(entry);
         }
+    
+        std::sort(entries.begin(), entries.end(), 
+            [](const auto& a, const auto& b) {
+                return a.path().filename() < b.path().filename();
+            });
+    
+        for (const auto& entry : entries) {
+            the_answer[(entry.is_directory()) ? DIRECTORY : FILE].push_back(entry.path().filename().string());
+        }
+    
         return the_answer;
     }
+    
 
 
     // template <typename data_> bool contains(std::map<std::string, data_>& to_search, const std::string& to_find_key, bool ignore_case) {

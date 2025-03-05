@@ -62,7 +62,7 @@
     // For dealing with adapters
     #define ifaddrs_adapter_type PIP_ADAPTER_ADDRESSES
     #define ifaddrs_get_adapter_name(this_adapter) get_string(this_adapter->FriendlyName)
-    #define ifaddrs_get_next_adapter(this_adapter) this_address->Next
+    #define ifaddrs_get_next_adapter(this_adapter) this_adapter->Next
     #define ifaddrs_pull_adapter_address(this_adapter) this_adapter->FirstUnicastAddress
     #define ifaddrs_free_adapters(these_adapters) std::free(these_adapters)
 
@@ -81,7 +81,7 @@
     #define socket_type SOCKET
     #define socket_family_type int
     #define invalid_socket INVALID_SOCKET
-    #define valid_socket(this_socket) this_socket != INVALID_SOCKET
+    #define valid_socket(this_socket) (this_socket != INVALID_SOCKET)
     #define close_socket(this_socket) closesocket(this_socket)
     #define sys_slash "\\"
     #define get_socket_error() WSAGetLastError()

@@ -196,14 +196,14 @@ namespace networking {
 
     bool uninitialize_network() {
         #if defined(crap_os)
-            if (!is_init) {
+            if (not is_init) {
                 if (WSACleanup()) {
                     return is_init;
                 }
                 is_init = false;
             }
         #endif
-        return !is_init;
+        return is_init is false;
     }
 
     std::vector<std::string> resolve_hostname(const std::string hostname, const std::string port) {
@@ -401,9 +401,9 @@ namespace networking {
 
     }
 
-    bool socket_is_connected(const int the_socket) {
+    bool socket_is_connected(const socket_type the_socket) {
         int error = 0;
-        socklen_t len = sizeof(error);
+        // socklen_t len = sizeof(error);
         int retval = 0;
 
         #ifdef _WIN32
@@ -1711,7 +1711,7 @@ namespace networking {
 
         uintmax_t file_length;
         int bytes, total;
-        unsigned long index;
+        // unsigned long index;
         char read[4 * kilo_byte];
         size_t pos;
 
@@ -1843,7 +1843,7 @@ namespace networking {
 
         uintmax_t file_length;
         int bytes, total;
-        unsigned long index;
+        // unsigned long index;
         char read[4 * kilo_byte];
         size_t pos;
 
@@ -2016,7 +2016,7 @@ namespace networking {
                     if (not headers.empty()) {
                         if (headers.contains(METHOD)) {
                             served = this->serve_resource(*client, headers);
-                            if (not served or headers.contains(CONNECTION) and string_functions::same_string(headers[CONNECTION], "close")) {
+                            if ((not served or headers.contains(CONNECTION)) and (string_functions::same_string(headers[CONNECTION], "close"))) {
                                 std::printf("Closing connection to client '%s' on port '%s'.\n", client->hostname.c_str(), client->portvalue.c_str());
                                 this->server_connection.close_connection(client->connected_socket);
                                 continue;
@@ -2072,9 +2072,9 @@ namespace networking {
                         bytes = (this->server_connection.secure_host()) ? 
                                 SSL_write(client->secure_socket, message.c_str(), message.length()) :
                                     send(client->connected_socket, message.c_str(), message.length(), 0);
-                        if (this->server_connection.secure_host() and bytes <= 0
+                        if ((this->server_connection.secure_host() and bytes <= 0)
                                         or
-                        this->server_connection.secure_host() and bytes < 1) {
+                        (this->server_connection.secure_host() and bytes < 1)) {
                             std::fprintf(stderr, "Failed to send a message to '%s' on port '%s'\n", client->hostname.c_str(), client->portvalue.c_str());
                             this->server_connection.close_connection(client->connected_socket);
                             continue;
