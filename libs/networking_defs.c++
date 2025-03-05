@@ -721,8 +721,8 @@ namespace networking {
         if (not valid_socket(this->connect_socket)) {
             std::printf("creating the connection socket...\n");
             this->connect_socket = socket(this->connect_address->ai_family, this->connect_address->ai_socktype, this->connect_address->ai_protocol);
-            std::printf("Created the connection socket...");
-            std::cout << "Socket is " << this->connect_socket << std::endl;
+            std::printf("Created the connection socket...\n");
+            std::cout << "Socket is " << this->connect_socket << ". It is " << ((valid_socket(this->connect_socket)) ? " secure " : " not secure ") << std::endl;
             if (not valid_socket(this->connect_socket)) {
                 (this->del_on_except) ? freeaddrinfo(this->connect_address) : (void) 0;
                 (not this->was_init) ? uninitialize_network() : true;
