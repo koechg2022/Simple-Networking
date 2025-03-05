@@ -188,7 +188,6 @@ namespace networking {
                 if (WSAStartup(MAKEWORD(2, 2), &d)) {
                     return false;
                 }
-                was_init = false;
                 is_init = true;
             }
         #endif
@@ -197,18 +196,14 @@ namespace networking {
 
     bool uninitialize_network() {
         #if defined(crap_os)
-            if (not is_init and was_init is false) {
+            if (is_init) {
                 if (WSACleanup()) {
-                    std::printf("WSACleanup failed.\n");
                     return is_init;
                 }
                 is_init = false;
-                was_init = false;
             }
-            return is_init is false;
-        #else
-            return is_init;
         #endif
+        return is_init is false;
     }
 
     std::vector<std::string> resolve_hostname(const std::string hostname, const std::string port) {
@@ -408,7 +403,7 @@ namespace networking {
     }
 
     bool socket_is_connected(const socket_type the_socket) {
-        
+        // int error = 0;
         // socklen_t len = sizeof(error);
         int retval = 0;
 
@@ -427,7 +422,6 @@ namespace networking {
             return false;  // Connection closed
         } else if (retval < 0) {
             #if defined(crap_os)
-            int error = 0;
                 error = WSAGetLastError();
                 if (error != WSAEWOULDBLOCK) {
                     return false;  // Error occurred

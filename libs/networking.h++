@@ -12,7 +12,6 @@
 
         namespace {
             #if defined(crap_os)
-                bool was_init = false;
                 bool is_init = false;
                 const std::string rel_adapter = "Wi-Fi 3";
             #else
