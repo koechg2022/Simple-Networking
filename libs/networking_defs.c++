@@ -186,12 +186,12 @@ namespace networking {
         #if defined(crap_os)
             if (not is_init) {
                 WSADATA d;
-                std::printf("Initializing network...\n");
+                // std::printf("Initializing network...\n");
                 if (WSAStartup(MAKEWORD(2, 2), &d)) {
                     return false;
                 }
                 is_init = true;
-                std::printf("Network is initialized...\n");
+                // std::printf("Network is initialized...\n");
             }
         #endif
         return is_init;
@@ -200,12 +200,12 @@ namespace networking {
     bool uninitialize_network() {
         #if defined(crap_os)
             if (is_init) {
-                std::printf("Uninitializing network...\n");
+                // std::printf("Uninitializing network...\n");
                 if (WSACleanup()) {
                     return is_init;
                 }
                 is_init = false;
-                std::printf("Network is uninitialized...\n");
+                // std::printf("Network is uninitialized...\n");
             }
         #endif
         return is_init is false;
@@ -1453,13 +1453,13 @@ namespace networking {
             this->initialize_secure();
             this->create_context();
         }
-        std::printf("Creating address...\n");
+        // std::printf("Creating address...\n");
         this->create_address();
-        std::printf("Created address...\n");
+        // std::printf("Created address...\n");
 
-        std::printf("Creating socket...\n");
+        // std::printf("Creating socket...\n");
         this->create_socket();
-        std::printf("Successfully created socket");
+        // std::printf("Successfully created socket");
 
 
         if (connect(this->connect_socket, this->connect_address->ai_addr, this->connect_address->ai_addrlen)) {
@@ -1467,7 +1467,7 @@ namespace networking {
             (not this->was_init) ? uninitialize_network() : true;
             throw exceptions::connect_failure("Failed to connect to remote machine. Error " + std::to_string(get_socket_error()), true, __FILE__, __LINE__ - 3, __FUNCTION__);
         }
-        std::printf("Connected.\n");
+        // std::printf("Connected.\n");
         
         if (this->secure_) {
             this->create_secure_socket();
