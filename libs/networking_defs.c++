@@ -1295,7 +1295,7 @@ namespace networking {
 
     bool network_structures::tcp_server::start() {
 
-        if (not this->listening) {
+        if (not this->running()) {
 
             if (this->secure_ and not this->initialize_secure()) {
                 (not this->was_init) ? uninitialize_network() : true;
