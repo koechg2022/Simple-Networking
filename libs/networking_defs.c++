@@ -298,6 +298,7 @@ namespace networking {
                 }
 
             }
+            std::printf("Done with the creation of the pointer for all_adapters.\n");
 
         #else
 

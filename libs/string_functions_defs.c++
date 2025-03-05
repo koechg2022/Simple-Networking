@@ -202,7 +202,7 @@ namespace string_functions {
                         };
         
         for (const auto& entry : std::filesystem::directory_iterator(file_name)) {
-            the_answer[(entry.is_directory()) ? DIRECTORY : FILE].push_back(entry.path().filename());
+            the_answer[(entry.is_directory()) ? DIRECTORY : FILE].push_back(std::string(entry.path().filename().string()));
         }
         return the_answer;
     }

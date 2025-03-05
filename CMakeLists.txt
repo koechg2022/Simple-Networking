@@ -99,7 +99,7 @@
 
 # Unix: cmake .. -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 # Windows: cmake .. -G "MinGW Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-#           cmake --build .
+#           mingw32-make .
 
 cmake_minimum_required(VERSION 3.10)
 project(NetworkingProject CXX)
