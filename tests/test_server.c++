@@ -198,7 +198,7 @@ void test_server() {
                     for (auto this_client = clients.begin(); this_client != clients.end(); this_client++) {
                         if (string_functions::same_string(message, this_client->hostname)) {
                             client = *this_client;
-                            break;
+                            goto loop_exit;
                         }
                     }
 
@@ -210,6 +210,7 @@ void test_server() {
                     }
                 }
 
+                loop_exit:
                 if (client.hostname.empty()) {
                     continue;
                 }

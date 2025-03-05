@@ -1181,25 +1181,27 @@ namespace networking {
 
     bool network_structures::tcp_server::close_connection(const socket_type to_close) {
         bool the_answer = false;
-        if (this->clients.contains(to_close)) {
-            for (auto client = this->clients.begin(); client != this->clients.end(); client++) {
-                if (to_close == client->first) {
-                    // This is the client to be removed
-                    (this->secure_) ? SSL_shutdown(client->second.secure_socket) : 0;
-                    (socket_is_connected(client->first)) ? close_socket(client->first) : 0;
-                    (this->secure_) ? SSL_free(client->second.secure_socket) : (void) 0;
-                    this->clients.erase(client->first);
-                    the_answer = true;
-                    break;
-                }
+        for (auto client = this->clients.begin(); client != this->clients.end(); client++) {
+            if (to_close == client->first) {
+                // This is the client to be removed
+                std::printf("Closing secure socket...\n");
+                (this->secure_) ? SSL_shutdown(client->second.secure_socket) : 0;
+                std::printf("Closing connection socket...\n");
+                (socket_is_connected(client->first)) ? close_socket(client->first) : 0;
+                std::printf("Freeing secure socket...\n");
+                (this->secure_) ? SSL_free(client->second.secure_socket) : (void) 0;
+                std::printf("Removing client from database...\n");
+                this->clients.erase(client->first);
+                the_answer = true;
+                goto other;
             }
+        }
 
-            this->max_socket = invalid_socket;
-            for (auto client = this->clients.begin(); client != this->clients.end(); client++) {
-                this->max_socket = (client->first > this->max_socket) ? client->first : this->max_socket;
-                this->max_secure_socket = (client->second.secure_socket > this->max_secure_socket) ? client->second.secure_socket : this->max_secure_socket;
-            }
-
+        other:
+        this->max_socket = invalid_socket;
+        for (auto client = this->clients.begin(); client != this->clients.end(); client++) {
+            this->max_socket = (client->first > this->max_socket) ? client->first : this->max_socket;
+            this->max_secure_socket = (client->second.secure_socket > this->max_secure_socket) ? client->second.secure_socket : this->max_secure_socket;
         }
         return the_answer;
     }
@@ -1209,15 +1211,20 @@ namespace networking {
         for (auto client = this->clients.begin(); client != this->clients.end(); client++) {
             if (string_functions::same_string(client->second.hostname, hostname) and string_functions::same_string(client->second.portvalue, portvalue)) {
                 // This is the client to be removed
+                std::printf("Closing secure socket...\n");
                 (this->secure_) ? SSL_shutdown(client->second.secure_socket) : 0;
+                std::printf("Closing connection socket...\n");
                 (socket_is_connected(client->first)) ? close_socket(client->first) : 0;
+                std::printf("Freeing secure socket...\n");
                 (this->secure_) ? SSL_free(client->second.secure_socket) : (void) 0;
+                std::printf("Removing client from database...\n");
                 this->clients.erase(client->first);
                 the_answer = true;
-                continue;
+                goto other;
             }
         }
 
+        other:
         this->max_socket = invalid_socket;
         for (auto client = this->clients.begin(); client != this->clients.end(); client++) {
             this->max_socket = (client->first > this->max_socket) ? client->first : this->max_socket;
