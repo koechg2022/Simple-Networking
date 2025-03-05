@@ -1432,9 +1432,15 @@ namespace networking {
             this->initialize_secure();
             this->create_context();
         }
+        std::printf("Creating address...\n");
         this->create_address();
+        std::printf("Created address...\n");
+
+        std::printf("Creating socket...\n");
         this->create_socket();
         std::printf("Successfully created socket");
+
+        
         if (connect(this->connect_socket, this->connect_address->ai_addr, this->connect_address->ai_addrlen)) {
             (this->del_on_except) ? this->disconnect() : true;
             (not this->was_init) ? uninitialize_network() : true;
