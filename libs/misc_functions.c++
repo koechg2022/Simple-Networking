@@ -18,7 +18,7 @@ const std::string misc_functions::get_current_time() {
         }
     #else
         // Use ctime_r on POSIX systems (Linux, macOS, etc.)
-        if (!std::ctime_r(&now, buffer)) {
+        if (not ctime_r(&now, buffer)) {
             return "Error getting time";
         }
     #endif
