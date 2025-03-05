@@ -944,7 +944,7 @@ namespace networking {
     network_structures::tcp_server::tcp_server(const std::string host, const std::string port, int listen_limit, long seconds_wait, int micro_sec_wait, bool will_del, bool secure) :
         network_structures::host::host(host, port, true, seconds_wait, micro_sec_wait, will_del, secure) {
             this->listen_lim = listen_limit;
-            this->listening = this->bound;
+            this->listening = this->bound = false;
             this->max_socket = invalid_socket;
             this->max_secure_socket = null;
         }
