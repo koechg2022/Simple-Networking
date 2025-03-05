@@ -207,12 +207,14 @@
         *
         *   @param port (`const std::string`) : Defaults to `DEFAULT_PORT`. The port to be used 
         *   in resolving the hostname.
+        *   
+        *   @param name (`const bool`) : Defaults to false. A flag specifying whether to get the name info with a NI_NAMEREQD flag.
         *
         *   @returns A `std::vector<std::string>` of the IP addresses associated with the `hostname` passed in.
         *
         *
         */
-        std::vector<std::string> resolve_hostname(const std::string hostname, const std::string port = DEFAULT_PORT);
+        std::vector<std::string> resolve_hostname(const std::string hostname, const std::string port = DEFAULT_PORT, const bool name = false);
 
 
         

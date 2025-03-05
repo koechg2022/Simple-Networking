@@ -206,7 +206,7 @@ namespace networking {
         return is_init is false;
     }
 
-    std::vector<std::string> resolve_hostname(const std::string hostname, const std::string port) {
+    std::vector<std::string> resolve_hostname(const std::string hostname, const std::string port, const bool name) {
         
         bool was_init = is_init;
 
@@ -235,8 +235,10 @@ namespace networking {
                 the_answer.push_back(std::string(buffer));
             }
 
-            if (not getnameinfo(current->ai_addr, current->ai_addrlen, buffer, buffer_size, 0, 0, NI_NAMEREQD | AI_ALL)) {
-                the_answer.push_back(std::string(buffer));
+            if (name) {
+                if (not getnameinfo(current->ai_addr, current->ai_addrlen, buffer, buffer_size, 0, 0, NI_NAMEREQD | AI_ALL)) {
+                    the_answer.push_back(std::string(buffer));
+                }
             }
         }
 
