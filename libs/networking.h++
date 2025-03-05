@@ -13,14 +13,13 @@
         namespace {
             #if defined(crap_os)
                 bool is_init = false;
+                const std::string rel_adapter = "Wi-Fi 3";
             #else
                 const bool is_init = true;
                 #if defined(mac_os)
                     const std::string rel_adapter = "en0";
                 #elif
                     const std::string rel_adapter = "enp0s8";
-                #else
-                    const std::string rel_adapter = "Wi-Fi 3"
                 #endif
             #endif
             const std::string ip6_regex_pattern = std::string("^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}") + 
@@ -267,16 +266,21 @@
                     socklen_t address_size = sizeof(address_info);
 
                     bool operator<(const client& other) const;
+
+                    operator bool() const;
                 } client;
 
                 typedef struct server{
                     std::string hostname = "", portvalue = "";
                     secure_socket_context_type context = invalid_context;
                     secure_socket_type secure_socket = invalid_secure_socket;
+                    socket_type connect_socket = invalid_socket;
                     
                     struct addrinfo address_info;
 
                     bool operator<(const server& other) const;
+
+                    operator bool() const;
                 } server;
 
             }
@@ -296,6 +300,7 @@
                     bool initialized_secure;
                     SSL_CTX* context;
                     SSL* secure_socket;
+                    X509* certificate;
                     bool certificates;
                     
                     
@@ -309,6 +314,15 @@
 
                     
                     ~host();
+
+                    
+                    host(const host& other);
+
+
+                    host& operator=(host& other);
+
+                    
+                    host& operator=(const host& other);
 
                     
                     /**
@@ -461,6 +475,10 @@
                     secure_socket_type get_secure_connection_socket() const;
 
 
+                    /**
+                        @brief Checks if the host is secure or not.
+                     */
+                    bool secure_host();
 
             };
 
@@ -492,6 +510,15 @@
 
                     
                     ~tcp_server();
+
+
+                    tcp_server(const tcp_server& other);
+
+
+                    tcp_server& operator=(tcp_server& other);
+
+
+                    tcp_server& operator=(const tcp_server& other);
 
                     
                     operator bool() const;
@@ -629,6 +656,8 @@
                 private:
                     
                     bool connected;
+                    char request[2 * kilo_byte];
+                    int bytes;
 
 
                 public:
@@ -643,6 +672,119 @@
 
 
                     operator bool();
+
+
+                    bool connect();
+                    
+
+                    bool disconnect();
+
+
+            };
+
+
+            class http_server {
+
+                private:
+
+                    const std::string default_content_type = "application/octet-stream";
+                    const std::string ending = "\r\n", 
+                            CONNECTION = "Connection",
+                            METHOD = "METHOD";
+                            std::string default_page, directory;
+
+                    tcp_server server_connection;
+
+                    std::map<std::string, std::string> content_options;
+                    // {
+                    //     {".avif", "image/avif"},
+                    //     {".AVIF", "image/avif"},
+                    //     {".css", "text/css"},
+                    //     {".CSS", "text/css"},
+                    //     {".csv", "text/csv"},
+                    //     {".CSV", "text/csv"},
+                    //     {".gif", "image/gif"},
+                    //     {".GIF", "image/gif"},
+                    //     {".htm", "text/html"},
+                    //     {".HTM", "text/html"},
+                    //     {".html", "text/html"},
+                    //     {".HTML", "text/html"},
+                    //     {".ico", "image/x-icon"},
+                    //     {".ICO", "image/x-icon"},
+                    //     {".jpeg", "image/jpeg"},
+                    //     {".JPEG", "image/jpeg"},
+                    //     {".jpg", "image/jpeg"},
+                    //     {".JPG", "image/jpeg"},
+                    //     {".js", "application/javascript"},
+                    //     {".JS", "application/javascript"},
+                    //     {".json", "applicatoin/json"},
+                    //     {".JSON", "applicatoin/json"},
+                    //     {".png", "image/png"},
+                    //     {".PNG", "image/png"},
+                    //     {".pdf", "application/pdf"},
+                    //     {".PDF", "application/pdf"},
+                    //     {".svg", "image/svg+xml"},
+                    //     {".SVG", "image/svg+xml"},
+                    //     {".txt", "text/plain"},
+                    //     {".TXT", "text/plain"}
+                    // };
+
+                    const std::map<std::string, std::string> url_decode_map = {
+                        {"%20", " "}, {"%21", "!"}, {"%22", "\""}, {"%23", "#"}, {"%24", "$"},
+                        {"%25", "%"}, {"%26", "&"}, {"%27", "'"}, {"%28", "("}, {"%29", ")"},
+                        {"%2B", "+"}, {"%2C", ","}, {"%2F", "/"}, {"%3A", ":"}, {"%3B", ";"},
+                        {"%3C", "<"}, {"%3D", "="}, {"%3E", ">"}, {"%3F", "?"}, {"%40", "@"},
+                        {"%5B", "["}, {"%5C", "\\"}, {"%5D", "]"}, {"%5E", "^"}, {"%60", "`"},
+                        {"%7B", "{"}, {"%7C", "|"}, {"%7D", "}"}, {"%7E", "~"}
+                    };
+
+                    std::map<std::string, std::string> message_headers = {
+                        {CONNECTION, "Keep-Alive"}
+                    };
+
+
+                    void write16(std::ofstream& file, uint16_t value);
+
+                    
+                    void write32(std::ofstream& file, uint32_t value);
+
+
+                    void create_favicon_file(const std::string file_name = "Client/files/favicon.ico");
+
+
+                    bool file_exists(const std::string directory, const std::string file);
+
+
+                    uintmax_t file_size(const std::string directory, const std::string file);
+
+                    
+                    std::string get_file_content(const std::string directory, const std::string file);
+
+                    
+                    std::map<std::string, std::string> parse_message(std::string message);
+                    
+
+                public:
+
+                    http_server(const std::string base_page = "index.html", const std::string base_dir = "./", bool secure = false, int listen_limit = 10);
+
+                    ~http_server();
+
+                    bool send_404(network_structures::connected_host::client& client, const std::string message = "Not Found");
+
+                    bool send_400(network_structures::connected_host::client& client, const std::string message = "Bad Request");
+
+                    bool serve_resource(network_structures::connected_host::client client, const std::string message_from_host = "");
+
+                    bool serve_resource(network_structures::connected_host::client client, std::map<std::string, std::string> headers);
+
+                    bool run();
+
+                    bool disconnect();
+
+                    operator bool() const;
+
+
 
             };
 

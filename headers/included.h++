@@ -7,7 +7,15 @@
     #if defined(_WIN16) or defined(_WIN32) or defined(_WIN64) or defined(__WIN32__) or defined(__TOS_WIN__) or defined(__WINDOWS__)
     
     #if not defined(_WIN32_WINNT)
-        #include <winsock2.h>
+        #define _WIN32_WINNT 0x0600
+    #endif
+
+    #if not defined(_WINSOCK2API_)
+        #include <WinSock2.h>
+    #endif
+
+    #if not defined(_WS2TCPIP_H_)
+        #include <WS2tcpip.h>
     #endif
 
     #if not defined(crap_os)
@@ -24,6 +32,16 @@
 
     #if not defined(_WINDOWS_)
         #include <Windows.h>
+    #endif
+
+    #if not defined(_BASETSD_H_)
+        #include <BaseTsd.h>
+        typedef SSIZE_T ssize_t;
+    #endif
+
+    #if defined(_WIN32) || defined(_WIN64)
+        #include <cstddef>
+        typedef ptrdiff_t ssize_t;
     #endif
 
     #pragma comment(lib, "ws2_32.lib")
@@ -195,6 +213,19 @@
         #include <regex>
     #endif
 
+    #if (defined(mac_os) and not defined(_LIBCPP_FILESYSTEM)) or (defined(linux_os) and not defined(_GLIBCXX_FILESYSTEM)) or (defined(crap_os) and not defined(_FILESYSTEM_))
+        #include <filesystem>
+    #endif
+
+    #if (defined(mac_os) and not defined(_LIBCPP_FSTREAM)) or (defined(linux_os) and not defined(_GLIBCXX_FSTREAM)) or (defined(crap_os) and not defined(_FSTREAM_))
+        #include <fstream>
+    #endif
+
+    #include <memory>
+
+
+
+
     #include <openssl/crypto.h>
     #include <openssl/x509.h>
     #include <openssl/pem.h>
@@ -239,5 +270,7 @@
     #define DEFAULT_HOST "LOCALHOST"
     #define DEFAULT_PORT "8080"
     #define TIMEOUT 5.0
+
+
 
 #endif

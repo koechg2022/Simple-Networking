@@ -15,6 +15,8 @@
             const struct timeval default_timeout = (const struct timeval) {0, 100000};
         }
 
+        const std::string DIRECTORY = "Directory", FILE = "File";
+
         /**
             @brief Checks if the character passed in is uppercase.
             @param c (const char) : the character to check it's case.
@@ -188,6 +190,41 @@
         *
         */
         bool has_keyboard_input();
+
+
+        /**
+            @brief Remove excess strings at the beginning and end of
+            `the_string`.
+
+            @param the_string (std::string&) : The string to be stripped.
+            @param to_remove (const std::string) : The string to be stripped.
+         */
+        void strip(std::string& the_string, const std::string to_remove);
+
+
+        /**
+            @brief Replaces all instances of `to_replace` with `the_string`
+            @param the_string (`std::string&) : The string to have parts of itself replaced.
+            @param to_replace (`const std::string`) : The string to replace within `the_string`.
+            @param replace_with (`const std::string`) : The string to replace `to_replace` with.
+         */
+        void replace_all(std::string& the_string, const std::string to_replace, const std::string replace_with);
+
+
+        std::map<std::string, std::string> get_file_data(const std::string& file_name);
+
+        
+        std::map<std::string, std::vector<std::string> > get_directory_content(const std::string& file_name);
+
+
+        template <typename data_> bool contains(std::map<std::string, data_>& to_search, const std::string& to_find_key, bool ignore_case = true) {
+            for (auto pair = to_search.begin(); pair != to_search.end(); pair++) {
+                if (same_string(pair->first, to_find_key, ignore_case)) {
+                    return true;
+                }
+            }
+            return false;
+        }
 
     }
     
