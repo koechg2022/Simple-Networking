@@ -514,6 +514,7 @@ namespace networking {
         this->secure_socket = null;
         this->certificates = false;
         this->certificate = null;
+        this->connect_address = 0;
     }
 
 
@@ -532,6 +533,7 @@ namespace networking {
         this->secure_socket = null;
         this->certificates = false;
         this->certificate = null;
+        this->connect_address = 0;
     }
 
 
