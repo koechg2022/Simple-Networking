@@ -1,7 +1,7 @@
 
 #include "../libs/networking.h++"
 #include "../libs/misc_functions.h++"
-#include "included.h++"
+#include "../libs/string_functions.h++"
 
 
 
@@ -279,6 +279,7 @@ void test_client() {
                 (not client.secure_host() and bytes < 1)) {
                 std::printf("Connection closed.\n");
                 client.disconnect();
+                continue;
             }
             std::printf("Message from server:\n'%.*s'\n", (int) bytes, message_buffer);
         }
