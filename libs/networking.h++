@@ -1,6 +1,6 @@
 
 
-#include <sys/socket.h>
+
 #if not defined(_NETWORKING_FUNC_)
 #define _NETWORKING_FUNC_
 
