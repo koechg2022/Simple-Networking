@@ -4,6 +4,7 @@
 
 
 #include "networking.h++"
+#include "included.h++"
 
 
 
@@ -868,16 +869,7 @@ namespace networking {
             client.portvalue = "";
         }
 
-        #if defined(mac_os)
-            if (client.address_info.ss_family and client.address_info.ss_len) {
-                client.address_info.ss_family = 0;
-                client.address_info.ss_len = 0;
-            }
-        #else
-            if (client.address_info.ss_family) {
-                client.address_info.ss_family = 0;
-            }
-        #endif
+        client.address_info = empty_sockaddr();
 
         if (this->clients.contains(client.connected_socket)) {
             this->clients.erase(client.connected_socket);
@@ -1440,9 +1432,6 @@ namespace networking {
             this->create_context();
         }
 
-        // std::cout << (this->create_address() ? "Created connection address" : "Failed to create connection address") << std::endl;
-        
-        // std::cout << (this->create_socket() ? "Created the connection socket" : "Failed to create the connection socket") << ".\nThe socket is " << this->connect_socket << std::endl;
         this->create_address();
         this->create_socket();
 
