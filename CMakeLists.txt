@@ -143,3 +143,132 @@ endif()
 
 # Add compiler flags
 target_compile_options(test_server PRIVATE -Wall -Wextra)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# cmake_minimum_required(VERSION 3.10)
+# project(NetworkingLibrary VERSION 1.0.0 LANGUAGES CXX)
+
+# set(CMAKE_CXX_STANDARD 23)
+# set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# # Add the library target
+# add_library(networking STATIC
+#     libs/networking.c++
+#     libs/string_functions.c++
+#     libs/misc_functions.c++
+# )
+
+# # Set include directories for the library
+# target_include_directories(networking PUBLIC
+#     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+#     $<INSTALL_INTERFACE:include>
+# )
+
+# # Platform-specific configurations for OpenSSL
+# if(WIN32)
+#     target_include_directories(networking PRIVATE "C:/Program Files/OpenSSL-Win64/include")
+#     target_link_libraries(networking PRIVATE
+#         "C:/Program Files/OpenSSL-Win64/lib/VC/x64/MD/libssl.lib"
+#         "C:/Program Files/OpenSSL-Win64/lib/VC/x64/MD/libcrypto.lib"
+#         ws2_32
+#         iphlpapi
+#     )
+# else()
+#     find_package(OpenSSL REQUIRED)
+#     target_link_libraries(networking PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+# endif()
+
+# # Add compiler flags
+# target_compile_options(networking PRIVATE -Wall -Wextra)
+
+# # Install the library
+# install(TARGETS networking
+#     EXPORT NetworkingTargets
+#     ARCHIVE DESTINATION lib # Static libraries go here
+#     LIBRARY DESTINATION lib # Shared libraries go here (if applicable)
+#     RUNTIME DESTINATION bin # Executables go here (if applicable)
+#     INCLUDES DESTINATION include # Header files go here
+# )
+
+# # Install header files
+# install(DIRECTORY include/networking DESTINATION include)
+
+# # Generate and install export file
+# install(EXPORT NetworkingTargets
+#     FILE NetworkingTargets.cmake
+#     NAMESPACE Networking::
+#     DESTINATION lib/cmake/Networking
+# )
+
+# # Create a Config file for find_package support
+# include(CMakePackageConfigHelpers)
+# configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in
+#     "${CMAKE_CURRENT_BINARY_DIR}/NetworkingConfig.cmake"
+#     INSTALL_DESTINATION lib/cmake/Networking
+# )
+
+# # Create a version file for compatibility checks
+# write_basic_package_version_file(
+#     "${CMAKE_CURRENT_BINARY_DIR}/NetworkingConfigVersion.cmake"
+#     VERSION ${PROJECT_VERSION}
+#     COMPATIBILITY SameMajorVersion
+# )
+
+# # Install Config and Version files
+# install(FILES
+#     "${CMAKE_CURRENT_BINARY_DIR}/NetworkingConfig.cmake"
+#     "${CMAKE_CURRENT_BINARY_DIR}/NetworkingConfigVersion.cmake"
+#     DESTINATION lib/cmake/Networking
+# )

@@ -5,7 +5,7 @@
 #define _NETWORKING_FUNC_
 
     #include "../headers/included.h++"
-    #include "string_functions.h++"
+    // #include "string_functions.h++"
 
     namespace networking {
 
@@ -697,71 +697,6 @@
 
 
                     bool server_has_message();
-
-
-            };
-
-
-            class http_server {
-
-                private:
-
-                    const std::string default_content_type = "application/octet-stream";
-                    const std::string ending = "\r\n", 
-                            CONNECTION = "Connection",
-                            METHOD = "METHOD";
-                            std::string default_page, directory;
-
-                    tcp_server server_connection;
-
-                    std::map<std::string, std::string> content_options;
-
-                    const std::map<std::string, std::string> url_decode_map = {
-                        {"%20", " "}, {"%21", "!"}, {"%22", "\""}, {"%23", "#"}, {"%24", "$"},
-                        {"%25", "%"}, {"%26", "&"}, {"%27", "'"}, {"%28", "("}, {"%29", ")"},
-                        {"%2B", "+"}, {"%2C", ","}, {"%2F", "/"}, {"%3A", ":"}, {"%3B", ";"},
-                        {"%3C", "<"}, {"%3D", "="}, {"%3E", ">"}, {"%3F", "?"}, {"%40", "@"},
-                        {"%5B", "["}, {"%5C", "\\"}, {"%5D", "]"}, {"%5E", "^"}, {"%60", "`"},
-                        {"%7B", "{"}, {"%7C", "|"}, {"%7D", "}"}, {"%7E", "~"}
-                    };
-
-                    std::map<std::string, std::string> message_headers = {
-                        {CONNECTION, "Keep-Alive"}
-                    };
-
-                    
-                    bool file_exists(const std::string directory, const std::string file);
-
-
-                    uintmax_t file_size(const std::string directory, const std::string file);
-
-                    
-                    std::string get_file_content(const std::string directory, const std::string file);
-
-                    
-                    std::map<std::string, std::string> parse_message(std::string message);
-                    
-
-                public:
-
-                    http_server(const std::string base_page = "index.html", const std::string base_dir = "./", bool secure = false, int listen_limit = 10);
-
-                    ~http_server();
-
-                    bool send_404(network_structures::connected_host::client& client, const std::string message = "Not Found");
-
-                    bool send_400(network_structures::connected_host::client& client, const std::string message = "Bad Request");
-
-                    bool serve_resource(network_structures::connected_host::client client, const std::string message_from_host = "");
-
-                    bool serve_resource(network_structures::connected_host::client client, std::map<std::string, std::string> headers);
-
-                    bool run();
-
-                    bool disconnect();
-
-                    operator bool() const;
-
 
 
             };
