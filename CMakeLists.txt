@@ -133,7 +133,7 @@ if(WIN32)
     target_link_libraries(test_server
         "C:/Program Files/OpenSSL-Win64/lib/VC/x64/MD/libssl.lib"
         "C:/Program Files/OpenSSL-Win64/lib/VC/x64/MD/libcrypto.lib"
-        lws2_32
+        ws2_32
         iphlpapi
     )
 else()
