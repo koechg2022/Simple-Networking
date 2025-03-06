@@ -119,8 +119,8 @@ include_directories(
 # Add source files
 set(SOURCES
     tests/test_server.c++
-    libs/networking_defs.c++
-    libs/string_functions_defs.c++
+    libs/networking.c++
+    libs/string_functions.c++
     libs/misc_functions.c++
 )
 
@@ -142,4 +142,4 @@ else()
 endif()
 
 # Add compiler flags
-target_compile_options(test_server PRIVATE -Wall)
+target_compile_options(test_server PRIVATE -Wall -Wextra)

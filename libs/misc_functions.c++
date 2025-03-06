@@ -4,15 +4,13 @@
 
 
 const std::string misc_functions::get_current_time() {
-    // std::time_t now = std::time(nullptr);
-    // std::string the_answer = (const std::string) (std::ctime(&now));
-    // return the_answer.substr(0, the_answer.length() - 1);
+    
     std::time_t now = std::time(nullptr);
-    char buffer[26]; // Standard size for ctime output
+    char buffer[buffer_size]; // Standard size for ctime output
 
-    #if defined(_WIN32) || defined(_WIN64)
+    #if defined(crap_os)
         // Use ctime_s on Windows
-        errno_t result = ctime_s(buffer, sizeof(buffer), &now);
+        errno_t result = ctime_s(buffer, buffer_size, &now);
         if (result != 0) {
             return "Error getting time";
         }

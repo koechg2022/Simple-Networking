@@ -1,5 +1,6 @@
 
 
+#include <sys/socket.h>
 #if not defined(_NETWORKING_FUNC_)
 #define _NETWORKING_FUNC_
 
@@ -261,13 +262,21 @@
         namespace network_structures {
 
             namespace connected_host {
+
+                // namespace {
+                //     inline sockaddr_storage empty_sockaddr() {
+                //         sockaddr_storage the_answer;
+                //         std::memset(&the_answer, 0, sizeof(the_answer));
+                //         return the_answer;
+                //     }
+                // }
                 
                 typedef struct client {
                     std::string hostname = "", portvalue = "";
                     socket_type connected_socket = invalid_socket;
                     secure_socket_type secure_socket = invalid_secure_socket;
 
-                    struct sockaddr_storage address_info;
+                    struct sockaddr_storage address_info = empty_sockaddr();
                     socklen_t address_size = sizeof(address_info);
 
                     bool operator<(const client& other) const;
@@ -281,7 +290,7 @@
                     secure_socket_type secure_socket = invalid_secure_socket;
                     socket_type connect_socket = invalid_socket;
                     
-                    struct addrinfo* address_info;
+                    struct addrinfo* address_info = null;
 
                     bool operator<(const server& other) const;
 
@@ -706,38 +715,6 @@
                     tcp_server server_connection;
 
                     std::map<std::string, std::string> content_options;
-                    // {
-                    //     {".avif", "image/avif"},
-                    //     {".AVIF", "image/avif"},
-                    //     {".css", "text/css"},
-                    //     {".CSS", "text/css"},
-                    //     {".csv", "text/csv"},
-                    //     {".CSV", "text/csv"},
-                    //     {".gif", "image/gif"},
-                    //     {".GIF", "image/gif"},
-                    //     {".htm", "text/html"},
-                    //     {".HTM", "text/html"},
-                    //     {".html", "text/html"},
-                    //     {".HTML", "text/html"},
-                    //     {".ico", "image/x-icon"},
-                    //     {".ICO", "image/x-icon"},
-                    //     {".jpeg", "image/jpeg"},
-                    //     {".JPEG", "image/jpeg"},
-                    //     {".jpg", "image/jpeg"},
-                    //     {".JPG", "image/jpeg"},
-                    //     {".js", "application/javascript"},
-                    //     {".JS", "application/javascript"},
-                    //     {".json", "applicatoin/json"},
-                    //     {".JSON", "applicatoin/json"},
-                    //     {".png", "image/png"},
-                    //     {".PNG", "image/png"},
-                    //     {".pdf", "application/pdf"},
-                    //     {".PDF", "application/pdf"},
-                    //     {".svg", "image/svg+xml"},
-                    //     {".SVG", "image/svg+xml"},
-                    //     {".txt", "text/plain"},
-                    //     {".TXT", "text/plain"}
-                    // };
 
                     const std::map<std::string, std::string> url_decode_map = {
                         {"%20", " "}, {"%21", "!"}, {"%22", "\""}, {"%23", "#"}, {"%24", "$"},
@@ -752,16 +729,7 @@
                         {CONNECTION, "Keep-Alive"}
                     };
 
-
-                    void write16(std::ofstream& file, uint16_t value);
-
                     
-                    void write32(std::ofstream& file, uint32_t value);
-
-
-                    void create_favicon_file(const std::string file_name = "Client/files/favicon.ico");
-
-
                     bool file_exists(const std::string directory, const std::string file);
 
 

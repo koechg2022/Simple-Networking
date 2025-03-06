@@ -1116,15 +1116,11 @@ namespace networking {
 
     network_structures::connected_host::client network_structures::tcp_server::new_client() {
         
+        
         if (not *this) {
-            return {"", "", invalid_socket, invalid_secure_socket, 
-            #if defined(unix_os)
-                {0, 0, {0}}
-            #else
-                {0, {0, 0}}
-            #endif
-            , sizeof(struct sockaddr_storage)};
+            return (network_structures::connected_host::client) {};
         }
+
         fd_set ready;
         FD_ZERO(&ready);
         FD_SET(this->connect_socket, &ready);
@@ -1135,20 +1131,7 @@ namespace networking {
             throw exceptions::select_failure("Failed to select for the actively listening socket for new connections. Error number " + std::to_string(get_socket_error()), true, __FILE__, __LINE__ - 3, __FUNCTION__);
         }
 
-        network_structures::connected_host::client the_answer = {"", "", invalid_socket, invalid_secure_socket, 
-            #if defined(unix_os)
-                {0, 0, {0}}
-            #else
-                {0, {0, 0}}
-            #endif
-            , sizeof(struct sockaddr_storage)};
-        // the_answer.connected_socket = invalid_socket;
-        // the_answer.secure_socket = invalid_secure_socket;
-        // the_answer.address_info.ss_family = 0;
-        // #if defined(mac_os)
-        //     the_answer.address_info.ss_len = 0;
-        // #endif
-        // the_answer.hostname = the_answer.portvalue = "";
+        network_structures::connected_host::client the_answer;
         
         if (FD_ISSET(this->connect_socket, &ready)) {
             network_structures::connected_host::client new_client;
@@ -1568,62 +1551,6 @@ namespace networking {
 
 
     // Code goes here
-
-    void network_structures::http_server::write16(std::ofstream& file, uint16_t value) {
-        file.put(value & 0xFF);
-        file.put((value >> 8) & 0xFF);
-    }
-
-    void network_structures::http_server::write32(std::ofstream& file, uint32_t value) {
-        file.put(value & 0xFF);
-        file.put((value >> 8) & 0xFF);
-        file.put((value >> 16) & 0xFF);
-        file.put((value >> 24) & 0xFF);
-    }
-
-    void network_structures::http_server::create_favicon_file(const std::string file_name) {
-        
-        std::ofstream file(file_name, std::ios::binary);
-
-        // ICO file header
-        write16(file, 0);  // Reserved. Must always be 0.
-        write16(file, 1);  // Specifies image type: 1 for icon (.ICO) image
-        write16(file, 1);  // Specifies number of images in the file
-
-        // Image entry
-        file.put(16);  // Width, 0 means 256
-        file.put(16);  // Height, 0 means 256
-        file.put(0);   // Color palette, 0 means no palette
-        file.put(0);   // Reserved. Should be 0.
-        write16(file, 1);  // Color planes
-        write16(file, 32); // Bits per pixel
-        write32(file, 40 + 16*16*4); // Size of image data
-        write32(file, 22); // Offset of image data from the beginning of the file
-
-        // DIB header
-        write32(file, 40);  // DIB header size
-        write32(file, 16);  // Width
-        write32(file, 32);  // Height (2 * actual height for icons)
-        write16(file, 1);   // Color planes
-        write16(file, 32);  // Bits per pixel
-        write32(file, 0);   // Compression (0 = uncompressed)
-        write32(file, 16*16*4); // Image size
-        write32(file, 0);   // X pixels per meter
-        write32(file, 0);   // Y pixels per meter
-        write32(file, 0);   // Total colors
-        write32(file, 0);   // Important colors
-
-        // Image data (16x16 pixels, 32 bits per pixel, blue color)
-        for (int i = 0; i < 16*16; ++i) {
-            file.put(static_cast<char>(255));  // Blue
-            file.put(0);    // Green
-            file.put(0);    // Red
-            file.put(static_cast<char>(255));  // Alpha
-        }
-
-        file.close();
-    }
-
     bool network_structures::http_server::file_exists(const std::string directory, const std::string file) {
         std::filesystem::path dir_path = std::filesystem::path(directory).lexically_normal();
         std::filesystem::path file_path = std::filesystem::path(file).lexically_normal();

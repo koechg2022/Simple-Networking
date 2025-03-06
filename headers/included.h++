@@ -274,16 +274,23 @@
 
         #if defined(crap_os)
 
-        inline std::string wchar_to_string(const wchar_t* wstr) {
-            if (!wstr) return std::string();
-            int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, NULL, 0, NULL, NULL);
-            std::string strTo(size_needed, 0);
-            WideCharToMultiByte(CP_UTF8, 0, wstr, -1, &strTo[0], size_needed, NULL, NULL);
-            strTo.pop_back(); // Remove the null terminator
-            return strTo;
-        }
+            inline std::string wchar_to_string(const wchar_t* wstr) {
+                if (!wstr) return std::string();
+                int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, NULL, 0, NULL, NULL);
+                std::string strTo(size_needed, 0);
+                WideCharToMultiByte(CP_UTF8, 0, wstr, -1, &strTo[0], size_needed, NULL, NULL);
+                strTo.pop_back(); // Remove the null terminator
+                return strTo;
+            }
 
         #endif
+
+
+        inline sockaddr_storage empty_sockaddr() {
+            sockaddr_storage the_answer;
+            std::memset(&the_answer, 0, sizeof(the_answer));
+            return the_answer;
+        }
 
 
 #endif
