@@ -1432,18 +1432,19 @@ namespace networking {
     }
 
     bool network_structures::tcp_client::connect_client() {
+        if (this->connected) {
+            return this->connected;
+        }
         if (this->secure_) {
             this->initialize_secure();
             this->create_context();
         }
-        // std::printf("Creating address...\n");
+
+        // std::cout << (this->create_address() ? "Created connection address" : "Failed to create connection address") << std::endl;
+        
+        // std::cout << (this->create_socket() ? "Created the connection socket" : "Failed to create the connection socket") << ".\nThe socket is " << this->connect_socket << std::endl;
         this->create_address();
-        // std::printf("Created address...\n");
-
-        // std::printf("Creating socket...\n");
         this->create_socket();
-        // std::printf("Successfully created socket");
-
 
         if (connect(this->connect_socket, this->connect_address->ai_addr, this->connect_address->ai_addrlen)) {
             (this->del_on_except) ? this->disconnect() : true;
