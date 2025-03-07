@@ -8,8 +8,6 @@
 
     namespace networking {
 
-        static bool clean_on_except = true;
-
         namespace network_address_families {
 
             std::set<std::string> get_address_families();

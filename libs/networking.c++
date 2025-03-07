@@ -19,6 +19,7 @@
 
 namespace networking {
 
+    static bool clean_on_except = true;
 
     namespace {
 
