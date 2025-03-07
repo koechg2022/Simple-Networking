@@ -108,10 +108,6 @@
             #include <sys/ioctl.h>
         #endif
 
-        #if (defined(mac_os) and not defined(_UNISTD_H_)) or (defined(linux_os) and not defined(_UNISTD_H))
-            #include <unistd.h>
-        #endif
-
         #if (defined(mac_os) and not defined(_IFADDRS_H_)) or (defined(linux_os) and not defined(_IFADDRS_H))
             #include <ifaddrs.h>
         #endif
