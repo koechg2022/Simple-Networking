@@ -30,24 +30,29 @@ int main(int len, char** args) {
         std::printf("\t'windows_tests' | 'wt':\tTo test windows basics on networking.\n");
     }
     for (index = 1; index < len; index++) {
-        std::printf("\t%d.) %s\n", index, args[index]);
+        // std::printf("\t%d.) %s\n", index, args[index]);
         if (string_functions::same_string(std::string(args[index]), "list_adapters") or string_functions::same_string(std::string(args[index]), "la")) {
+            std::printf("Printing adapters for this machine:\n");
             list_machine_adapters();
         }
 
         else if (string_functions::same_string(std::string(args[index]), "resolve_host") or string_functions::same_string(std::string(args[index]), "rh")) {
+            std::printf("Resolving hostname:\n");
             resolve_hostname();
         }
 
         else if (string_functions::same_string(args[index], "test_server") or string_functions::same_string(args[index], "ts")) {
+            std::printf("Running test server:\n");
             test_server();
         }
 
         else if (string_functions::same_string(args[index], "test_client") or string_functions::same_string(args[index], "tc")) {
+            std::printf("Running test client:\n");
             test_client();
         }
 
         else if (string_functions::same_string(args[index], "windows_tests") or string_functions::same_string(args[index], "wt")) {
+            std::printf("Running windows tests:\n");
             windows_tests();
         }
     }
