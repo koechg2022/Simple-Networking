@@ -10,10 +10,6 @@ namespace string_functions {
     const std::string _directory_ = "Directory";
     const std::string _file_ = "File";
 
-    namespace {
-        struct timeval default_timeout = {0, 100000};
-    }
-
 }
 
 
@@ -146,7 +142,7 @@ bool string_functions::has_keyboard_input() {
         fd_set ready;
         FD_ZERO(&ready);
         FD_SET(STDIN_FILENO, &ready);
-
+        struct timeval default_timeout = {0, 100000};
         if (select(STDIN_FILENO + 1, &ready, 0, 0, &default_timeout) less 0) {
             return false;
         }
