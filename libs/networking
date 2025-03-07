@@ -12,9 +12,7 @@
 
         namespace network_address_families {
 
-
             std::set<std::string> get_address_families();
-
 
             std::string resolve_address_family_to_string(socket_family_type the_family);
 
@@ -170,7 +168,6 @@
         *
         */
         std::vector<std::string> resolve_hostname(const std::string hostname, const std::string port = DEFAULT_PORT, const bool name = false);
-
 
         
         /**
