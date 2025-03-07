@@ -9,6 +9,10 @@
 
     namespace networking {
 
+        namespace {
+            const std::string this_file = std::string(__FILE__);
+        }
+
         namespace network_address_families {
 
             std::set<std::string> get_address_families();
@@ -466,7 +470,9 @@
                     socket_type max_socket;
                     secure_socket_type max_secure_socket;
                     std::map<socket_type, connected_host::client> clients;
-                    const std::string cert_pem_file = "files" + std::string(sys_slash) + "cert.pem", key_pem_file = "files" + std::string(sys_slash) + "key.pem";
+                    
+                    const std::string cert_pem_file = this_file.substr(0, this_file.length() - 10) + "../files" + std::string(sys_slash) + "cert.pem", 
+                                        key_pem_file = this_file.substr(0, this_file.length() - 10) + "../files" + std::string(sys_slash) + "key.pem";
 
 
                     bool create_certificates();

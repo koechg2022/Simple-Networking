@@ -270,12 +270,12 @@ void test_server() {
 
 void test_secure_server() {
     networking::network_structures::tcp_server server("", connection_port, 10, 0, 100000, true, true);
-
+    // std::printf("starting server.....................................\n");
     if (not server.start()) {
         std::fprintf(stderr, "Failed to start server '%s' on port '%s'\n", server.host_name().c_str(), server.port_value().c_str());
         return;
     }
-
+    
     char msg[kilo_byte];
     int bytes;
     std::string message;
@@ -283,6 +283,7 @@ void test_secure_server() {
     std::set<networking::network_structures::connected_host::client> clients;
     std::printf("Server is running on hostname '%s' and port '%s'\n", server.host_name().c_str(), server.port_value().c_str());
 
+    // std::printf("About to enter while loop.....................................\n");
     while (server) {
 
         client = server.new_client();

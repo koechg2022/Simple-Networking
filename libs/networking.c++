@@ -881,6 +881,8 @@ bool networking::network_structures::tcp_server::create_certificates() {
     if (this->secure_ and not this->certificates) {
         this->initialize_secure();
         this->create_context();
+        // std::printf("cert_pem_file is '%s'\n", this->cert_pem_file.c_str());
+        // std::printf("key_pem_file is '%s'\n", this->key_pem_file.c_str());
         if (not SSL_CTX_use_certificate_file(this->context, this->cert_pem_file.c_str(), SSL_FILETYPE_PEM) or not SSL_CTX_use_PrivateKey_file(this->context, this->key_pem_file.c_str(), SSL_FILETYPE_PEM)) {
             (not this->was_init) ? uninitialize_network() : true;
             char err_buf[256]; unsigned long err = ERR_get_error(); ERR_error_string_n(err, err_buf, sizeof(err_buf));
@@ -942,18 +944,23 @@ bool networking::network_structures::tcp_server::disconnect_client(networking::n
 
 bool networking::network_structures::tcp_server::bind_socket() {
     if (not this->bound) {
+        // std::printf("bound is false... configuring...\n");
         if (this->secure_) {
             this->initialize_secure();
             this->create_certificates();
         }
+        // std::printf("initialized secure stuff...\n");
         this->create_address();
+        // std::printf("created address...\n");
         this->create_socket();
-        
+        // std::printf("created connection socket...\n");
+        // std::printf("binding the connection socket...\n");
         if (bind(this->connect_socket, this->connect_address->ai_addr, this->connect_address->ai_addrlen)) {
             (this->del_on_except) ? freeaddrinfo(this->connect_address) : (void) 0;
             (this->was_init) ? uninitialize_network() : true;
             throw exceptions::bind_socket_failure("Failed to bind the connecting socket", true, __FILE__, __LINE__- 3, __FUNCTION__);
         }
+        // std::printf("socket is bound...\n");
         this->bound = true;
     }
     return this->bound;
@@ -1317,6 +1324,8 @@ bool networking::network_structures::tcp_server::start() {
             throw exceptions::certificate_or_key_error("Failed to create the certificates and/or errors for the secure connection", true, __FILE__, __LINE__ - 2, __FUNCTION__);
         }
 
+        // Basic non secure stuff
+
         if (not this->create_address()) {
             (not this->was_init) ? uninitialize_network() : true;
             throw exceptions::getaddrinfo_failure("Failed to get the address information for the connection.", true, __FILE__, __LINE__ - 2, __FUNCTION__);
@@ -1339,6 +1348,10 @@ bool networking::network_structures::tcp_server::start() {
             (this->was_init) ? uninitialize_network() : true;
             throw exceptions::listen_socket_failure("Failed to start the server listening.", true, __FILE__, __LINE__ - 3, __FUNCTION__);
         }
+
+        if (this->secure_) {
+            this->create_secure_socket();
+        }
         
         this->listening = true;
     }
@@ -1347,6 +1360,9 @@ bool networking::network_structures::tcp_server::start() {
 }
 
 bool networking::network_structures::tcp_server::running() const {
+    // std::printf("Bound : %s\n", this->bound ? "true" : "false");
+    // std::printf("Listening : %s\n", this->listening ? "true" : "false");
+    // std::printf("secure and valid_secure_socket : %s\n", (this->secure_ and valid_secure_socket(this->secure_socket)) ? "true" : "false");
     return this->bound and this->listening and ((this->secure_ and valid_secure_socket(this->secure_socket)) or (not this->secure_ and valid_socket(this->connect_socket)));
 }
 
