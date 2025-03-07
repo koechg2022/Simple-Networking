@@ -1,7 +1,5 @@
 
-#include "../libs/networking.h++"
-#include "../libs/misc_functions.h++"
-#include "../libs/string_functions.h++"
+#include "headers"
 
 
 
