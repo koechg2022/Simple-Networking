@@ -944,23 +944,20 @@ bool networking::network_structures::tcp_server::disconnect_client(networking::n
 
 bool networking::network_structures::tcp_server::bind_socket() {
     if (not this->bound) {
-        // std::printf("bound is false... configuring...\n");
+        
         if (this->secure_) {
             this->initialize_secure();
             this->create_certificates();
         }
-        // std::printf("initialized secure stuff...\n");
+        
         this->create_address();
-        // std::printf("created address...\n");
         this->create_socket();
-        // std::printf("created connection socket...\n");
-        // std::printf("binding the connection socket...\n");
         if (bind(this->connect_socket, this->connect_address->ai_addr, this->connect_address->ai_addrlen)) {
             (this->del_on_except) ? freeaddrinfo(this->connect_address) : (void) 0;
             (this->was_init) ? uninitialize_network() : true;
             throw exceptions::bind_socket_failure("Failed to bind the connecting socket", true, __FILE__, __LINE__- 3, __FUNCTION__);
         }
-        // std::printf("socket is bound...\n");
+        
         this->bound = true;
     }
     return this->bound;
