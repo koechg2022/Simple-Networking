@@ -226,6 +226,20 @@
                     operator bool() const;
                 } client;
 
+                template <typename return_type, typename ...args> struct client_thread : public client {
+                    return_type(*client_function)(args...);
+                    std::thread client_thread;
+                };
+
+                template <typename return_type, typename ...args> struct client_process : public client {
+                    return_type (*client_function)(args...);
+                    #if defined(unix_os)
+                        
+                    #else
+
+                    #endif
+                };
+
                 typedef struct server{
                     std::string hostname = "", portvalue = "";
                     secure_socket_context_type context = invalid_context;
@@ -279,6 +293,9 @@
 
                     
                     host& operator=(const host& other);
+
+                    
+                    bool operator==(const host& other);
 
                     
                     /**
@@ -623,7 +640,8 @@
                     int listen_lim;
                     bool listening, bound;
                     // return_type(*thread_function)(args...);
-                    std::map<socket_type, return_type(*)(args...)> clients;
+                    // return_type(*)(args...)
+                    std::map<socket_type, std::thread> clients;
                     const std::string cert_pem_file = "files" + std::string(sys_slash) + "cert.pem", key_pem_file = "files" + std::string(sys_slash) + "key.pem";
 
 
@@ -644,10 +662,11 @@
                     bool operator==(const tcp_server_thread& other);
 
 
-                    bool operator==(const int other);
+                    bool operator==(const unsigned long other);
 
 
                     operator bool() const;
+
 
 
                 
@@ -679,6 +698,9 @@
 
 
                     bool operator==(const int other);
+
+
+                    bool operator==(const unsigned long other);
 
 
                     operator bool() const;

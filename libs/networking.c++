@@ -682,6 +682,13 @@ networking::network_structures::host& networking::network_structures::host::oper
     return *this;
 }
 
+bool networking::network_structures::host::operator==(const networking::network_structures::host& other) {
+    return this->connect_socket == other.connect_socket and 
+            string_functions::same_string(this->hostname, other.hostname) and
+                string_functions::same_string(this->portvalue, other.portvalue) and
+                    this->tcp == other.tcp and this->was_init == other.was_init and 
+                        this->del_on_except == other.del_on_except and this->secure_ == other.secure_;
+}
 
 bool networking::network_structures::host::host_name(const std::string new_host) {
     if (valid_socket(this->connect_socket) and connect_address and ((this->secure_) ? (this->context and this->secure_socket) : true)) {
@@ -1035,11 +1042,10 @@ bool networking::network_structures::tcp_server::operator==(networking::network_
         return true;
     }
 
-    return string_functions::same_string(this->hostname, other.hostname) and 
-                string_functions::same_string(this->portvalue, other.portvalue) and
-                    this->listen_lim == other.listen_lim and
-                        this->bound == other.bound and
-                            this->max_secure_socket == other.max_secure_socket;
+    return host::operator==(other) and
+        this->listen_lim == other.listen_lim and
+            this->bound == other.bound and
+                this->max_secure_socket == other.max_secure_socket;
 }
 
 bool networking::network_structures::tcp_server::operator==(const unsigned long other) {
@@ -1400,10 +1406,7 @@ template <typename return_type, typename... args> networking::network_structures
 networking::network_structures::host::host(host, port, true, seconds_wait, micro_sec_wait, will_del, secure) {
     this->listen_lim = listen_limit;
     this->listening = this->bound = false;
-    // this->thread_function = nullptr;
 }
-
-
 
 
 
@@ -1413,7 +1416,6 @@ template <typename return_type, typename... args> networking::network_structures
 networking::network_structures::host::host(host, port, true, seconds_wait, micro_sec_wait, will_del, secure) {
     this->listen_lim = listen_limit;
     this->listening = this->bound = false;
-    // this->process_function = nullptr;
 }
 
 
