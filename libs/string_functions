@@ -7,7 +7,7 @@
 #if not defined(_STRING_FUNC_)
 #define _STRING_FUNC_
 
-    // #include "../headers/included"
+    #include "../headers/included"
 
     namespace string_functions {
 
