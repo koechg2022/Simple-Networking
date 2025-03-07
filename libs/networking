@@ -1,6 +1,7 @@
 
 
 
+
 #if not defined(_NETWORKING_FUNC_)
 #define _NETWORKING_FUNC_
 
@@ -438,6 +439,9 @@
             };
 
             class tcp_server : public host {
+            
+
+
                 private:
 
                     int listen_lim;
@@ -475,6 +479,12 @@
 
                     tcp_server& operator=(const tcp_server& other);
 
+                    
+                    bool operator==(tcp_server& other);
+                    
+                    
+                    bool operator==(const unsigned long other);
+                    
                     
                     operator bool() const;
 
@@ -607,6 +617,75 @@
 
             };
 
+            template <typename return_type = void, typename... args> class tcp_server_thread : public host {
+
+                private:
+                    int listen_lim;
+                    bool listening, bound;
+                    // return_type(*thread_function)(args...);
+                    std::map<socket_type, return_type(*)(args...)> clients;
+                    const std::string cert_pem_file = "files" + std::string(sys_slash) + "cert.pem", key_pem_file = "files" + std::string(sys_slash) + "key.pem";
+
+
+                public:
+
+                    tcp_server_thread(const std::string host = "", const std::string port = DEFAULT_PORT, int listen_limit = 10, long seconds_wait = 0, int micro_sec_wait = 100000, bool will_del = true, bool secure = false);
+
+
+                    ~tcp_server_thread();
+
+
+                    tcp_server_thread(const tcp_server_thread& other);
+
+                    
+                    tcp_server_thread& operator=(const tcp_server_thread& other);
+
+
+                    bool operator==(const tcp_server_thread& other);
+
+
+                    bool operator==(const int other);
+
+
+                    operator bool() const;
+
+
+                
+            };
+
+
+            template <typename return_type = void, typename... args> class tcp_server_process : public host {
+                
+                private:
+                    int listen_lim;
+                    bool listening, bound;
+                    // return_type(*process_function)(args...);
+                    std::map<socket_type, return_type(*)(args...)> clients;
+                    const std::string cert_pem_file = "files" + std::string(sys_slash) + "cert.pem", key_pem_file = "files" + std::string(sys_slash) + "key.pem";
+
+
+                public:
+
+                    tcp_server_process(const std::string host = "", const std::string port = DEFAULT_PORT, int listen_limit = 10, long seconds_wait = 0, int micro_sec_wait = 100000, bool will_del = true, bool secure = false);
+
+
+                    ~tcp_server_process();
+
+                    
+                    tcp_server_process(const tcp_server_process& other);
+
+
+                    tcp_server_process& operator=(const tcp_server_process& other);
+
+
+                    bool operator==(const int other);
+
+
+                    operator bool() const;
+
+            };
+
+
             class tcp_client : public host {
                 private:
                     
@@ -620,6 +699,9 @@
 
 
                     tcp_client(const std::string remote_host, const std::string connect_port = DEFAULT_PORT, const long wait_sec = 0, const int wait_msec = 100000, bool will_del = true, bool secure = false);
+
+                    
+                    tcp_client(const tcp_client& other);
 
 
                     ~tcp_client();
@@ -638,6 +720,12 @@
 
 
                     bool server_has_message();
+
+
+                    int receive(byte* buffer_space, int size);
+
+                    
+                    int last_trasmissin_size() const;
 
 
             };

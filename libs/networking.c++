@@ -990,24 +990,6 @@ networking::network_structures::tcp_server::tcp_server(const networking::network
     networking::network_structures::host(other) {
     if (this != &other) {
 
-        // For the host stuff:
-        this->connect_socket = other.connect_socket;
-        this->hostname = other.hostname;
-        this->portvalue = other.portvalue;
-        this->connect_address = other.connect_address;
-        this->timeout = other.timeout;
-        this->tcp = other.tcp;
-        this->was_init = other.was_init;
-        this->del_on_except = other.del_on_except;
-
-        // secure stuff
-        this->secure_ = other.secure_;
-        this->initialized_secure = other.initialized_secure;
-        this->context = other.context;
-        this->secure_socket = other.secure_socket;
-        this->certificates = other.certificates;
-
-
         // For the tcp_server
         this->listen_lim = other.listen_lim;
         this->listening = other.listening;
@@ -1020,23 +1002,7 @@ networking::network_structures::tcp_server::tcp_server(const networking::network
 
 networking::network_structures::tcp_server& networking::network_structures::tcp_server::operator=(networking::network_structures::tcp_server& other) {
     if (this != &other) {
-        // For the host stuff:
-        this->connect_socket = other.connect_socket;
-        this->hostname = other.hostname;
-        this->portvalue = other.portvalue;
-        this->connect_address = other.connect_address;
-        this->timeout = other.timeout;
-        this->tcp = other.tcp;
-        this->was_init = other.was_init;
-        this->del_on_except = other.del_on_except;
-
-        // secure stuff
-        this->secure_ = other.secure_;
-        this->initialized_secure = other.initialized_secure;
-        this->context = other.context;
-        this->secure_socket = other.secure_socket;
-        this->certificates = other.certificates;
-
+        host::operator=(other);
 
         // For the tcp_server
         this->listen_lim = other.listen_lim;
@@ -1051,23 +1017,7 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
 
 networking::network_structures::tcp_server& networking::network_structures::tcp_server::operator=(const networking::network_structures::tcp_server& other) {
     if (this != &other) {
-        // For the host stuff:
-        this->connect_socket = other.connect_socket;
-        this->hostname = other.hostname;
-        this->portvalue = other.portvalue;
-        this->connect_address = other.connect_address;
-        this->timeout = other.timeout;
-        this->tcp = other.tcp;
-        this->was_init = other.was_init;
-        this->del_on_except = other.del_on_except;
-
-        // secure stuff
-        this->secure_ = other.secure_;
-        this->initialized_secure = other.initialized_secure;
-        this->context = other.context;
-        this->secure_socket = other.secure_socket;
-        this->certificates = other.certificates;
-
+        host::operator=(other);
 
         // For the tcp_server
         this->listen_lim = other.listen_lim;
@@ -1078,6 +1028,22 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
         this->clients = other.clients;
     }
     return *this;
+}
+
+bool networking::network_structures::tcp_server::operator==(networking::network_structures::tcp_server& other) {
+    if (&other == this) {
+        return true;
+    }
+
+    return string_functions::same_string(this->hostname, other.hostname) and 
+                string_functions::same_string(this->portvalue, other.portvalue) and
+                    this->listen_lim == other.listen_lim and
+                        this->bound == other.bound and
+                            this->max_secure_socket == other.max_secure_socket;
+}
+
+bool networking::network_structures::tcp_server::operator==(const unsigned long other) {
+    return this->clients.size() == other;
 }
 
 networking::network_structures::tcp_server::operator bool() const {
@@ -1430,6 +1396,32 @@ secure_socket_type networking::network_structures::tcp_server::get_max_secure_so
 
 /***********************************************************************************************/
 
+template <typename return_type, typename... args> networking::network_structures::tcp_server_thread<return_type, args...>::tcp_server_thread::tcp_server_thread(const std::string host, const std::string port, int listen_limit, long seconds_wait, int micro_sec_wait, bool will_del, bool secure) :
+networking::network_structures::host::host(host, port, true, seconds_wait, micro_sec_wait, will_del, secure) {
+    this->listen_lim = listen_limit;
+    this->listening = this->bound = false;
+    // this->thread_function = nullptr;
+}
+
+
+
+
+
+/***********************************************************************************************/
+
+template <typename return_type, typename... args> networking::network_structures::tcp_server_process<return_type, args...>::tcp_server_process(const std::string host, const std::string port, int listen_limit, long seconds_wait, int micro_sec_wait, bool will_del, bool secure) :
+networking::network_structures::host::host(host, port, true, seconds_wait, micro_sec_wait, will_del, secure) {
+    this->listen_lim = listen_limit;
+    this->listening = this->bound = false;
+    // this->process_function = nullptr;
+}
+
+
+
+
+
+/***********************************************************************************************/
+
 
 networking::network_structures::tcp_client::tcp_client() : networking::network_structures::host() {
     this->connected = false;
@@ -1441,6 +1433,18 @@ networking::network_structures::tcp_client::tcp_client(const std::string remote_
 networking::network_structures::host(remote_host, connect_port, true, wait_sec, wait_msec, will_del, secure) {
     this->connected = false;
     this->bytes = -1;
+}
+
+
+networking::network_structures::tcp_client::tcp_client(const networking::network_structures::tcp_client& other) :
+networking::network_structures::host(other) {
+    if (this != &other) {
+        host::operator=(other);
+
+        // For tcp_client
+        this->connected = other.connected;
+        this->bytes = other.bytes;
+    }
 }
 
 
@@ -1553,4 +1557,24 @@ bool networking::network_structures::tcp_client::server_has_message() {
         throw exceptions::select_failure("Failed to select for active sockets", true, __FILE__, __LINE__ - 1, __FUNCTION__);
     }
     return FD_ISSET(this->connect_socket, &ready);
+}
+
+
+int networking::network_structures::tcp_client::receive(byte* buffer_space, int size) {
+    if (not *this) {
+        this->bytes = -1;
+        return this->bytes;
+    }
+    
+    if (this->server_has_message()) {
+        this->bytes = (this->secure_host()) ? SSL_read(this->secure_socket, buffer_space, size) :
+                            recv(this->connect_socket, buffer_space, size, 0);
+    }
+    
+    return this->bytes;
+}
+
+
+int networking::network_structures::tcp_client::last_trasmissin_size() const {
+    return this->bytes;
 }
