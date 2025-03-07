@@ -986,7 +986,8 @@ networking::network_structures::tcp_server::~tcp_server() {
     this->close_server();
 }
 
-networking::network_structures::tcp_server::tcp_server(const networking::network_structures::tcp_server& other) {
+networking::network_structures::tcp_server::tcp_server(const networking::network_structures::tcp_server& other) :
+    networking::network_structures::host(other) {
     if (this != &other) {
 
         // For the host stuff:
