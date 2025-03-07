@@ -1,6 +1,7 @@
 
 #include "headers"
 #include "networking"
+#include "string_functions"
 
 
 
@@ -51,9 +52,19 @@ int main(int len, char** args) {
             test_server();
         }
 
+        else if (string_functions::same_string(args[index], "test_secure_server") or string_functions::same_string(args[index], "tss")) {
+            std::printf("Running test secure server:\n");
+            test_secure_server();
+        }
+
         else if (string_functions::same_string(args[index], "test_client") or string_functions::same_string(args[index], "tc")) {
             std::printf("Running test client:\n");
             test_client();
+        }
+
+        else if (string_functions::same_string(args[index], "test_secure_client") or string_functions::same_string(args[index], "tsc")) {
+            std::printf("Running test secure client:\n");
+            test_secure_client();
         }
 
         else if (string_functions::same_string(args[index], "windows_tests") or string_functions::same_string(args[index], "wt")) {
