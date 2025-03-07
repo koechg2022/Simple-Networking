@@ -91,30 +91,37 @@
 
         // Process management
         #define process_type PROCESS_INFORMATION
-        #define create_process(cmd, the_process) create_windows_process(cmd, the_process)
-        #define valid_process(the_process) ((the_process).hProcess != NULL)
+        #define create_process(cmd, the_process) true //create_windows_process(cmd, the_process)
+        #define valid_process(the_process) true //((the_process).hProcess != NULL)
         #define is_child_process(the_process) (false) // Not applicable for CreateProcess
         #define is_parent_process(the_process) (true) // Always true for CreateProcess
 
-        bool create_windows_process(const char* cmd, PROCESS_INFORMATION& the_process) {
-            STARTUPINFO si;
-            ZeroMemory(&si, sizeof(si));
-            si.cb = sizeof(si);
-            ZeroMemory(&the_process, sizeof(the_process));
 
-            return CreateProcess(
-                NULL,                // Application name (NULL if included in cmd)
-                const_cast<char*>(cmd), // Command line (modifiable string)
-                NULL,                // Process handle not inheritable
-                NULL,                // Thread handle not inheritable
-                FALSE,               // Set handle inheritance to FALSE
-                0,                   // No creation flags
-                NULL,                // Use parent's environment block
-                NULL,                // Use parent's starting directory
-                &si,                 // Pointer to STARTUPINFO structure
-                &the_process           // Pointer to PROCESS_INFORMATION structure
-            );
-        }
+        // #define process_type PROCESS_INFORMATION
+        // #define create_process(cmd, the_process) create_windows_process(cmd, the_process)
+        // #define valid_process(the_process) ((the_process).hProcess != NULL)
+        // #define is_child_process(the_process) (false) // Not applicable for CreateProcess
+        // #define is_parent_process(the_process) (true) // Always true for CreateProcess
+
+        // bool create_windows_process(const char* cmd, PROCESS_INFORMATION& the_process) {
+        //     STARTUPINFO si;
+        //     ZeroMemory(&si, sizeof(si));
+        //     si.cb = sizeof(si);
+        //     ZeroMemory(&the_process, sizeof(the_process));
+
+        //     return CreateProcess(
+        //         NULL,                // Application name (NULL if included in cmd)
+        //         const_cast<char*>(cmd), // Command line (modifiable string)
+        //         NULL,                // Process handle not inheritable
+        //         NULL,                // Thread handle not inheritable
+        //         FALSE,               // Set handle inheritance to FALSE
+        //         0,                   // No creation flags
+        //         NULL,                // Use parent's environment block
+        //         NULL,                // Use parent's starting directory
+        //         &si,                 // Pointer to STARTUPINFO structure
+        //         &the_process           // Pointer to PROCESS_INFORMATION structure
+        //     );
+        // }
 
 
     #else
