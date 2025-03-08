@@ -1,5 +1,6 @@
 
 #include "headers"
+#include "included"
 #include "networking"
 #include "string_functions"
 
@@ -283,7 +284,7 @@ void test_secure_server() {
     std::set<networking::network_structures::connected_host::client> clients;
     std::printf("Server is running on hostname '%s' and port '%s'\n", server.host_name().c_str(), server.port_value().c_str());
 
-    // std::printf("About to enter while loop.....................................\n");
+    
     while (server) {
 
         client = server.new_client();
@@ -437,7 +438,7 @@ void test_client() {
     std::string message;
     networking::network_structures::connected_host::server server_info;
     char message_buffer[kilo_byte];
-    int bytes;
+    int bytes, error;
     std::memset(message_buffer, 0, kilo_byte);
 
     while (client) {
@@ -448,9 +449,16 @@ void test_client() {
             bytes = (client.secure_host()) ? 
                                 SSL_read(client.get_secure_connection_socket(), message_buffer, kilo_byte) : 
                                         recv(client.get_connection_socket(), message_buffer, kilo_byte, 0);
-            if ((client.secure_host() and bytes <= 0 )
-                            or 
-                (not client.secure_host() and bytes < 1)) {
+            if (bytes < 1) {
+                if (client.secure_host()) {
+                    error = SSL_get_error(client.get_secure_connection_socket(), bytes);
+                    if ((error is SSL_ERROR_WANT_READ) or (SSL_ERROR_WANT_WRITE)) {
+                        continue;
+                    }
+                    std::printf("Connection closed.\n");
+                    client.disconnect();
+                    continue;
+                }
                 std::printf("Connection closed.\n");
                 client.disconnect();
                 continue;
@@ -513,25 +521,28 @@ void test_secure_client() {
     char message_buffer[kilo_byte];
     int bytes;
     std::memset(message_buffer, 0, kilo_byte);
-
+    // std::printf("Entering while loop\n");
     while (client) {
-        
+        // std::printf("In while loop...\n");
         
         if (client.server_has_message()) {
             std::memset(message_buffer, 0, kilo_byte);
-            bytes = (client.secure_host()) ? 
-                                SSL_read(client.get_secure_connection_socket(), message_buffer, kilo_byte) : 
-                                        recv(client.get_connection_socket(), message_buffer, kilo_byte, 0);
-            if ((client.secure_host() and bytes <= 0 )
-                            or 
-                (not client.secure_host() and bytes < 1)) {
-                std::printf("Connection closed.\n");
+            // bytes = (client.secure_host()) ? 
+            //                     SSL_read(client.get_secure_connection_socket(), message_buffer, kilo_byte) : 
+            //                             recv(client.get_connection_socket(), message_buffer, kilo_byte, 0);
+            bytes = client.receive(message_buffer, kilo_byte);
+            if (bytes < 1) {
+                if (client) {
+                    continue;
+                }
                 client.disconnect();
+                std::printf("Connection closed by server.\n");
                 continue;
             }
             std::printf("Message from server:\n'%.*s'\n", (int) bytes, message_buffer);
         }
 
+        // std::printf("Checking if there's keyboard input...\n");
         if (string_functions::has_keyboard_input()) {
             message = string_functions::get_input();
 

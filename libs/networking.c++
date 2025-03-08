@@ -811,7 +811,7 @@ bool networking::network_structures::host::initialize_secure() {
 }
 
 
-bool networking::network_structures::host::create_context() {
+bool networking::network_structures::host::create_context_client() {
     
     if (this->secure_ and not this->initialize_secure()) {
         return false;
@@ -823,20 +823,47 @@ bool networking::network_structures::host::create_context() {
     return (this->secure_) ? valid_context(this->context) : not valid_context(this->context);
 }
 
+bool networking::network_structures::host::create_context_server() {
 
-bool networking::network_structures::host::create_secure_socket() {
     if (this->secure_ and not this->initialize_secure()) {
         return false;
     }
 
-    if (this->secure_ and not this->create_context()) {
+    if (this->secure_ and not valid_context(this->context)) {
+        this->context = SSL_CTX_new(TLS_server_method());
+    }
+    return (this->secure_) ? valid_context(this->context) : not valid_context(this->context);
+}
+
+
+bool networking::network_structures::host::create_secure_socket_client() {
+    if (this->secure_ and not this->initialize_secure()) {
         return false;
     }
 
-    if (this->secure_ and not this->secure_socket) {
+    if (this->secure_ and not this->create_context_client()) {
+        return false;
+    }
+
+    if (this->secure_ and not valid_secure_socket(this->secure_socket)) {
         this->secure_socket = SSL_new(this->context);
     }
-    return this->secure_socket;
+    return valid_secure_socket(this->secure_socket);
+}
+
+bool networking::network_structures::host::create_secure_socket_server() {
+    if (this->secure_ and not this->initialize_secure()) {
+        return false;
+    }
+
+    if (this->secure_ and not this->create_context_server()) {
+        return false;
+    }
+
+    if (this->secure_ and not valid_secure_socket(this->secure_socket)) {
+        this->secure_socket = SSL_new(this->context);
+    }
+    return valid_secure_socket(this->secure_socket);
 }
 
 
@@ -880,7 +907,7 @@ bool networking::network_structures::host::secure_host() {
 bool networking::network_structures::tcp_server::create_certificates() {
     if (this->secure_ and not this->certificates) {
         this->initialize_secure();
-        this->create_context();
+        this->create_context_server();
         // std::printf("cert_pem_file is '%s'\n", this->cert_pem_file.c_str());
         // std::printf("key_pem_file is '%s'\n", this->key_pem_file.c_str());
         if (not SSL_CTX_use_certificate_file(this->context, this->cert_pem_file.c_str(), SSL_FILETYPE_PEM) or not SSL_CTX_use_PrivateKey_file(this->context, this->key_pem_file.c_str(), SSL_FILETYPE_PEM)) {
@@ -1311,7 +1338,7 @@ bool networking::network_structures::tcp_server::start() {
             throw exceptions::initialize_network_failure("Failed to initialize secure network functions and algorithms", true, __FILE__, __LINE__ - 2, __FUNCTION__);
         }
         
-        if (this->secure_ and not this->create_context()) {
+        if (this->secure_ and not this->create_context_server()) {
             (not this->was_init) ? uninitialize_network() : true;
             throw exceptions::create_context_failure("Failed to create the secure network context", true, __FILE__, __LINE__ - 2, __FUNCTION__);
         }
@@ -1347,7 +1374,8 @@ bool networking::network_structures::tcp_server::start() {
         }
 
         if (this->secure_) {
-            this->create_secure_socket();
+            this->create_secure_socket_server();
+            std::printf("Created secure socket... it is a %s secure socket.\n", (valid_secure_socket(this->secure_socket)) ? "valid" : "invalid");
         }
         
         this->listening = true;
@@ -1360,7 +1388,9 @@ bool networking::network_structures::tcp_server::running() const {
     // std::printf("Bound : %s\n", this->bound ? "true" : "false");
     // std::printf("Listening : %s\n", this->listening ? "true" : "false");
     // std::printf("secure and valid_secure_socket : %s\n", (this->secure_ and valid_secure_socket(this->secure_socket)) ? "true" : "false");
-    return this->bound and this->listening and ((this->secure_ and valid_secure_socket(this->secure_socket)) or (not this->secure_ and valid_socket(this->connect_socket)));
+    return this->bound and this->listening and 
+            ((this->secure_ and valid_secure_socket(this->secure_socket)) or 
+                (not this->secure_ and valid_socket(this->connect_socket)));
 }
 
 std::set<networking::network_structures::connected_host::client> networking::network_structures::tcp_server::get_clients() {
@@ -1479,7 +1509,7 @@ bool networking::network_structures::tcp_client::connect_client() {
     }
     if (this->secure_) {
         this->initialize_secure();
-        this->create_context();
+        this->create_context_client();
     }
 
     this->create_address();
@@ -1493,7 +1523,7 @@ bool networking::network_structures::tcp_client::connect_client() {
     // std::printf("Connected.\n");
     
     if (this->secure_) {
-        this->create_secure_socket();
+        this->create_secure_socket_client();
         if (not valid_secure_socket(this->secure_socket)) {
             (this->del_on_except) ? this->disconnect() : true;
             (not this->was_init) ? uninitialize_network() : true;
@@ -1519,6 +1549,16 @@ bool networking::network_structures::tcp_client::connect_client() {
             (not this->was_init) ? uninitialize_network() : true;
             throw exceptions::certificate_error("Failed to get the peer certificate", true, __FILE__, __LINE__ - 4, __FUNCTION__);
         }
+
+        #if defined(crap_os)
+            unsigned long non_block = 1;
+            ioctlsocket(this->connect_socket, FIONBIO, &non_block);
+        #else
+            int flags;
+            flags = fcntl(this->connect_socket, F_GETFL, 0);
+            fcntl(this->connect_socket, F_SETFL, flags | O_NONBLOCK);
+        #endif
+
         this->connected = true;
     }
     else {
@@ -1567,10 +1607,13 @@ bool networking::network_structures::tcp_client::server_has_message() {
     fd_set ready;
     FD_ZERO(&ready);
     FD_SET(this->connect_socket, &ready);
-
-    if (select(this->connect_socket + 1, &ready, 0, 0, (this->timeout.tv_usec is -1) ? 0 : &this->timeout) < 0) {
-        throw exceptions::select_failure("Failed to select for active sockets", true, __FILE__, __LINE__ - 1, __FUNCTION__);
+    // std::printf("in server_has_message() method\n");
+    if (select(this->connect_socket + 1, &ready, 0, 0, (this->timeout.tv_usec == -1) ? 0 : &this->timeout) < 0) {
+        (this->del_on_except) ? this->disconnect() : true;
+        (not this->was_init) ? uninitialize_network() : true;
+        throw exceptions::select_failure("Failed to select for active sockets", true, __FILE__, __LINE__ - 3, __FUNCTION__);
     }
+    
     return FD_ISSET(this->connect_socket, &ready);
 }
 
@@ -1581,11 +1624,27 @@ int networking::network_structures::tcp_client::receive(byte* buffer_space, int 
         return this->bytes;
     }
     
-    if (this->server_has_message()) {
-        this->bytes = (this->secure_host()) ? SSL_read(this->secure_socket, buffer_space, size) :
-                            recv(this->connect_socket, buffer_space, size, 0);
+    this->bytes = (this->secure_) ? SSL_read(this->secure_socket, buffer_space, size) :
+                recv(this->connect_socket, buffer_space, size, 0);
+    if (this->bytes < 1)  {
+        if (this->secure_) {
+            int error;
+            if ((error = SSL_get_error(this->secure_socket, this->bytes)) 
+                                        and 
+                ((error is SSL_ERROR_WANT_READ) or (error is SSL_ERROR_WANT_WRITE))) {
+                // Waiting for SSL, do nothing...
+                return this->bytes;
+            }
+            else {
+                // Connection closed by peer.
+                this->bytes = 0;
+                this->disconnect();
+            }
+        }
+        else {
+            this->disconnect();
+        }
     }
-    
     return this->bytes;
 }
 

@@ -378,22 +378,42 @@
 
                     /**
                         @brief Create the context that is used for the secure connection
-                        management.
+                        management for a client.
 
                         @returns `true` if the context is successfully created, `false` if it's not.
 
                      */
-                    bool create_context();
+                    bool create_context_client();
+
+
+                    /**
+                        @brief Create the context that is used for the secure connection
+                        management for a server.
+
+                        @returns `true` if the context is successfully created, `false` if it's not.
+
+                     */
+                    bool create_context_server();
 
 
                     
                     /**
                         @brief Create the secure sockets layer socket that is used for 
-                        TLS/SSL communication with the remote host.
+                        TLS/SSL communication with the remote host server.
 
                         @returns `true` if the secure socket is successfully created, `false` if it's not.
                      */
-                    bool create_secure_socket();
+                    bool create_secure_socket_server();
+
+
+                    
+                    /**
+                        @brief Create the secure sockets layer socket that is used for 
+                        TLS/SSL communication with the remote host client.
+
+                        @returns `true` if the secure socket is successfully created, `false` if it's not.
+                     */
+                    bool create_secure_socket_client();
                     
 
                     /**
