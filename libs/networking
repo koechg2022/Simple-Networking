@@ -491,7 +491,7 @@
                     secure_socket_type max_secure_socket;
                     std::map<socket_type, connected_host::client> clients;
                     
-                    const std::string cert_pem_file = this_file.substr(0, this_file.length() - 10) + "../files" + std::string(sys_slash) + "cert.pem", 
+                    std::string cert_pem_file = this_file.substr(0, this_file.length() - 10) + "../files" + std::string(sys_slash) + "cert.pem", 
                                         key_pem_file = this_file.substr(0, this_file.length() - 10) + "../files" + std::string(sys_slash) + "key.pem";
 
 
@@ -508,7 +508,7 @@
 
                 public:
 
-                    tcp_server(const std::string host = "", const std::string port = DEFAULT_PORT, int listen_limit = 10, long seconds_wait = 0, int micro_sec_wait = 100000, bool will_del = true, bool secure = false);
+                    tcp_server(const std::string host = "", const std::string port = DEFAULT_PORT, int listen_limit = 10, long seconds_wait = 0, int micro_sec_wait = 100000, bool will_del = true, bool secure = false, const std::string cert_file = this_file.substr(0, this_file.length() - 10) + "../files" + std::string(sys_slash) + "cert.pem", const std::string pem_file = this_file.substr(0, this_file.length() - 10) + "../files" + std::string(sys_slash) + "key.pem");
 
                     
                     ~tcp_server();

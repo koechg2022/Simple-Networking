@@ -908,8 +908,6 @@ bool networking::network_structures::tcp_server::create_certificates() {
     if (this->secure_ and not this->certificates) {
         this->initialize_secure();
         this->create_context_server();
-        // std::printf("cert_pem_file is '%s'\n", this->cert_pem_file.c_str());
-        // std::printf("key_pem_file is '%s'\n", this->key_pem_file.c_str());
         if (not SSL_CTX_use_certificate_file(this->context, this->cert_pem_file.c_str(), SSL_FILETYPE_PEM) or not SSL_CTX_use_PrivateKey_file(this->context, this->key_pem_file.c_str(), SSL_FILETYPE_PEM)) {
             (not this->was_init) ? uninitialize_network() : true;
             char err_buf[256]; unsigned long err = ERR_get_error(); ERR_error_string_n(err, err_buf, sizeof(err_buf));
@@ -1011,12 +1009,14 @@ bool networking::network_structures::tcp_server::start_listening() {
     return this->listening;
 }
 
-networking::network_structures::tcp_server::tcp_server(const std::string host, const std::string port, int listen_limit, long seconds_wait, int micro_sec_wait, bool will_del, bool secure) :
+networking::network_structures::tcp_server::tcp_server(const std::string host, const std::string port, int listen_limit, long seconds_wait, int micro_sec_wait, bool will_del, bool secure, const std::string cert_file, const std::string pem_file) :
     networking::network_structures::host::host(host, port, true, seconds_wait, micro_sec_wait, will_del, secure) {
     this->listen_lim = listen_limit;
     this->listening = this->bound = false;
     this->max_socket = invalid_socket;
     this->max_secure_socket = null;
+    this->cert_pem_file = cert_file;
+    this->key_pem_file = pem_file;
 }
 
 networking::network_structures::tcp_server::~tcp_server() {
