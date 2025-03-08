@@ -332,7 +332,7 @@
         #endif
 
 
-        inline sockaddr_storage empty_sockaddr() {
+        inline struct sockaddr_storage empty_sockaddr() {
             sockaddr_storage the_answer;
             std::memset(&the_answer, 0, sizeof(the_answer));
             return the_answer;

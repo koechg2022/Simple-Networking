@@ -926,21 +926,17 @@ bool networking::network_structures::tcp_server::disconnect_client(networking::n
     socket_type to_remove = (this->clients.contains(client)) ? client.connected_socket : invalid_socket;
     
     if (valid_secure_socket(client.secure_socket)) {
-        // std::printf("shutting down secure socket %p\n", client.secure_socket);
         SSL_shutdown(client.secure_socket);
-        // std::printf("secure socket is now %p\n", client.secure_socket);
     }
 
     if (valid_socket(client.connected_socket)) {
         close_socket(client.connected_socket);
         client.connected_socket = invalid_socket;
-        // std::printf("connected socket is now closed.\n");
     }
 
     if (valid_secure_socket(client.secure_socket)) {
         SSL_free(client.secure_socket);
         client.secure_socket = invalid_secure_socket;
-        // std::printf("freed the secure socket\n");
     }
 
     if (not client.hostname.empty()) {
@@ -951,7 +947,7 @@ bool networking::network_structures::tcp_server::disconnect_client(networking::n
         client.portvalue = "";
     }
 
-    // client.address_info = empty_sockaddr();
+    client.address_info = empty_sockaddr();
 
     if (valid_socket(to_remove)) {
         this->clients.erase(client.connected_socket);
@@ -963,11 +959,13 @@ bool networking::network_structures::tcp_server::disconnect_client(networking::n
         }
     }
     
+    struct sockaddr_storage empty = empty_sockaddr();
     
     return not valid_socket(client.connected_socket) and 
-            not valid_secure_socket(client.secure_socket) and
-                not this->clients.contains(client.connected_socket) and
-                    client.hostname.empty() and 
+                not valid_secure_socket(client.secure_socket) and
+                    not this->clients.contains(client.connected_socket) and
+                        (std::memcmp(&empty, &client.address_info, sizeof(client.address_info)) == 0) and
+                            client.hostname.empty() and 
                                 client.portvalue.empty();
 }
 
@@ -1288,10 +1286,10 @@ bool networking::network_structures::tcp_server::close_server() {
     if (this->connect_address) {
         freeaddrinfo(this->connect_address);
         this->connect_address = null;
-        std::printf("Freeing connection address\n");
+        // std::printf("Freeing connection address\n");
     }
 
-    if (this->secure_socket) {
+    if (valid_secure_socket(this->secure_socket)) {
         SSL_shutdown(this->secure_socket);
         this->secure_socket = invalid_secure_socket;
     }
@@ -1301,13 +1299,17 @@ bool networking::network_structures::tcp_server::close_server() {
         this->connect_socket = invalid_socket;
     }
 
-    if (this->secure_socket) {
+    if (valid_secure_socket(this->secure_socket)) {
         SSL_free(secure_socket);
+        this->secure_socket = invalid_secure_socket;
+    }
+
+    if (valid_context(this->context)) {
         SSL_CTX_free(this->context);
         this->context = invalid_context;
     }
 
-    if (not this->certificate) {
+    if (this->certificate) {
         X509_free(this->certificate);
         this->certificate = null;
     }
