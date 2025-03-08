@@ -926,21 +926,21 @@ bool networking::network_structures::tcp_server::disconnect_client(networking::n
     socket_type to_remove = (this->clients.contains(client)) ? client.connected_socket : invalid_socket;
     
     if (valid_secure_socket(client.secure_socket)) {
-        std::printf("shutting down secure socket %p\n", client.secure_socket);
+        // std::printf("shutting down secure socket %p\n", client.secure_socket);
         SSL_shutdown(client.secure_socket);
-        std::printf("secure socket is now %p\n", client.secure_socket);
+        // std::printf("secure socket is now %p\n", client.secure_socket);
     }
 
     if (valid_socket(client.connected_socket)) {
         close_socket(client.connected_socket);
         client.connected_socket = invalid_socket;
-        std::printf("connected socket is now closed.\n");
+        // std::printf("connected socket is now closed.\n");
     }
 
     if (valid_secure_socket(client.secure_socket)) {
         SSL_free(client.secure_socket);
         client.secure_socket = invalid_secure_socket;
-        std::printf("freed the secure socket\n");
+        // std::printf("freed the secure socket\n");
     }
 
     if (not client.hostname.empty()) {
@@ -951,7 +951,7 @@ bool networking::network_structures::tcp_server::disconnect_client(networking::n
         client.portvalue = "";
     }
 
-    client.address_info = empty_sockaddr();
+    // client.address_info = empty_sockaddr();
 
     if (valid_socket(to_remove)) {
         this->clients.erase(client.connected_socket);
@@ -967,11 +967,7 @@ bool networking::network_structures::tcp_server::disconnect_client(networking::n
     return not valid_socket(client.connected_socket) and 
             not valid_secure_socket(client.secure_socket) and
                 not this->clients.contains(client.connected_socket) and
-                #if defined(mac_os)
-                    client.address_info.ss_len == 0 and 
-                #endif
-                        client.address_info.ss_family == 0 and 
-                            client.hostname.empty() and 
+                    client.hostname.empty() and 
                                 client.portvalue.empty();
 }
 
