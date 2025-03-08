@@ -921,20 +921,26 @@ bool networking::network_structures::tcp_server::create_certificates() {
 }
 
 bool networking::network_structures::tcp_server::disconnect_client(networking::network_structures::connected_host::client& client) {
+
     
-    if (client.secure_socket != invalid_secure_socket) {
+    socket_type to_remove = (this->clients.contains(client)) ? client.connected_socket : invalid_socket;
+    
+    if (valid_secure_socket(client.secure_socket)) {
+        std::printf("shutting down secure socket %p\n", client.secure_socket);
         SSL_shutdown(client.secure_socket);
+        std::printf("secure socket is now %p\n", client.secure_socket);
     }
 
     if (valid_socket(client.connected_socket)) {
-
         close_socket(client.connected_socket);
         client.connected_socket = invalid_socket;
+        std::printf("connected socket is now closed.\n");
     }
 
-    if (client.secure_socket != invalid_secure_socket) {
+    if (valid_secure_socket(client.secure_socket)) {
         SSL_free(client.secure_socket);
         client.secure_socket = invalid_secure_socket;
+        std::printf("freed the secure socket\n");
     }
 
     if (not client.hostname.empty()) {
@@ -947,7 +953,7 @@ bool networking::network_structures::tcp_server::disconnect_client(networking::n
 
     client.address_info = empty_sockaddr();
 
-    if (this->clients.contains(client.connected_socket)) {
+    if (valid_socket(to_remove)) {
         this->clients.erase(client.connected_socket);
         this->max_socket = invalid_socket;
         this->max_secure_socket = invalid_secure_socket;
