@@ -205,12 +205,47 @@
         void replace_all(std::string& the_string, const std::string to_replace, const std::string replace_with);
 
 
-        std::map<std::string, std::string> get_file_data(const std::string& file_name);
+        /**
+            @brief Get the content of a file as a map with a key/value separator of the `delimiter`.
+            @param file_name : (`const std::string&`) The file whose data is to be read.
+            @param delimiter : (`const std::string`). Defaults to `:` This is what will separate the key from the value in each line.
+            @returns a std::map<std::string, std::string> with the data from the `file_name` as key/value pairs in a `std::map`
+        */
+        std::map<std::string, std::string> get_file_data_map(const std::string& file_name, const std::string delimiter = ":");
 
         
+        /**
+            @brief Get the content of a directory with. The content will either be a 
+            directory or a file. The map returned will have two keys:
+                string_functions::_directory_ ("DIRECTORY")
+                string_functions::_file_ ("FILE")
+            
+            Each key will map to a std::vector with all the files or directories 
+                that are in the directory `directory_name`. If the directory doesn't exist, 
+                then a map with the two keys and each key mapping to an empty std::vector is returned.
+
+            @param directory_name (`const std::string&`) : The directory whose content is to be retrieved.
+
+            @returns a std::map<std::string,std::vector<std::string> > with the files and directories of the `directory_name`.
+        */
         std::map<std::string, std::vector<std::string> > get_directory_content(const std::string& file_name);
 
 
+        /**
+            @brief Get the content of the file `file_name` as a string.
+            @param file_name (`const std::string`) : The file to be read from.
+            @returns A `std::string` of the content of the file `file_name`
+        */
+        std::string get_file_data(const std::string file_name);
+
+
+        /**
+            @brief Check if a std::map<std::string, data_> contains a specific key or not.
+            @param to_search (std::map<std::string, data_>&) : The std::map to search. The keys are what are searched for, looking for `to_find_key`
+            @param to_find_key (std::string&) : The key to search for in to_search.
+            @param ignore_case (bool) : A flag specifying whether or not to ignore the cases of the characters of the keys and `to_find_key`
+                while searching the map.
+        */
         template <typename data_> bool contains(std::map<std::string, data_>& to_search, const std::string& to_find_key, bool ignore_case = true) {
             for (auto pair = to_search.begin(); pair != to_search.end(); pair++) {
                 if (same_string(pair->first, to_find_key, ignore_case)) {

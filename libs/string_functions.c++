@@ -166,11 +166,10 @@ void string_functions::replace_all(std::string& the_string, const std::string to
     }
 }
 
-
-std::map<std::string, std::string> string_functions::get_file_data(const std::string& file_name) {
+std::map<std::string, std::string> string_functions::get_file_data_map(const std::string& file_name, const std::string delimiter) {
     std::map<std::string, std::string> the_answer;
 
-    if (!std::filesystem::exists(std::filesystem::path(file_name).lexically_normal())) {
+    if (not std::filesystem::exists(std::filesystem::path(file_name).lexically_normal())) {
         std::cerr << "No file '" << file_name << "' found\n";
         return the_answer;
     }
@@ -182,12 +181,12 @@ std::map<std::string, std::string> string_functions::get_file_data(const std::st
     }
 
     std::string line, key, value;
-    size_t delimiter;
+    size_t delim;
     while (std::getline(open_file, line)) {
-        delimiter = line.find_first_of(':');
-        if (delimiter != std::string::npos) {
-            key = line.substr(0, delimiter);
-            value = line.substr(delimiter + 1);
+        delim = line.find_first_of(delimiter);
+        if (delim != std::string::npos) {
+            key = line.substr(0, delim);
+            value = line.substr(delim + 1);
 
             strip(key, " ");
             strip(value, " ");
@@ -211,5 +210,27 @@ std::map<std::string, std::vector<std::string> > string_functions::get_directory
     for (const auto& entry : std::filesystem::directory_iterator(file_name)) {
         the_answer[(entry.is_directory()) ? _directory_ : _file_].push_back(std::string(entry.path().filename().string()));
     }
+    return the_answer;
+}
+
+std::string string_functions::get_file_data(const std::string file_name) {
+
+    std::string the_answer, line;
+    
+    if (not std::filesystem::exists(std::filesystem::path(file_name).lexically_normal())) {
+        std::cerr << "No file '" << file_name << "' found\n";
+        return the_answer;
+    }
+
+    std::fstream open_file(file_name, std::ios_base::in | std::ios_base::binary);
+    if (not open_file.is_open()) {
+        std::cerr << "Could not open file \"" << file_name << "\"" << std::endl;
+        return the_answer;
+    }
+
+    while (std::getline(open_file, line)) {
+        the_answer = the_answer + line;
+    }
+
     return the_answer;
 }
