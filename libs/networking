@@ -491,8 +491,8 @@
                     secure_socket_type max_secure_socket;
                     std::map<socket_type, connected_host::client> clients;
                     
-                    std::string cert_pem_file = this_file.substr(0, this_file.length() - 10) + "../files" + std::string(sys_slash) + "cert.pem", 
-                                        key_pem_file = this_file.substr(0, this_file.length() - 10) + "../files" + std::string(sys_slash) + "key.pem";
+                    std::string cert_pem_file; // = this_file.substr(0, this_file.length() - 10) + "../files" + std::string(sys_slash) + "cert.pem", 
+                    std::string key_pem_file; // = this_file.substr(0, this_file.length() - 10) + "../files" + std::string(sys_slash) + "key.pem";
 
 
                     bool create_certificates();
