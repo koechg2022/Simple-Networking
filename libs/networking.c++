@@ -1275,6 +1275,7 @@ bool networking::network_structures::tcp_server::close_connection(const std::str
 
 bool networking::network_structures::tcp_server::close_server() {
     for (auto client = this->clients.begin(); client != this->clients.end(); client++) {
+        std::printf("\tDisconnecting '%s'\n", client->second.hostname.c_str());
         this->disconnect_client(client->second);
     }
 
@@ -1285,6 +1286,7 @@ bool networking::network_structures::tcp_server::close_server() {
     if (this->connect_address) {
         freeaddrinfo(this->connect_address);
         this->connect_address = null;
+        std::printf("Freeing connection address\n");
     }
 
     if (this->secure_socket) {
@@ -1374,7 +1376,7 @@ bool networking::network_structures::tcp_server::start() {
         }
 
         if (this->secure_) {
-            this->create_secure_socket_server();
+            // this->create_secure_socket_server();
             std::printf("Created secure socket... it is a %s secure socket.\n", (valid_secure_socket(this->secure_socket)) ? "valid" : "invalid");
         }
         
