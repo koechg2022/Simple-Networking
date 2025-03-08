@@ -206,6 +206,28 @@
 
 
         /**
+            @brief Remove the first occurance of the `to_remove` substring within `the_string`
+            @param the_string (`const std::string`) : The string to be searched through for `to_remove`
+            @param to_remove (`const std::string`) : The string to remove from within `the_string`
+            @param ignore_case (`const std::string`) : A bool flag specifying whether or not to ignore the cases 
+            @returns A new `std::string` that is the same as `the_string` except it doesn't have the first instance of `to_remove`
+            @note If there is no instance of `to_remove` within `the_string`, then the_string is returned.
+        */
+        std::string remove_first_of(const std::string the_string, const std::string to_remove, bool ignore_case = true);
+
+
+        /**
+            @brief Remove the last occurance of the `to_remove` substring within `the_string`
+            @param the_string (`const std::string`) : The string to be searched through for `to_remove`
+            @param to_remove (`const std::string`) : The string to remove from within `the_string`
+            @param ignore_case (`const std::string`) : A bool flag specifying whether or not to ignore the cases 
+            @returns A new `std::string` that is the same as `the_string` except it doesn't have the last instance of `to_remove`
+            @note If there is no instance of `to_remove` within `the_string`, then the_string is returned.
+        */
+        std::string remove_last_of(const std::string the_string, const std::string to_remove, bool ignore_case = true);
+
+
+        /**
             @brief Parse a string of characters into a list and return that list as a std::vector
             @param parse_me (`const std::string`) The std::string to parse into a std::vector.
             @param delimiter (`const std::string`) The std::string that separates parts of the std::string into the segments

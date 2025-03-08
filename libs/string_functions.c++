@@ -166,6 +166,66 @@ void string_functions::replace_all(std::string& the_string, const std::string to
     }
 }
 
+std::string string_functions::remove_first_of(const std::string the_string, const std::string to_remove, bool ignore_case) {
+    
+    if (the_string.empty() or to_remove.empty()) {
+        return the_string;
+    }
+
+    
+    size_t start, current, index;
+    index = 0;
+    while (index < the_string.length()) {
+        start = index;
+        current = 0;
+        while (current < to_remove.length() and start + current < the_string.length() and same_char(the_string[start + current], to_remove[current], ignore_case)) current++;
+
+        if (not current) {
+            index = index + 1;
+            continue;
+        }
+
+        if (current == to_remove.length()) {
+            // Found
+            return the_string.substr(0, start) + the_string.substr(start + current);
+        }
+        index = index + current;
+    }
+
+    return the_string;
+}
+
+std::string string_functions::remove_last_of(const std::string the_string, const std::string to_remove, bool ignore_case) {
+    if (the_string.empty() or to_remove.empty()) {
+        return the_string;
+    }
+
+    size_t start, current;
+    start = the_string.length() - 1;
+    while (start < the_string.length()) { // This condition is always true for size_t, but kept for safety
+        current = 0;
+        while (current < to_remove.length() and 
+              start >= current and 
+              same_char(the_string[start - current], to_remove[to_remove.length() - current - 1], ignore_case)) {
+            current++;
+        }
+
+        if (current == to_remove.length()) {
+            // Found
+            if (start + 1 == current) {
+                // Matched the entire string
+                return "";
+            }
+            return the_string.substr(0, start - current + 1) + (start + 1 < the_string.length() ? the_string.substr(start + 1) : "");
+        }
+        
+        if (start == 0) break; // Prevent underflow
+        start--;
+    }
+
+    return the_string;
+}
+
 std::vector<std::string> string_functions::parse_to_list(const std::string parse_me, const std::string delimiter, bool ignore_case) {
     
     if (parse_me.empty()) {
