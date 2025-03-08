@@ -1391,7 +1391,7 @@ bool networking::network_structures::tcp_server::running() const {
     // std::printf("Listening : %s\n", this->listening ? "true" : "false");
     // std::printf("secure and valid_secure_socket : %s\n", (this->secure_ and valid_secure_socket(this->secure_socket)) ? "true" : "false");
     return this->bound and this->listening and 
-            ((this->secure_ and valid_secure_socket(this->secure_socket)) or 
+            ((this->secure_ and valid_context(this->context)) or 
                 (not this->secure_ and valid_socket(this->connect_socket)));
 }
 
