@@ -206,6 +206,30 @@
 
 
         /**
+            @brief Parse a string of characters into a list and return that list as a std::vector
+            @param parse_me (`const std::string`) The std::string to parse into a std::vector.
+            @param delimiter (`const std::string`) The std::string that separates parts of the std::string into the segments
+            of substrings that will take up individual segments of the std::vector.
+            @param ignore_case (bool) : A flag specifying whether or not to ignore the case while comparing the strings.
+            @returns A `std::vector<std::string>` with all the substrings within the `parse_me` string that are 
+            separated by the `delimiter`
+        */
+        std::vector<std::string> parse_to_list(const std::string parse_me, const std::string delimiter = ",", bool ignore_case = true);
+
+
+
+        /**
+            @brief Parse a string of characters into a list and return that list as a std::vector
+            @param parse_me (`const std::string`) The std::string to parse into a std::vector.
+            @param delimiter (`const char`) The std::string that separates parts of the std::string into the segments
+            of substrings that will take up individual segments of the std::vector.
+            @returns A `std::vector<std::string>` with all the substrings within the `parse_me` string that are 
+            separated by the `delimiter`
+        */
+        std::vector<std::string> parse_to_list(const std::string parse_me, const char delimiter = ',');
+
+
+        /**
             @brief Get the content of a file as a map with a key/value separator of the `delimiter`.
             @param file_name : (`const std::string&`) The file whose data is to be read.
             @param delimiter : (`const std::string`). Defaults to `:` This is what will separate the key from the value in each line.

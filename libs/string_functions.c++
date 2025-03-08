@@ -166,6 +166,69 @@ void string_functions::replace_all(std::string& the_string, const std::string to
     }
 }
 
+std::vector<std::string> string_functions::parse_to_list(const std::string parse_me, const std::string delimiter, bool ignore_case) {
+    
+    if (parse_me.empty()) {
+        return std::vector<std::string> {};
+    }
+    
+    if (delimiter.empty()) {
+        return std::vector<std::string> {parse_me};
+    }
+
+    size_t start, current, delim;
+    std::vector<std::string> the_answer;
+    start = 0;
+    
+    while (start < parse_me.length()) {
+        current = start;
+        delim = 0;
+        while (current + delim < parse_me.length() and delim < delimiter.length() and string_functions::same_char(parse_me[current + delim], delimiter[delim], ignore_case)) delim++;
+
+
+        if (delim == delimiter.length()) {
+            // current is at the start of a delimiter segment, delim is at the end of the segment.
+            start = current + delim + 1;
+        }
+        else {
+            // current is not at the start of the delimter
+            delim = parse_me.find_first_of(delimiter, start);
+            the_answer.push_back(parse_me.substr(start, delim - start));
+            if (delim == std::string::npos) {
+                // No more delimiters.
+                start = delim;
+                continue;
+            }
+            start = delim + delimiter.length();
+        }
+        
+    }
+    return the_answer;
+}
+
+std::vector<std::string> string_functions::parse_to_list(const std::string parse_me, const char delimiter) {
+    
+    std::vector<std::string> the_answer;
+    if (parse_me.empty()) {
+        return the_answer;
+    }
+    std::string line;
+    std::stringstream stream(parse_me);
+
+    while (std::getline(stream, line, delimiter)) {
+        the_answer.push_back(line);
+    }
+
+    if (the_answer.empty() and line.empty()) {
+        return the_answer;
+    }
+
+    if (not string_functions::same_string(the_answer[the_answer.size() - 1], line)) {
+        the_answer.push_back(line);
+    }
+    return the_answer;
+}
+
 std::map<std::string, std::string> string_functions::get_file_data_map(const std::string& file_name, const std::string delimiter) {
     std::map<std::string, std::string> the_answer;
 
@@ -181,7 +244,7 @@ std::map<std::string, std::string> string_functions::get_file_data_map(const std
     }
 
     std::string line, key, value;
-    size_t delim;
+    unsigned long delim;
     while (std::getline(open_file, line)) {
         delim = line.find_first_of(delimiter);
         if (delim != std::string::npos) {
