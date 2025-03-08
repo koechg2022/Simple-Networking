@@ -63,6 +63,17 @@ namespace misc_functions {
     std::string get_file_data(const std::string file_name);
 
 
+    /**
+        @brief Get the directory path up to the directory passed in (including the directory passed in).
+        @param dir_name (`const std::string`) : The directory to be found.
+        @param ignore_case (`bool`) : Defaults to true. A flag specifying whether or not to ignore while
+        getting the directory path.
+        @returns The path up to and including `dir_name`, provided that `dir_name` exists down the path, 
+        otherwise the complete path up to the current file is returned.
+     */
+    std::string get_base_directory(const std::string dir_name, bool ignore_case = true);
+
+
 }
 
 #endif

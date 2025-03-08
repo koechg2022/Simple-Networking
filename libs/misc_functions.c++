@@ -129,3 +129,16 @@ std::string misc_functions::get_file_data(const std::string file_name) {
 
     return the_answer;
 }
+
+
+std::string misc_functions::get_base_directory(const std::string dir_name, bool ignore_case) {
+    std::string the_answer = std::string(__FILE__);
+    size_t index = string_functions::last_index_of(the_answer, dir_name, ignore_case);
+    if (index != std::string::npos) {
+        the_answer = the_answer.substr(0, index + dir_name.length());
+        the_answer = (string_functions::same_char(dir_name[dir_name.length() - 1], sys_slash[0])) ?
+                            the_answer.substr(0, index + dir_name.length() - 1) : the_answer;
+    }
+    // std::printf("'%s'\n", the_answer.c_str());
+    return the_answer;
+}
