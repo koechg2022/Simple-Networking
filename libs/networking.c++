@@ -1379,11 +1379,6 @@ bool networking::network_structures::tcp_server::start() {
             (this->was_init) ? uninitialize_network() : true;
             throw exceptions::listen_socket_failure("Failed to start the server listening.", true, __FILE__, __LINE__ - 3, __FUNCTION__);
         }
-
-        // if (this->secure_) {
-            // this->create_secure_socket_server();
-            // std::printf("Created secure socket... it is a %s secure socket.\n", (valid_secure_socket(this->secure_socket)) ? "valid" : "invalid");
-        // }
         
         this->listening = true;
     }
