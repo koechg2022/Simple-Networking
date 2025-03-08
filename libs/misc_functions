@@ -3,7 +3,7 @@
 #if not defined(_MISC_FUNCTIONS_)
     #define _MISC_FUNCTIONS_
     
-    // #include "../headers/included"
+    #include "../headers/included"
 
 namespace misc_functions {
 
@@ -27,6 +27,40 @@ namespace misc_functions {
         @returns An `int` representing the Command line's height.
      */
     int get_terminal_height();
+
+
+    /**
+        @brief Get the content of a file as a map with a key/value separator of the `delimiter`.
+        @param file_name : (`const std::string&`) The file whose data is to be read.
+        @param delimiter : (`const std::string`). Defaults to `:` This is what will separate the key from the value in each line.
+        @returns a std::map<std::string, std::string> with the data from the `file_name` as key/value pairs in a `std::map`
+    */
+    std::map<std::string, std::string> get_file_data_map(const std::string& file_name, const std::string delimiter = ":");
+
+    
+    /**
+        @brief Get the content of a directory with. The content will either be a 
+        directory or a file. The map returned will have two keys:
+            string_functions::_directory_ ("DIRECTORY")
+            string_functions::_file_ ("FILE")
+        
+        Each key will map to a std::vector with all the files or directories 
+            that are in the directory `directory_name`. If the directory doesn't exist, 
+            then a map with the two keys and each key mapping to an empty std::vector is returned.
+
+        @param directory_name (`const std::string&`) : The directory whose content is to be retrieved.
+
+        @returns a std::map<std::string,std::vector<std::string> > with the files and directories of the `directory_name`.
+    */
+    std::map<std::string, std::vector<std::string> > get_directory_content(const std::string& file_name);
+
+
+    /**
+        @brief Get the content of the file `file_name` as a string.
+        @param file_name (`const std::string`) : The file to be read from.
+        @returns A `std::string` of the content of the file `file_name`
+    */
+    std::string get_file_data(const std::string file_name);
 
 
 }

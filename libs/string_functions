@@ -217,6 +217,18 @@
 
 
         /**
+            @brief Find the first occurance of the `to_find` substring within `the_string`
+            @param the_string (`const std::string`) : The string to be searched through for `to_find`
+            @param to_find (`const std::string`) : The string to find from within `the_string`
+            @param ignore_case (`const std::string`) : A bool flag specifying whether or not to ignore the cases 
+            @returns A `size_t` that is the index of `the_string` with the first instance of `to_find`
+            @note If there is no instance of `to_find` within `the_string`, then a size_t 
+                std::string::npos is returned.
+        */
+        size_t first_index_of(const std::string the_string, const std::string to_find, bool ignore_case = true);
+
+
+        /**
             @brief Remove the last occurance of the `to_remove` substring within `the_string`
             @param the_string (`const std::string`) : The string to be searched through for `to_remove`
             @param to_remove (`const std::string`) : The string to remove from within `the_string`
@@ -225,6 +237,18 @@
             @note If there is no instance of `to_remove` within `the_string`, then the_string is returned.
         */
         std::string remove_last_of(const std::string the_string, const std::string to_remove, bool ignore_case = true);
+
+
+        /**
+            @brief Find the first occurance of the `to_find` substring within `the_string`
+            @param the_string (`const std::string`) : The string to be searched through for `to_find`
+            @param to_find (`const std::string`) : The string to find from within `the_string`
+            @param ignore_case (`const std::string`) : A bool flag specifying whether or not to ignore the cases 
+            @returns A `size_t` that is the index of `the_string` with the first instance of `to_find`
+            @note If there is no instance of `to_find` within `the_string`, then a size_t 
+                std::string::npos is returned.
+        */
+        size_t last_index_of(const std::string the_string, const std::string to_find, bool ignore_case = true);
 
 
         /**
@@ -249,40 +273,6 @@
             separated by the `delimiter`
         */
         std::vector<std::string> parse_to_list(const std::string parse_me, const char delimiter = ',');
-
-
-        /**
-            @brief Get the content of a file as a map with a key/value separator of the `delimiter`.
-            @param file_name : (`const std::string&`) The file whose data is to be read.
-            @param delimiter : (`const std::string`). Defaults to `:` This is what will separate the key from the value in each line.
-            @returns a std::map<std::string, std::string> with the data from the `file_name` as key/value pairs in a `std::map`
-        */
-        std::map<std::string, std::string> get_file_data_map(const std::string& file_name, const std::string delimiter = ":");
-
-        
-        /**
-            @brief Get the content of a directory with. The content will either be a 
-            directory or a file. The map returned will have two keys:
-                string_functions::_directory_ ("DIRECTORY")
-                string_functions::_file_ ("FILE")
-            
-            Each key will map to a std::vector with all the files or directories 
-                that are in the directory `directory_name`. If the directory doesn't exist, 
-                then a map with the two keys and each key mapping to an empty std::vector is returned.
-
-            @param directory_name (`const std::string&`) : The directory whose content is to be retrieved.
-
-            @returns a std::map<std::string,std::vector<std::string> > with the files and directories of the `directory_name`.
-        */
-        std::map<std::string, std::vector<std::string> > get_directory_content(const std::string& file_name);
-
-
-        /**
-            @brief Get the content of the file `file_name` as a string.
-            @param file_name (`const std::string`) : The file to be read from.
-            @returns A `std::string` of the content of the file `file_name`
-        */
-        std::string get_file_data(const std::string file_name);
 
 
         /**

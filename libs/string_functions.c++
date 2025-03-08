@@ -5,13 +5,6 @@
 
 
 
-namespace string_functions {
-
-    const std::string _directory_ = "Directory";
-    const std::string _file_ = "File";
-
-}
-
 
 bool string_functions::is_caps(const char c) {
     return IN_RANGE_INCLUDE('A', c, 'Z');
@@ -195,6 +188,33 @@ std::string string_functions::remove_first_of(const std::string the_string, cons
     return the_string;
 }
 
+size_t string_functions::first_index_of(const std::string the_string, const std::string to_find, bool ignore_case) {
+
+    if (the_string.empty() or to_find.empty()) {
+        return std::string::npos;
+    }
+
+    size_t start, current, index;
+    index = 0;
+    while (index < the_string.length()) {
+        start = index;
+        current = 0;
+        while (current < to_find.length() and start + current < the_string.length() and same_char(the_string[start + current], to_find[current], ignore_case)) current++;
+
+        if (not current) {
+            index = index + 1;
+            continue;
+        }
+
+        if (current == to_find.length()) {
+            // Found
+            return start;
+        }
+        index = index + current;
+    }
+    return std::string::npos;
+}
+
 std::string string_functions::remove_last_of(const std::string the_string, const std::string to_remove, bool ignore_case) {
     if (the_string.empty() or to_remove.empty()) {
         return the_string;
@@ -224,6 +244,30 @@ std::string string_functions::remove_last_of(const std::string the_string, const
     }
 
     return the_string;
+}
+
+size_t string_functions::last_index_of(const std::string the_string, const std::string to_find, bool ignore_case) {
+    if (the_string.empty() || to_find.empty()) {
+        return std::string::npos;
+    }
+
+    for (size_t start = the_string.length() - 1; start < the_string.length(); --start) {
+        size_t current = 0;
+        while (current < to_find.length() &&
+               start >= current &&
+               same_char(the_string[start - current], to_find[to_find.length() - current - 1], ignore_case)) {
+            ++current;
+        }
+
+        if (current == to_find.length()) {
+            // Found
+            return start - current + 1;
+        }
+
+        if (start == 0) break; // Prevent underflow
+    }
+
+    return std::string::npos;
 }
 
 std::vector<std::string> string_functions::parse_to_list(const std::string parse_me, const std::string delimiter, bool ignore_case) {
@@ -289,71 +333,3 @@ std::vector<std::string> string_functions::parse_to_list(const std::string parse
     return the_answer;
 }
 
-std::map<std::string, std::string> string_functions::get_file_data_map(const std::string& file_name, const std::string delimiter) {
-    std::map<std::string, std::string> the_answer;
-
-    if (not std::filesystem::exists(std::filesystem::path(file_name).lexically_normal())) {
-        std::cerr << "No file '" << file_name << "' found\n";
-        return the_answer;
-    }
-
-    std::ifstream open_file(file_name);
-    if (not open_file.is_open()) {
-        std::cerr << "Could not open file '" << file_name << "'" << std::endl;
-        return the_answer;
-    }
-
-    std::string line, key, value;
-    size_t delim;
-    while (std::getline(open_file, line)) {
-        delim = line.find_first_of(delimiter);
-        if (delim >= line.length()) {
-            key = line.substr(0, delim);
-            value = line.substr(delim + 1);
-
-            strip(key, " ");
-            strip(value, " ");
-            strip(value, "\n");
-
-            the_answer[key] = value;
-        }
-    }
-    open_file.close();
-    return the_answer;
-}
-
-std::map<std::string, std::vector<std::string> > string_functions::get_directory_content(const std::string& file_name) {
-    
-
-    std::map<std::string, std::vector<std::string> > the_answer = {
-                    {_directory_, std::vector<std::string>() },
-                    {_file_, std::vector<std::string>() }
-                    };
-    
-    for (const auto& entry : std::filesystem::directory_iterator(file_name)) {
-        the_answer[(entry.is_directory()) ? _directory_ : _file_].push_back(std::string(entry.path().filename().string()));
-    }
-    return the_answer;
-}
-
-std::string string_functions::get_file_data(const std::string file_name) {
-
-    std::string the_answer, line;
-    
-    if (not std::filesystem::exists(std::filesystem::path(file_name).lexically_normal())) {
-        std::cerr << "No file '" << file_name << "' found\n";
-        return the_answer;
-    }
-
-    std::fstream open_file(file_name, std::ios_base::in | std::ios_base::binary);
-    if (not open_file.is_open()) {
-        std::cerr << "Could not open file \"" << file_name << "\"" << std::endl;
-        return the_answer;
-    }
-
-    while (std::getline(open_file, line)) {
-        the_answer = the_answer + line;
-    }
-
-    return the_answer;
-}
