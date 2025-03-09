@@ -132,13 +132,38 @@ std::string misc_functions::get_file_data(const std::string file_name) {
 
 
 std::string misc_functions::get_base_directory(const std::string dir_name, bool ignore_case) {
-    std::string the_answer = std::string(__FILE__);
-    size_t index = string_functions::last_index_of(the_answer, dir_name, ignore_case);
-    if (index != std::string::npos) {
-        the_answer = the_answer.substr(0, index + dir_name.length());
-        the_answer = (string_functions::same_char(dir_name[dir_name.length() - 1], sys_slash[0])) ?
-                            the_answer.substr(0, index + dir_name.length() - 1) : the_answer;
+    std::filesystem::path current_path = std::filesystem::absolute(std::filesystem::current_path());
+    std::string name = dir_name;
+    string_functions::strip(name, sys_slash);
+
+    // Search up the directory tree
+    while (current_path != current_path.root_path()) {
+        std::string parent_path = current_path.string();
+        std::map<std::string, std::vector<std::string>> dir_content = misc_functions::get_directory_content(parent_path);
+
+        for (const auto& content : dir_content[misc_functions::_directory_]) {
+            std::string stripped_content = content;
+            string_functions::strip(stripped_content, sys_slash);
+            if (string_functions::same_string(name, stripped_content, ignore_case)) {
+                return (std::filesystem::path(parent_path) / content).string();
+            }
+        }
+
+        current_path = current_path.parent_path();
     }
-    // std::printf("'%s'\n", the_answer.c_str());
-    return the_answer;
+
+    // If not found in parent directories, search recursively from project root
+    std::filesystem::path project_root = std::filesystem::absolute(std::filesystem::path(".."));
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(project_root)) {
+        if (entry.is_directory()) {
+            std::string stripped_entry_name = entry.path().filename().string();
+            string_functions::strip(stripped_entry_name, sys_slash);
+            if (string_functions::same_string(name, stripped_entry_name, ignore_case)) {
+                return entry.path().string();
+            }
+        }
+    }
+
+    // If not found at all, return original absolute path
+    return std::filesystem::absolute(dir_name).string();
 }
