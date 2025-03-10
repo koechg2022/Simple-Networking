@@ -673,7 +673,9 @@ networking::network_structures::host::host() {
     
     this->connect_socket = invalid_socket;
     this->address_information = 0;
-    this->host_name = this->port_value = "";
+    this->host_name = DEFAULT_HOST;
+    this->cert_file = this->key_file = "";
+    this->port_value = DEFAULT_PORT;
     this->tcp = true;
     this->was_init = is_init;
     this->timeout = {0, 200};
@@ -693,6 +695,8 @@ networking::network_structures::host::host(const std::string hostname, const std
     this->secure_ = secure;
     this->was_init_secure = is_init_secure;
     this->context = invalid_context;
+    this->cert_file = cert_file;
+    this->key_file = key_file;
 }
 
 networking::network_structures::host::host(const networking::network_structures::host& other) {
@@ -702,6 +706,8 @@ networking::network_structures::host::host(const networking::network_structures:
         this->address_information = 0;
         this->host_name = other.host_name;
         this->port_value = other.port_value;
+        this->cert_file = other.cert_file;
+        this->key_file = other.key_file;
         this->tcp = other.tcp;
         this->was_init = other.was_init;
         this->timeout = other.timeout;
@@ -782,5 +788,7 @@ bool networking::network_structures::host::close_host() {
         uninitialize_network();
         this->was_init = false;
     }
+
+    this->key_file = this->cert_file = this->host_name = this->port_value = "";
 
 }
