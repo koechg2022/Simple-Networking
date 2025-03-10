@@ -158,20 +158,7 @@ void test_host() {
 
 
         host.create_connection_address();
-        std::vector<struct addrinfo> addresses = host.connect_address_;
-
-        for (struct addrinfo& address : addresses) {
-            std::cout << "\"" << std::string(address.ai_canonname, std::strlen(address.ai_canonname))<< "\"\t"  << std::endl;
-            char addr[buffer_size];
-            if (getnameinfo(address.ai_addr, address.ai_addrlen, addr, buffer_size, 0, 0, NI_NUMERICHOST)) {
-                continue;
-            }
-            std::vector<std::string> addresses_ = networking::resolve_hostname(std::string(addr), DEFAULT_PORT, true);
-            for (std::string& this_address : addresses_) {
-                std::cout << "\t" << this_address << std::endl;
-            }
-            std::cout << "----------------------------------------------------------------" << std::endl;
-        }
+        host.create_connection_socket();
 
     }
 
