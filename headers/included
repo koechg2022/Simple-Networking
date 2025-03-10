@@ -291,7 +291,7 @@
     #define NOT !=
     #define null NULL
     #define secure_socket_type SSL*
-    #define secure_socket_context_type SSL_CTX*
+    #define context_type SSL_CTX*
     #define invalid_secure_socket null
     #define invalid_context null
     
