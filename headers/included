@@ -86,6 +86,7 @@
         #define close_socket(this_socket) closesocket(this_socket)
         #define sys_slash "\\"
         #define get_socket_error() WSAGetLastError()
+        #define get_socket_error_string(error_number) gai_strerrorA(error_number)
 
 
 
@@ -202,6 +203,7 @@
         #define close_socket(this_socket) close(this_socket)
         #define sys_slash "/"
         #define get_socket_error() errno
+        #define get_socket_error_string(error_number) gai_strerror(error_number)
 
 
 

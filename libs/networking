@@ -15,6 +15,40 @@
 
         namespace network_address_families {
 
+            #if defined(crap_os)
+                const std::string rel_adapter = "Wi-Fi 3";
+            #else
+                
+                #if defined(mac_os)
+                    const std::string rel_adapter = "en0";
+                #else
+                    const std::string rel_adapter = "enp0s8";
+                #endif
+            #endif
+
+            const std::string unspec_address_family = "Unspecific Address family";
+            const std::string ip_version4_address_family = "IP Version 4 family";
+            const std::string ip_version6_address_family = "IP Version 6 family";
+
+            #if defined(unix_os)
+                
+                #if defined(mac_os)
+                    const std::string link_layer_address_family = "Link-layer Interface Address family";
+                #else
+                    const std::string netlink_address_family = "Netlink Address family";
+                    const std::string packet_address_family = "Packet Address family";
+                #endif
+            #else
+                
+                const std::string netbios_address_family = "NetBIOS Address family";
+                const std::string irda_address_family = "IrDa Address family";
+                const std::string bluetooth_address_family = "Bluetooth Address family";
+
+            #endif
+
+            const std::string unrecognized_address_family = "Unrecognized Address family";
+
+
             std::set<std::string> get_address_families();
 
             std::string resolve_address_family_to_string(socket_family_type the_family);
@@ -271,42 +305,29 @@
 
             class host {
 
-                protected:
+                public:
+
+                    std::string host_, port_;
+                    std::vector<struct addrinfo> connect_address_;
+                    
+                    socket_type connect_socket_;
+                    bool tcp_, serving_, was_init_;
 
                     
-                    // For non secure connection
-                    socket_type connect_socket;
-                    struct addrinfo* address_information;
-                    std::string host_name, port_value, cert_file, key_file;
-                    bool tcp, was_init;
-                    struct timeval timeout;
+                public:
+
+                    bool create_connection_address();
+
+                    bool create_connection_socket();
+
+                    bool close_host();
 
                     
-                    // For secure connection
-                    bool secure_, was_init_secure;
-                    context_type context;
-
-
-                    bool create_context_(bool server_);
-
-                    /**
-                        Create the address object of this host.
-
-                        `note` : Returns the current host object, allowing for chaining.
-                     */
-                    bool create_address();
-
-                    /**
-                        Create the socket for this host machine.
-                     */
-                    bool create_socket();
-
-
                 public:
 
                     host();
 
-                    host(const std::string hostname, const std::string port, bool tcp = true, bool secure = false, struct timeval select_timeout = {0, 200}, const std::string cert_file = "cert.pem", const std::string key_file = "key.pem");
+                    host(const std::string host_address, const std::string port = DEFAULT_PORT, const bool use_tcp = true, const bool serving = true);
 
                     host(const host& other);
 
@@ -314,50 +335,21 @@
 
                     host& operator=(const host& other);
 
-                    virtual operator bool() const;
-                    
-                    /**
-                        Get the status of whether or not the host creates secure connections or not.
+                    socket_type get_socket() const;
 
-                            * Returns `true` if the host makes secure conections, `false` if it doesn't.
-                     */
-                    bool secure() const;
+                    bool retrieve_hostname(const std::set<std::string> adapter_name_options = 
+                        {network_address_families::rel_adapter}, 
+                            const std::set<std::string> family_name_options = 
+                            {network_address_families::ip_version4_address_family, 
+                                network_address_families::ip_version6_address_family});
 
-                    /**
-                            Change the host from a non secure host connection
-                            to a secure host connection.
-
-                            * `new_flag (const bool)` : A flag to set the set the host 
-                                to secure or not secure.
-
-                            * `note` : If the host is connected, then the host's connection 
-                                    type is not changed.
-                     */
-                    host& secure(const bool new_flag = false);
-
-                    /**
-                        Change the hostname of the host.
-
-                            * `new_host (const std::string)` : The new hostname of this host.
-                            
-                            * `new_host (const std::string)` : If the host is connected, then the hostname is not changed.
-                     */
-                    host& hostname(const std::string new_host);
-                    
-                    /**
-                        Get the name of this host's `hostname`.
-                     */
                     std::string hostname() const;
-                    
-                    /**
-                        Get the conection socket that this host uses.
-                     */
-                    socket_type connection_socket() const;
 
-                    /**
-                        Close the host connection.
-                     */
-                    bool close_host();
+                    host& hostname(const std::string new_host);
+
+                    std::string port() const;
+
+                    host& port(const std::string new_port);
 
             };
 

@@ -5,8 +5,8 @@
 
 #include "../headers/included"
 #include "string_functions"
-#include <openssl/crypto.h>
-#include <openssl/ssl.h>
+#include <cstring>
+#include <sys/socket.h>
 #include "networking"
 
 
@@ -44,43 +44,6 @@ namespace networking {
             std::string("{0,1}[0-9]){0,1}[0-9])\\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$");
     }
     
-    
-    namespace network_address_families {
-
-        #if defined(crap_os)
-            const std::string rel_adapter = "Wi-Fi 3";
-        #else
-            
-            #if defined(mac_os)
-                const std::string rel_adapter = "en0";
-            #else
-                const std::string rel_adapter = "enp0s8";
-            #endif
-        #endif
-
-        const std::string unspec_address_family = "Unspecific Address family";
-        const std::string ip_version4_address_family = "IP Version 4 family";
-        const std::string ip_version6_address_family = "IP Version 6 family";
-
-        #if defined(unix_os)
-            
-            #if defined(mac_os)
-                const std::string link_layer_address_family = "Link-layer Interface Address family";
-            #else
-                const std::string netlink_address_family = "Netlink Address family";
-                const std::string packet_address_family = "Packet Address family";
-            #endif
-        #else
-            
-            const std::string netbios_address_family = "NetBIOS Address family";
-            const std::string irda_address_family = "IrDa Address family";
-            const std::string bluetooth_address_family = "Bluetooth Address family";
-
-        #endif
-
-        const std::string unrecognized_address_family = "Unrecognized Address family";
-
-    }
 }
 
 std::set<std::string> networking::network_address_families::get_address_families() {
@@ -579,142 +542,203 @@ networking::network_structures::connected_host::server::operator bool() const {
 
 
 
-bool networking::network_structures::host::create_context_(bool server_) {
+bool networking::network_structures::host::create_connection_address() {
     
-    if (not is_init) {
-        this->was_init = false;
-        initialize_network();
-    }
+    if (this->connect_address_.empty()) {
+        if (not is_init) {
+            initialize_network();
+            this->was_init_ = false;
+        }
+        if (this->host_.empty()) {
+            throw exceptions::getaddrinfo_failure("Cannot retrieve address information without a hostname specified", true, __FILE__, __LINE__ - 1, __FUNCTION__);
+        }
+        if (this->port_.empty()) {
+            throw exceptions::getaddrinfo_failure("Cannot retrieve address information without a port", true, __FILE__, __LINE__ - 1, __FUNCTION__);
+        }
 
-    if (not is_init_secure) {
-        this->was_init_secure = false;
-        initialize_secure_network();
-    }
+        
+        // Setting up to call getaddrinfo
+        struct addrinfo hints;
+        std::memset(&hints, 0, sizeof(hints));
+        hints.ai_family = AF_UNSPEC;//(is_ipstring(this->host_)) ? AF_INET : (is_ipstring(this->host_, false)) ? AF_INET6 : AF_UNSPEC;
+        hints.ai_socktype = (this->tcp_) ? SOCK_STREAM : SOCK_DGRAM;
+        hints.ai_flags = (this->serving_) ? AI_PASSIVE : hints.ai_flags;
 
-    if (this->secure_ and not valid_context(this->context)) {
-        this->context = SSL_CTX_new((server_) ? TLS_server_method() : TLS_client_method());
+        // Ready to call getaddrinfo
+        struct addrinfo* remote_address;
+        int status = getaddrinfo(this->host_.c_str(), this->port_.c_str(), &hints, &remote_address);
+        
+        if (status) {
+            throw exceptions::getaddrinfo_failure("Failed to retrieve address information for host \"" + this->host_ + "\". Error " + std::string(get_socket_error_string(status)), true, __FILE__, __LINE__ - 1, __FUNCTION__);
+        }
+        
+        struct addrinfo* current;
+        int line_;
+        size_t len;
+        for (current = remote_address; current; current = current->ai_next) {
+            
+            try {
+
+                struct addrinfo address;
+
+                // Deep copy ai_addr
+                if (current->ai_addr) {
+                    line_ = __LINE__ + 1;
+                    address.ai_addr = new struct sockaddr;
+                    std::memcpy(address.ai_addr, current->ai_addr, current->ai_addrlen);
+                }
+
+                else {
+                    address.ai_addr = nullptr;
+                }
+
+                // Deep copy ai_canonname
+                if (current->ai_canonname) {
+                    line_ = __LINE__ + 2;
+                    len = std::strlen(current->ai_canonname);
+                    address.ai_canonname = new char[len + 1];
+                    std::memcpy(address.ai_canonname, current->ai_canonname, len + 1);
+                    // if (not address.ai_canonname) {
+                    //     freeaddrinfo(remote_address); // Clean before throwing
+                    //     throw exceptions::memory_exception("Failed to allocate memory for ai_canonname", true, __FILE__, line_, __FUNCTION__);
+                    // }
+                }
+                
+                else {
+                    address.ai_canonname = nullptr;
+                }
+
+                this->connect_address_.push_back(address);
+
+            }
+
+            catch (...) {
+                this->close_host();
+                throw exceptions::memory_exception("Failed to allocate memory for ai_canonname", true, __FILE__, line_, __FUNCTION__);
+            }
+        }
+        freeaddrinfo(remote_address);
     }
-    return valid_context(this->context);
+    return not this->connect_address_.empty();
 }
 
-bool networking::network_structures::host::create_address() {
+bool networking::network_structures::host::create_connection_socket() {
 
-    if (not this->address_information) {
+    if (not valid_socket(this->connect_socket_)) {
+        
+        this->create_connection_address();
 
-        if (this->host_name.empty()) {
-            std::map<std::string, std::map<std::string, std::vector<std::string> > > adapters = this_machine_adapters();
-
-            for (auto adapter = adapters.begin(); adapter != adapters.end(); adapter++) {
-
-                if (not string_functions::same_string(adapter->first, network_address_families::rel_adapter)) {
-                    continue;
-                }
-
-                for (auto family = adapter->second.begin(); family != adapter->second.end(); family++)  {
-                    if (not string_functions::same_string(network_address_families::ip_version4_address_family, family->first) and not 
-                        string_functions::same_string(network_address_families::ip_version6_address_family, family->first)) {
-                        continue;
-                    }
-                    
-                    for (auto address = family->second.begin(); address != family->second.end(); address++) {
-                        if (address->empty()) {
-                            continue;
-                        }
-
-                        this->host_name = *address;
-                        goto end;
-                    }
-                }
-
-                
-                if (not this->host_name.empty()) {
-                    break;
-                }
+        for (const struct addrinfo& address : this->connect_address_) {
+            this->connect_socket_ = socket(address.ai_family, address.ai_socktype, address.ai_protocol);
+            if (valid_socket(this->connect_socket_)) {
+                break;
             }
         }
 
-        end:
-        if (this->port_value.empty()) {
-            this->port_value = DEFAULT_PORT;
+        if (not valid_socket(this->connect_socket_)) {
+            throw exceptions::create_socket_failure("Failed to create socket for host \"" + this->host_ + "\". Error " + std::string(get_socket_error_string(socket_error)), true, __FILE__, __LINE__ - 1, __FUNCTION__);
         }
-
-        struct addrinfo hints;
-        hints.ai_family = AF_UNSPEC;
-        hints.ai_socktype = (this->tcp) ? SOCK_STREAM : SOCK_DGRAM;
-        hints.ai_flags = AI_PASSIVE;
-        if (getaddrinfo(this->host_name.c_str(), this->port_value.c_str(), &hints, &this->address_information)) {
-            (not this->was_init) ? uninitialize_network() : true;
-            throw exceptions::getaddrinfo_failure("Failed to retrieve address information for \"" + this->host_name + "\"", true, __FILE_NAME__, __LINE__ - 2, __FUNCTION__);
-        }
-
     }
-    return this->address_information != nullptr;
+
+    return valid_socket(this->connect_socket_);
 }
 
-bool networking::network_structures::host::create_socket() {
-    if (not valid_socket(this->connect_socket)) {
-        if (not this->create_address()) {
-            throw exceptions::getaddrinfo_failure("Failed to retrieve address information", true, __FILE_NAME__, __LINE__ - 1, __FUNCTION__);
+bool networking::network_structures::host::close_host() {
+    
+    for (struct addrinfo& address : this->connect_address_) {
+        if (address.ai_addr) {
+            delete address.ai_addr;  // Free dynamically allocated ai_addr
+            address.ai_addr = nullptr;
         }
-        this->connect_socket = socket(this->address_information->ai_family, this->address_information->ai_socktype, this->address_information->ai_protocol);
-        #if defined(unix_os)
-            int reuse = 1;
-        #else
-            char reuse = 1;
-        #endif
-        if (setsockopt(this->connect_socket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse))) {
-            throw exceptions::create_socket_failure("Failed to set connection socket to reuse", true, __FILE__, __LINE__ - 1, __FUNCTION__);
+
+        if (address.ai_canonname) {
+            free(address.ai_canonname);  // Use free() because strdup uses malloc
+            address.ai_canonname = nullptr;
         }
     }
-    return valid_socket(this->connect_socket);
+
+    this->connect_address_.clear();  // Clear the vector
+
+    if (valid_socket(this->connect_socket_)) {
+        close_socket(this->connect_socket_);  // Close the socket
+        this->connect_socket_ = invalid_socket;  // Mark socket as invalid
+    }
+
+    return this->connect_address_.empty() && !valid_socket(this->connect_socket_);
 }
 
 networking::network_structures::host::host() {
-    
-    this->connect_socket = invalid_socket;
-    this->address_information = 0;
-    this->host_name = DEFAULT_HOST;
-    this->cert_file = this->key_file = "";
-    this->port_value = DEFAULT_PORT;
-    this->tcp = true;
-    this->was_init = is_init;
-    this->timeout = {0, 200};
-    this->secure_ = false;
-    this->was_init_secure = is_init_secure;
-    this->context = invalid_context;
+    this->host_ = this->port_ = "";
+    this->connect_socket_ = invalid_socket;
+    this->tcp_ = true;
+    this->serving_ = true;
+    this->was_init_ = is_init;
 }
 
-networking::network_structures::host::host(const std::string hostname, const std::string port, bool use_tcp, bool secure, struct timeval select_timeout, const std::string cert_file, const std::string key_file) {
-    this->connect_socket = invalid_socket;
-    this->address_information = 0;
-    this->host_name = hostname;
-    this->port_value = port;
-    this->tcp = use_tcp;
-    this->was_init = is_init;
-    this->timeout = select_timeout;
-    this->secure_ = secure;
-    this->was_init_secure = is_init_secure;
-    this->context = invalid_context;
-    this->cert_file = cert_file;
-    this->key_file = key_file;
+networking::network_structures::host::host(const std::string host_address, const std::string port, const bool use_tcp, const bool serving) {
+    this->host_ = host_address;
+    this->port_ = port;
+    this->connect_socket_ = invalid_socket;
+    this->tcp_ = use_tcp;
+    this->serving_ = serving;
+    this->was_init_ = is_init;
 }
 
 networking::network_structures::host::host(const networking::network_structures::host& other) {
-    if (this != &other) {
-        this->close_host();
-        this->connect_socket = other.connect_socket;
-        this->address_information = 0;
-        this->host_name = other.host_name;
-        this->port_value = other.port_value;
-        this->cert_file = other.cert_file;
-        this->key_file = other.key_file;
-        this->tcp = other.tcp;
-        this->was_init = other.was_init;
-        this->timeout = other.timeout;
-        this->secure_ = other.secure_;
-        this->was_init_secure = other.was_init_secure;
-        this->context = other.context;
+
+
+    this->host_ = other.host_;
+    this->port_ = other.port_;
+    this->tcp_ = other.tcp_;
+    this->serving_ = other.serving_;
+    this->was_init_ = other.was_init_;
+
+    int line_;
+
+    try {
+        size_t len;
+        for (const struct addrinfo& addr : other.connect_address_) {
+            struct addrinfo address = addr;
+
+            // Deep copy ai_addr
+            if (addr.ai_addr) {
+                line_ = __LINE__ + 1;
+                address.ai_addr = new struct sockaddr;
+                std::memcpy(address.ai_addr, addr.ai_addr, addr.ai_addrlen);
+            }
+
+            else {
+                address.ai_addr = nullptr;
+            }
+
+            // Deep copy ai_canonname
+            if (addr.ai_canonname) {
+                
+                line_ = __LINE__ + 2;
+                len = std::strlen(addr.ai_canonname);
+                address.ai_canonname = new char[len + 1];
+                std::memcpy(address.ai_canonname, addr.ai_canonname, len + 1);
+            }
+
+            else {
+                address.ai_canonname = nullptr;
+            }
+            this->connect_address_.push_back(address);
+        }
     }
+
+    catch (...) {
+        // Clean up already allocated resources in case of exception
+        this->close_host();
+        throw exceptions::memory_exception("Failed to allocate memory", true, __FILE__, line_, __FUNCTION__);
+    }
+    //     }
+    // } 
+    // catch (...) {
+    //     // Clean up already allocated resources in case of exception
+    //     this->close_host();
+    //     throw;  // Rethrow the exception
+    // }
 }
 
 networking::network_structures::host::~host() {
@@ -723,75 +747,123 @@ networking::network_structures::host::~host() {
 
 networking::network_structures::host& networking::network_structures::host::operator=(const networking::network_structures::host& other) {
     if (this != &other) {
-        this->connect_socket = other.connect_socket;
-        this->address_information = 0;
-        this->host_name = other.host_name;
-        this->port_value = other.port_value;
-        this->tcp = other.tcp;
-        this->was_init = other.was_init;
-        this->timeout = other.timeout;
-        this->secure_ = other.secure_;
-        this->was_init_secure = other.was_init_secure;
-        this->context = other.context;
+        this->close_host();
+        this->host_ = other.host_;
+        this->port_ = other.port_;
+        this->tcp_ = other.tcp_;
+        this->serving_ = other.serving_;
+        this->was_init_ = other.was_init_;
+
+        int line_;
+
+        try {
+            size_t len;
+            for (const struct addrinfo& addr : other.connect_address_) {
+                struct addrinfo address = addr;
+
+                // Deep copy ai_addr
+                if (addr.ai_addr) {
+                    line_ = __LINE__ + 1;
+                    address.ai_addr = new struct sockaddr;
+                    std::memcpy(address.ai_addr, addr.ai_addr, addr.ai_addrlen);
+                }
+
+                else {
+                    address.ai_addr = nullptr;
+                }
+
+                // Deep copy ai_canonname
+                if (addr.ai_canonname) {
+                    
+                    line_ = __LINE__ + 2;
+                    len = std::strlen(addr.ai_canonname);
+                    address.ai_canonname = new char[len + 1];
+                    std::memcpy(address.ai_canonname, addr.ai_canonname, len + 1);
+                }
+
+                else {
+                    address.ai_canonname = nullptr;
+                }
+                this->connect_address_.push_back(address);
+            }
+        }
+
+        catch (...) {
+            // Clean up already allocated resources in case of exception
+            this->close_host();
+            throw exceptions::memory_exception("Failed to allocate memory", true, __FILE__, line_, __FUNCTION__);
+        }
     }
     return *this;
 }
 
-networking::network_structures::host::operator bool() const {
-    return (this->secure_) ? valid_context(this->context) : valid_socket(this->connect_socket);
+socket_type networking::network_structures::host::get_socket() const {
+    return this->connect_socket_;
 }
 
-bool networking::network_structures::host::secure() const {
-    return this->secure_;
-}
+bool networking::network_structures::host::retrieve_hostname(const std::set<std::string> adapter_name_options, const std::set<std::string> family_name_options) {
 
-networking::network_structures::host& networking::network_structures::host::secure(const bool new_flag) {
-    if ((this->secure_ and not valid_context(this->context)) or (not this->secure_ and not valid_socket(this->connect_socket))) {
-        this->secure_ = new_flag;
+    if (this->host_.empty()) {
+        std::map<std::string, std::map<std::string, std::vector<std::string > > > adapters = this_machine_adapters();
+        std::string adapter_name = "", adapter_family = "";
+        
+        for (const std::string& name : adapter_name_options) {
+            if (string_functions::contains(adapters, name)) {
+                adapter_name = name;
+                break;
+            }
+        }
+
+        // std::cout << "adapter_name is now : " << adapter_name << std::endl;
+
+        if (not adapter_name.empty()) {
+            for (const std::string& name : family_name_options) {
+                if (string_functions::contains(adapters[adapter_name], name)) {
+                    adapter_family = name;
+                    break;
+                }
+            }
+        }
+
+        // std::cout << "adapter_family is now " << adapter_family << std::endl;
+
+        if (not adapter_family.empty()) {
+            for (const std::string& name : adapters[adapter_name][adapter_family]) {
+                if (name.empty()) {
+                    continue;
+                }
+                this->host_ = name;
+                break;
+            }
+        }
+
+        if (this->host_.empty()) {
+            this->host_ = DEFAULT_HOST;
+        }
+
     }
-    return *this;
-}
 
-networking::network_structures::host& networking::network_structures::host::hostname(const std::string new_host) {
-    if ((this->secure_ and not valid_context(this->context)) or (not this->secure_ and not valid_socket(this->connect_socket))) {
-        this->host_name = new_host;
-    }
-    return *this;
+    return not this->host_.empty();
 }
 
 std::string networking::network_structures::host::hostname() const {
-    return this->host_name;
+    return this->host_;
 }
 
-socket_type networking::network_structures::host::connection_socket() const {
-    return this->connect_socket;
+networking::network_structures::host& networking::network_structures::host::hostname(const std::string new_host) {
+    if (not valid_socket(this->connect_socket_)) {
+        this->host_ = new_host;
+    }
+    return *this;
 }
 
-bool networking::network_structures::host::close_host() {
-    
-    if (this->address_information) {
-        freeaddrinfo(this->address_information);
-        this->address_information = null;
-    }
+std::string networking::network_structures::host::port() const {
+    return this->port_;
+}
 
-    if (valid_context(this->context)) {
-        SSL_CTX_free(this->context);
-        this->context = invalid_context;
+networking::network_structures::host& networking::network_structures::host::port(const std::string new_port) {
+    if (not valid_socket(this->connect_socket_)) {
+        this->port_ = new_port;
     }
-
-    if (not this->was_init_secure){
-        uninitialize_secure_network();
-        this->was_init_secure = false;
-    }
-
-    if (not this->was_init) {
-        uninitialize_network();
-        this->was_init = false;
-    }
-
-    this->key_file = this->cert_file = this->host_name = this->port_value = "";
-    return not this->address_information and 
-            not valid_context(this->context) and 
-                not this->was_init and 
-                    not this->was_init_secure;
+    return *this;
 }

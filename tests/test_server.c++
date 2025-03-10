@@ -16,6 +16,8 @@ void resolve_hostname();
 
 void resolve_hostname_name();
 
+void test_host();
+
 void test_server();
 
 void test_secure_server();
@@ -52,8 +54,13 @@ int main(int len, char** args) {
         }
 
         else if (string_functions::same_string(std::string(args[index]), "resolve_host_name") or string_functions::same_string(std::string(args[index]), "rhn")) {
-            std::printf("Resolving hostname:\n");
+            std::printf("Resolving hostname name:\n");
             resolve_hostname_name();
+        }
+
+        else if (string_functions::same_string(args[index], "test_host") or string_functions::same_string(args[index], "th")) {
+            std::printf("Testing host:\n");
+            test_host();
         }
         
         else if (string_functions::same_string(args[index], "test_server") or string_functions::same_string(args[index], "ts")) {
@@ -123,6 +130,57 @@ void resolve_hostname_name() {
     for (index = 0; index < addresses.size(); index++) {
         std::cout << "\t" << addresses[index] << std::endl;
     }
+}
+
+void test_host() {
+    
+
+    try {
+
+        // For IP4
+        // .retrieve_hostname({networking::network_address_families::rel_adapter}, {networking::network_address_families::ip_version4_address_family});
+
+        // For IP6
+        // .retrieve_hostname({networking::network_address_families::rel_adapter}, {networking::network_address_families::ip_version6_address_family});
+        
+        networking::network_structures::host host;
+
+        std::cout << "host's hostname is \"" << host.hostname() << "\"" << std::endl;
+        std::cout << "host's port is \"" << host.port() << "\"" << std::endl << std::endl << std::endl;
+
+        std::cout << "host's hostname is now \"" << host.hostname(DEFAULT_HOST).hostname() << "\"" << std::endl;
+        std::cout << "host's port is \"" << host.port(connection_port).port() << "\"" << std::endl << std::endl << std::endl;
+
+
+        host.hostname("").retrieve_hostname();
+        std::cout << "host's hostname is \"" << host.hostname() << "\"" << std::endl;
+        std::cout << "host's port is \"" << host.port() << "\"" << std::endl << std::endl << std::endl;
+
+
+        host.create_connection_address();
+        std::vector<struct addrinfo> addresses = host.connect_address_;
+
+        for (struct addrinfo& address : addresses) {
+            std::cout << "\"" << std::string(address.ai_canonname, std::strlen(address.ai_canonname))<< "\"\t"  << std::endl;
+            char addr[buffer_size];
+            if (getnameinfo(address.ai_addr, address.ai_addrlen, addr, buffer_size, 0, 0, NI_NUMERICHOST)) {
+                continue;
+            }
+            std::vector<std::string> addresses_ = networking::resolve_hostname(std::string(addr), DEFAULT_PORT, true);
+            for (std::string& this_address : addresses_) {
+                std::cout << "\t" << this_address << std::endl;
+            }
+            std::cout << "----------------------------------------------------------------" << std::endl;
+        }
+
+    }
+
+    catch (networking::exceptions::base_exception& except) {
+        std::cerr << "Exception \"" << except.exception_type() << "\" caught" << std::endl;
+        std::cerr << "Exception message \"" << except.msg() << "\"" << std::endl;
+    }
+
+    
 }
 
 void test_server() {
