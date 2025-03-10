@@ -790,5 +790,8 @@ bool networking::network_structures::host::close_host() {
     }
 
     this->key_file = this->cert_file = this->host_name = this->port_value = "";
-
+    return not this->address_information and 
+            not valid_context(this->context) and 
+                not this->was_init and 
+                    not this->was_init_secure;
 }
