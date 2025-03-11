@@ -151,17 +151,17 @@ void test_host() {
         socket_type before_socket = host_server.get_socket();
         std::cout << (not valid_socket(before_socket) ? 
                     "Before socket is correctly not a valid socket" : 
-                        "Before socket is incorrectly a valid socket");
+                        "Before socket is incorrectly a valid socket") << std::endl;
         host_server.create_connection_address();
         socket_type mid_socket = host_server.get_socket();
         std::cout << (not valid_socket(mid_socket) ? 
                     "Mid socket is correctly not a valid socket" : 
-                        "Mid socket is incorrectly a valid socket");
+                        "Mid socket is incorrectly a valid socket") << std::endl;
         host_server.create_connection_socket();
         socket_type after_socket = host_server.get_socket();
         std::cout << (not valid_socket(after_socket) ? 
                     "After socket is correctly not a valid socket" : 
-                        "After socket is incorrectly a valid socket");
+                        "After socket is incorrectly a valid socket") << std::endl;
         // std::cout << "Successfully created the connection address and the connection socket" << std::endl;
 
     }
