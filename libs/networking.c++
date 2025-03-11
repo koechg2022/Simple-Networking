@@ -544,7 +544,7 @@ networking::network_structures::connected_host::server::operator bool() const {
 
 bool networking::network_structures::host::create_connection_address() {
     
-    if (this->connect_address_.empty()) {
+    if (not this->connect_address_) {
         if (not is_init) {
             initialize_network();
             this->was_init_ = false;
@@ -560,66 +560,20 @@ bool networking::network_structures::host::create_connection_address() {
         // Setting up to call getaddrinfo
         struct addrinfo hints;
         std::memset(&hints, 0, sizeof(hints));
-        hints.ai_family = AF_UNSPEC;//(is_ipstring(this->host_)) ? AF_INET : (is_ipstring(this->host_, false)) ? AF_INET6 : AF_UNSPEC;
+        hints.ai_family = AF_UNSPEC; //(is_ipstring(this->host_)) ? AF_INET : (is_ipstring(this->host_, false)) ? AF_INET6 : AF_UNSPEC;
         hints.ai_socktype = (this->tcp_) ? SOCK_STREAM : SOCK_DGRAM;
         hints.ai_flags = (this->serving_) ? AI_PASSIVE : 0;
 
         // Ready to call getaddrinfo
-        struct addrinfo* remote_address;
-        int status = getaddrinfo(this->host_.c_str(), this->port_.c_str(), &hints, &remote_address);
+        
+        int status = getaddrinfo(this->host_.c_str(), this->port_.c_str(), &hints, &this->connect_address_);
         
         if (status) {
             throw exceptions::getaddrinfo_failure("Failed to retrieve address information for host \"" + this->host_ + "\". Error " + std::string(get_socket_error_string(status)), true, __FILE__, __LINE__ - 1, __FUNCTION__);
         }
         
-        struct addrinfo* current;
-        int line_;
-        size_t len;
-        for (current = remote_address; current; current = current->ai_next) {
-            
-            try {
-
-                struct addrinfo address;
-
-                // Deep copy ai_addr
-                if (current->ai_addr) {
-                    line_ = __LINE__ + 1;
-                    address.ai_addr = new struct sockaddr;
-                    std::memcpy(address.ai_addr, current->ai_addr, current->ai_addrlen);
-                }
-
-                else {
-                    address.ai_addr = nullptr;
-                }
-
-                // Deep copy ai_canonname
-                if (current->ai_canonname) {
-                    line_ = __LINE__ + 2;
-                    len = std::strlen(current->ai_canonname);
-                    address.ai_canonname = new char[len + 1];
-                    std::memcpy(address.ai_canonname, current->ai_canonname, len + 1);
-                    // if (not address.ai_canonname) {
-                    //     freeaddrinfo(remote_address); // Clean before throwing
-                    //     throw exceptions::memory_exception("Failed to allocate memory for ai_canonname", true, __FILE__, line_, __FUNCTION__);
-                    // }
-                }
-                
-                else {
-                    address.ai_canonname = nullptr;
-                }
-
-                this->connect_address_.push_back(address);
-
-            }
-
-            catch (...) {
-                this->close_host();
-                throw exceptions::memory_exception("Failed to allocate memory for ai_canonname", true, __FILE__, line_, __FUNCTION__);
-            }
-        }
-        freeaddrinfo(remote_address);
     }
-    return not this->connect_address_.empty();
+    return this->connect_address_;
 }
 
 bool networking::network_structures::host::create_connection_socket() {
@@ -627,30 +581,15 @@ bool networking::network_structures::host::create_connection_socket() {
     if (not valid_socket(this->connect_socket_)) {
         
         this->create_connection_address();
-        char buffer[buffer_size];
-
         
-        std::memset(buffer, 0, buffer_size);
-        std::cout << "There are " << this->connect_address_.size() << " addresses. They produce:" << std::endl;
-        for (const struct addrinfo& address : this->connect_address_) {
-
-            std::cout << "Address family: " << address.ai_family
-            << ", Socket type: " << address.ai_socktype
-            << ", Protocol: " << address.ai_protocol
-            << std::endl;
-
-            
-            getnameinfo(address.ai_addr, address.ai_addrlen, buffer, buffer_size, 0, 0, NI_NUMERICHOST);
-            
-            this->connect_socket_ = socket(address.ai_family, address.ai_socktype, address.ai_protocol);
-            std::cout << "\t" << this->connect_socket_ << ".) " << std::string(buffer, std::strlen(buffer)) << std::endl;
-            if (valid_socket(this->connect_socket_)) {
-                break;
-            }
-        }
-
+        this->connect_socket_ = socket(this->connect_address_->ai_family, 
+                                this->connect_address_->ai_socktype, 
+                                    this->connect_address_->ai_protocol);
         if (not valid_socket(this->connect_socket_)) {
-            throw exceptions::create_socket_failure("Failed to create socket for host \"" + this->host_ + "\". Error " + std::string(get_socket_error_string(socket_error)), true, __FILE__, __LINE__ - 1, __FUNCTION__);
+            throw exceptions::create_socket_failure("Failed to create socket for host \"" + 
+                        this->host_ + "\". Error " + std::string(get_socket_error_string(socket_error)), 
+                                true, __FILE__, 
+                                    __LINE__ - 1, __FUNCTION__);
         }
     }
 
@@ -658,20 +597,6 @@ bool networking::network_structures::host::create_connection_socket() {
 }
 
 bool networking::network_structures::host::close_host() {
-    
-    for (struct addrinfo& address : this->connect_address_) {
-        if (address.ai_addr) {
-            delete address.ai_addr;  // Free dynamically allocated ai_addr
-            address.ai_addr = nullptr;
-        }
-
-        if (address.ai_canonname) {
-            free(address.ai_canonname);  // Use free() because strdup uses malloc
-            address.ai_canonname = nullptr;
-        }
-    }
-
-    this->connect_address_.clear();  // Clear the vector
 
     if (valid_socket(this->connect_socket_)) {
         close_socket(this->connect_socket_);  // Close the socket
@@ -682,7 +607,12 @@ bool networking::network_structures::host::close_host() {
         uninitialize_network();
     }
 
-    return this->connect_address_.empty() && !valid_socket(this->connect_socket_);
+    if (this->connect_address_) {
+        freeaddrinfo(this->connect_address_);
+        this->connect_address_ = 0;
+    }
+
+    return not this->connect_address_ && !valid_socket(this->connect_socket_);
 }
 
 networking::network_structures::host::host() {
@@ -691,6 +621,7 @@ networking::network_structures::host::host() {
     this->tcp_ = true;
     this->serving_ = true;
     this->was_init_ = is_init;
+    this->connect_address_ = 0;
 }
 
 networking::network_structures::host::host(const std::string host_address, const std::string port, const bool use_tcp, const bool serving) {
@@ -700,63 +631,38 @@ networking::network_structures::host::host(const std::string host_address, const
     this->tcp_ = use_tcp;
     this->serving_ = serving;
     this->was_init_ = is_init;
+    this->connect_address_ = 0;
 }
 
 networking::network_structures::host::host(const networking::network_structures::host& other) {
-
 
     this->host_ = other.host_;
     this->port_ = other.port_;
     this->tcp_ = other.tcp_;
     this->serving_ = other.serving_;
     this->was_init_ = other.was_init_;
+    this->connect_address_ = 0;
 
-    int line_;
-
-    try {
-        size_t len;
-        for (const struct addrinfo& addr : other.connect_address_) {
-            struct addrinfo address = addr;
-
-            // Deep copy ai_addr
-            if (addr.ai_addr) {
-                line_ = __LINE__ + 1;
-                address.ai_addr = new struct sockaddr;
-                std::memcpy(address.ai_addr, addr.ai_addr, addr.ai_addrlen);
+    if (other.connect_address_) {
+        if (this->host_.empty() or this->port_.empty()) {
+            int line_ = __LINE__ - 1;
+            std::string message = "Cannot retrieve address information. Missing ";
+            if (this->host_.empty() and not this->port_.empty()) {
+                line_ = __LINE__ - 1;
+                message = message + "hostname";
             }
-
+            else if (not this->host_.empty() and this->port_.empty()) {
+                line_ = __LINE__ - 1;
+                message = message + "port";
+            }
             else {
-                address.ai_addr = nullptr;
+                message = message + "hostname and port";
             }
-
-            // Deep copy ai_canonname
-            if (addr.ai_canonname) {
-                
-                line_ = __LINE__ + 2;
-                len = std::strlen(addr.ai_canonname);
-                address.ai_canonname = new char[len + 1];
-                std::memcpy(address.ai_canonname, addr.ai_canonname, len + 1);
-            }
-
-            else {
-                address.ai_canonname = nullptr;
-            }
-            this->connect_address_.push_back(address);
+            throw exceptions::getaddrinfo_failure(message, true, __FILE__, line_, __FUNCTION__);
         }
+        this->create_connection_address();
     }
 
-    catch (...) {
-        // Clean up already allocated resources in case of exception
-        this->close_host();
-        throw exceptions::memory_exception("Failed to allocate memory", true, __FILE__, line_, __FUNCTION__);
-    }
-    //     }
-    // } 
-    // catch (...) {
-    //     // Clean up already allocated resources in case of exception
-    //     this->close_host();
-    //     throw;  // Rethrow the exception
-    // }
 }
 
 networking::network_structures::host::~host() {
@@ -772,44 +678,24 @@ networking::network_structures::host& networking::network_structures::host::oper
         this->serving_ = other.serving_;
         this->was_init_ = other.was_init_;
 
-        int line_;
-
-        try {
-            size_t len;
-            for (const struct addrinfo& addr : other.connect_address_) {
-                struct addrinfo address = addr;
-
-                // Deep copy ai_addr
-                if (addr.ai_addr) {
-                    line_ = __LINE__ + 1;
-                    address.ai_addr = new struct sockaddr;
-                    std::memcpy(address.ai_addr, addr.ai_addr, addr.ai_addrlen);
+        if (other.connect_address_) {
+            if (this->host_.empty() or this->port_.empty()) {
+                int line_ = __LINE__ - 1;
+                std::string message = "Cannot retrieve address information. Missing ";
+                if (this->host_.empty() and not this->port_.empty()) {
+                    line_ = __LINE__ - 1;
+                    message = message + "hostname";
                 }
-
+                else if (not this->host_.empty() and this->port_.empty()) {
+                    line_ = __LINE__ - 1;
+                    message = message + "port";
+                }
                 else {
-                    address.ai_addr = nullptr;
+                    message = message + "hostname and port";
                 }
-
-                // Deep copy ai_canonname
-                if (addr.ai_canonname) {
-                    
-                    line_ = __LINE__ + 2;
-                    len = std::strlen(addr.ai_canonname);
-                    address.ai_canonname = new char[len + 1];
-                    std::memcpy(address.ai_canonname, addr.ai_canonname, len + 1);
-                }
-
-                else {
-                    address.ai_canonname = nullptr;
-                }
-                this->connect_address_.push_back(address);
+                throw exceptions::getaddrinfo_failure(message, true, __FILE__, line_, __FUNCTION__);
             }
-        }
-
-        catch (...) {
-            // Clean up already allocated resources in case of exception
-            this->close_host();
-            throw exceptions::memory_exception("Failed to allocate memory", true, __FILE__, line_, __FUNCTION__);
+            this->create_connection_address();
         }
     }
     return *this;

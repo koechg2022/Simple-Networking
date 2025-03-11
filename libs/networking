@@ -2,6 +2,7 @@
 
 
 
+#include <memory>
 #if not defined(_NETWORKING_FUNC_)
 #define _NETWORKING_FUNC_
 
@@ -308,8 +309,8 @@
                 public:
 
                     std::string host_, port_;
-                    std::vector<struct addrinfo> connect_address_;
-                    
+                    // std::unique_ptr<address_information*, decltype(&freeaddrinfo)> connect_address_;
+                    address_information* connect_address_;
                     socket_type connect_socket_;
                     bool tcp_, serving_, was_init_;
 
