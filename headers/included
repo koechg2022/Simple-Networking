@@ -340,11 +340,11 @@
     #endif
 
 
-    inline struct sockaddr_storage empty_sockaddr() {
-        sockaddr_storage the_answer;
-        std::memset(&the_answer, 0, sizeof(the_answer));
-        return the_answer;
-    }
+    // inline struct sockaddr_storage empty_sockaddr() {
+    //     sockaddr_storage the_answer;
+    //     std::memset(&the_answer, 0, sizeof(the_answer));
+    //     return the_answer;
+    // }
 
 
 #endif

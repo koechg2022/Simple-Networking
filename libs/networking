@@ -279,7 +279,12 @@
                     socket_type connected_socket = invalid_socket;
                     secure_socket_type secure_socket = invalid_secure_socket;
 
-                    struct sockaddr_storage address_info = empty_sockaddr();
+                    struct sockaddr_storage address_info =  [&]() -> struct sockaddr_storage {
+                                                                struct sockaddr_storage the_answer;
+                                                                std::memset(&the_answer, 0, sizeof(the_answer));
+                                                                return the_answer;
+                                                            }();
+
                     socklen_t address_size = sizeof(address_info);
 
                     bool operator<(const client& other) const;
