@@ -331,9 +331,6 @@
                      */
                     void reset_address();
 
-                    
-                public:
-
                     /**
                         Create the address information for this 
                         host to use to create the connection socket.
@@ -407,6 +404,45 @@
                                 network_address_families::ip_version6_address_family});
 
             };
+
+
+            class tcp_server : public host {
+
+                private:
+                    
+                    
+                    std::unordered_map<connected_host::client_name, connected_host::client> clients;
+
+
+
+                public:
+
+                    tcp_server();
+
+                    tcp_server(const std::string host, const std::string port = DEFAULT_PORT, bool secure = false);
+
+                    tcp_server(const tcp_server& other);
+
+                    operator bool() const;
+
+                    tcp_server& operator=(const tcp_server& other);
+
+
+            };
+
+
+            class tcp_client {
+
+            };
+
+
+            // TODO : IMPLEMENT THESE server methods
+
+            
+            class tcp_server_multithread : public host {};
+
+
+            class tcp_server_multiprocess : public host {};
 
         }
 

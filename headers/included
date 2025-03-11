@@ -1,5 +1,8 @@
 
 
+
+
+
 #if not defined(_INCLUDED_)
 
     #define _INCLUDED_
@@ -240,6 +243,10 @@
         #include <map>
     #endif
 
+    #if (defined(mac_os) and not defined(_LIBCPP_UNORDERED_MAP)) or (defined(linux_os) and not defined(_GLIBCXX_UNORDERED_MAP)) or (defined(crap_os) and not defined(_UNORDERED_MAP_))
+        #include <unordered_map>
+    #endif
+
     #if (defined(mac_os) and not defined(_LIBCPP_SET)) or (defined(linux_os) and not defined(_GLIBCXX_SET)) or (defined(crap_os) and not defined(_SET_))
         #include <set>
     #endif
@@ -268,9 +275,22 @@
         #include <fstream>
     #endif
 
-    #include <memory>
-    #include <thread>
-    #include <mutex>
+    #if (defined(mac_os) and not defined(_LIBCPP_MEMORY)) or (defined(linux_os) and not defined(_GLIBCXX_MEMORY)) or (defined(crap_os) and not defined(_MEMORY_))
+        #include <memory>
+    #endif
+
+
+    #if (defined(mac_os) and not defined(_LIBCPP_THREAD)) or (defined(linux_os) and not defined(_GLIBCXX_THREAD)) or (defined(crap_os) and not defined(_THREAD_))
+        #include <thread>
+    #endif
+
+    #if (defined(mac_os) and not defined(_LIBCPP_MUTEX)) or (defined(linux_os) and not defined(_GLIBCXX_MUTEX)) or (defined(crap_os) and not defined(_MUTEX_))
+        #include <mutex>
+    #endif
+
+    #if (defined(mac_os) and not defined(_LIBCPP_CSIGNAL)) or (defined(linux_os) and not defined(_GLIBCXX_CSIGNAL)) or (defined(crap_os) and not defined(_CSINGAL_))
+        #include <csignal>
+    #endif
 
 
 

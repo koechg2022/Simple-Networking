@@ -535,7 +535,11 @@ networking::network_structures::connected_host::server::operator bool() const {
     return valid_socket(this->connect_socket);
 }
 
+
+
 /***********************************************************************************************/
+
+
 
 
 void networking::network_structures::host::next_address() {
@@ -793,3 +797,17 @@ networking::network_structures::host& networking::network_structures::host::port
     }
     return *this;
 }
+
+
+
+
+/***********************************************************************************************/
+
+
+
+
+
+
+
+
+/***********************************************************************************************/

@@ -152,17 +152,6 @@ void test_host() {
         std::cout << (not valid_socket(before_socket) ? 
                     "\tBefore socket is correctly not a valid socket" : 
                         "\tBefore socket is incorrectly a valid socket") << std::endl;
-        host_server.create_connection_address();
-        socket_type mid_socket = host_server.get_socket();
-        std::cout << (not valid_socket(mid_socket) ? 
-                    "\tMid socket is correctly not a valid socket" : 
-                        "\tMid socket is incorrectly a valid socket") << std::endl;
-        host_server.create_connection_socket();
-        socket_type after_socket = host_server.get_socket();
-        std::cout << (valid_socket(after_socket) ? 
-                    "\tAfter socket is correctly a valid socket" : 
-                        "\tAfter socket is incorrectly a valid socket") << std::endl;
-        // std::cout << "Successfully created the connection address and the connection socket" << std::endl;
 
     }
 
@@ -178,10 +167,6 @@ void test_host() {
         networking::network_structures::host host_client("", DEFAULT_PORT, true, false);
 
         host_client.port(connection_port).retrieve_hostname();
-        host_client.create_connection_address();
-        host_client.create_connection_socket();
-        // std::cout << "host's hostname is \"" << host_client.hostname() << "\"" << std::endl;
-        // std::cout << "host's port is \"" << host_client.port() << "\"" << std::endl;
 
         std::cout << "Creating test_new host" << std::endl;
         networking::network_structures::host test_new(host_client);
