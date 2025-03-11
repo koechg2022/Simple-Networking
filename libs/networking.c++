@@ -580,6 +580,7 @@ bool networking::network_structures::host::create_connection_socket() {
         
         this->create_connection_address();
         
+        int line_ = __LINE__ + 1;
         this->connect_socket_ = socket(this->connect_address_->ai_family, 
                                 this->connect_address_->ai_socktype, 
                                     this->connect_address_->ai_protocol);
@@ -587,7 +588,7 @@ bool networking::network_structures::host::create_connection_socket() {
             throw exceptions::create_socket_failure("Failed to create socket for host \"" + 
                         this->host_ + "\". Error " + std::string(get_socket_error_string(socket_error)), 
                                 true, __FILE__, 
-                                    __LINE__ - 1, __FUNCTION__);
+                                    line_, __FUNCTION__);
         }
     }
 
@@ -665,6 +666,7 @@ networking::network_structures::host::host(const networking::network_structures:
 
 networking::network_structures::host::~host() {
     this->close_host();
+    std::cout << ((this->close_host()) ? "Successfully closed host" : "Unsuccessfully closed host") << std::endl;
 }
 
 networking::network_structures::host& networking::network_structures::host::operator=(const networking::network_structures::host& other) {
