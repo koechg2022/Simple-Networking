@@ -160,7 +160,7 @@ void test_host() {
         host_server.create_connection_socket();
         socket_type after_socket = host_server.get_socket();
         std::cout << (valid_socket(after_socket) ? 
-                    "\tAfter socket is correctly not a valid socket" : 
+                    "\tAfter socket is correctly a valid socket" : 
                         "\tAfter socket is incorrectly a valid socket") << std::endl;
         // std::cout << "Successfully created the connection address and the connection socket" << std::endl;
 
