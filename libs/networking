@@ -311,10 +311,9 @@
 
             class host {
 
-                public:
+                protected:
 
                     std::string host_, port_;
-                    // std::unique_ptr<address_information*, decltype(&freeaddrinfo)> connect_address_;
                     address_information* connect_address_;
                     socket_type connect_socket_;
                     bool tcp_, serving_, was_init_;
@@ -322,12 +321,20 @@
                     
                 public:
 
-                    bool create_connection_address();
+                    virtual bool create_connection_address();
 
-                    bool create_connection_socket();
+                    virtual bool create_connection_socket();
 
-                    bool close_host();
+                    virtual bool close_host();
 
+                    /**
+                        Retrieve the address information that this host will use.
+                     */
+                    bool retrieve_hostname(const std::set<std::string> adapter_name_options = 
+                        {network_address_families::rel_adapter}, 
+                            const std::set<std::string> family_name_options = 
+                            {network_address_families::ip_version4_address_family, 
+                                network_address_families::ip_version6_address_family});
                     
                 public:
 
@@ -341,13 +348,12 @@
 
                     host& operator=(const host& other);
 
+                    /**
+                        Get the socket of this host object
+                     */
                     socket_type get_socket() const;
 
-                    bool retrieve_hostname(const std::set<std::string> adapter_name_options = 
-                        {network_address_families::rel_adapter}, 
-                            const std::set<std::string> family_name_options = 
-                            {network_address_families::ip_version4_address_family, 
-                                network_address_families::ip_version6_address_family});
+                    
 
                     std::string hostname() const;
 
