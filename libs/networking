@@ -394,7 +394,6 @@
                      */
                     host& port(const std::string new_port);
 
-
                     /**
                         Retrieve the address information that this host 
                         will use and set the host's hostname to it.
