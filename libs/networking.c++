@@ -347,7 +347,6 @@ std::map<std::string, std::map<std::string, std::vector<std::string> > > network
             }
 
         }
-        std::printf("Done with the creation of the pointer for all_adapters.\n");
 
     #else
 
