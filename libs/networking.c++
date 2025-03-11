@@ -538,6 +538,15 @@ networking::network_structures::connected_host::server::operator bool() const {
 /***********************************************************************************************/
 
 
+void networking::network_structures::host::next_address() {
+    this->active_address_ = (this->active_address_) ? this->active_address_->ai_next : this->active_address_;
+}
+
+
+void networking::network_structures::host::reset_address() {
+    this->active_address_ = this->connect_address_;
+}
+
 
 bool networking::network_structures::host::create_connection_address() {
     
@@ -568,7 +577,7 @@ bool networking::network_structures::host::create_connection_address() {
         if (status) {
             throw exceptions::getaddrinfo_failure("Failed to retrieve address information for host \"" + this->host_ + "\". Error " + std::string(get_socket_error_string(status)), true, __FILE__, __LINE__ - 1, __FUNCTION__);
         }
-        
+        this->reset_address();
     }
     return this->connect_address_;
 }
@@ -579,13 +588,26 @@ bool networking::network_structures::host::create_connection_socket() {
         
         this->create_connection_address();
         
-        int line_ = __LINE__ + 1;
-        this->connect_socket_ = socket(this->connect_address_->ai_family, 
-                                this->connect_address_->ai_socktype, 
-                                    this->connect_address_->ai_protocol);
+        if (not this->active_address_) {
+            this->active_address_ = this->connect_address_;
+        }
+
+        std::string message = "Failed to create a valid socket for host \"" + this->host_ + "\"";
+        int line_ = __LINE__ + 2;
+        for (; this->active_address_; this->next_address()) {
+            this->connect_socket_ = socket(this->active_address_->ai_family, this->active_address_->ai_socktype, this->active_address_->ai_protocol);
+            if (valid_socket(this->connect_socket_)) {
+                break;
+            }
+        }
+        
+        if (not this->active_address_) {
+            line_ = line_ - 1;
+            message = message + ". No more addresses to use for a socket connection";
+        }
+        
         if (not valid_socket(this->connect_socket_)) {
-            throw exceptions::create_socket_failure("Failed to create socket for host \"" + 
-                        this->host_ + "\". Error " + std::string(get_socket_error_string(socket_error)), 
+            throw exceptions::create_socket_failure(message + ". Error : " + std::string(get_socket_error_string(socket_error)), 
                                 true, __FILE__, 
                                     line_, __FUNCTION__);
         }
@@ -607,7 +629,7 @@ bool networking::network_structures::host::close_host() {
 
     if (this->connect_address_) {
         freeaddrinfo(this->connect_address_);
-        this->connect_address_ = 0;
+        this->connect_address_ = this->active_address_ = 0;
     }
 
     return not this->connect_address_ && !valid_socket(this->connect_socket_);
@@ -620,6 +642,7 @@ networking::network_structures::host::host() {
     this->serving_ = true;
     this->was_init_ = is_init;
     this->connect_address_ = 0;
+    this->active_address_ = this->connect_address_;
 }
 
 networking::network_structures::host::host(const std::string host_address, const std::string port, const bool use_tcp, const bool serving) {
@@ -630,6 +653,7 @@ networking::network_structures::host::host(const std::string host_address, const
     this->serving_ = serving;
     this->was_init_ = is_init;
     this->connect_address_ = 0;
+    this->active_address_ = this->connect_address_;
 }
 
 networking::network_structures::host::host(const networking::network_structures::host& other) {
@@ -703,7 +727,7 @@ socket_type networking::network_structures::host::get_socket() const {
     return this->connect_socket_;
 }
 
-bool networking::network_structures::host::retrieve_hostname(const std::set<std::string> adapter_name_options, const std::set<std::string> family_name_options) {
+networking::network_structures::host& networking::network_structures::host::retrieve_hostname(const std::set<std::string> adapter_name_options, const std::set<std::string> family_name_options) {
 
     if (this->host_.empty()) {
         std::map<std::string, std::map<std::string, std::vector<std::string > > > adapters = this_machine_adapters();
@@ -745,7 +769,7 @@ bool networking::network_structures::host::retrieve_hostname(const std::set<std:
 
     }
 
-    return not this->host_.empty();
+    return *this;
 }
 
 std::string networking::network_structures::host::hostname() const {

@@ -314,27 +314,44 @@
                 protected:
 
                     std::string host_, port_;
-                    address_information* connect_address_;
+                    address_information* connect_address_, *active_address_;
                     socket_type connect_socket_;
                     bool tcp_, serving_, was_init_;
+
+
+                    /**
+                        Get the next address in the linked list
+                        chain of address information.
+                     */
+                    void next_address();
+
+                    /**
+                        Reset the `active_address_` to the
+                        beginning of the linked list.
+                     */
+                    void reset_address();
 
                     
                 public:
 
+                    /**
+                        Create the address information for this 
+                        host to use to create the connection socket.
+                     */
                     virtual bool create_connection_address();
 
+                    /**
+                        Create the connection socket that this 
+                        host will use for connections.
+                     */
                     virtual bool create_connection_socket();
 
-                    virtual bool close_host();
-
                     /**
-                        Retrieve the address information that this host will use.
+                        Disconnect this host's socket, 
+                        uninitialize the network if it was originally uninitialized,
+                        and free the address information if it was in use.
                      */
-                    bool retrieve_hostname(const std::set<std::string> adapter_name_options = 
-                        {network_address_families::rel_adapter}, 
-                            const std::set<std::string> family_name_options = 
-                            {network_address_families::ip_version4_address_family, 
-                                network_address_families::ip_version6_address_family});
+                    virtual bool close_host();
                     
                 public:
 
@@ -353,15 +370,42 @@
                      */
                     socket_type get_socket() const;
 
-                    
-
+                    /**
+                        Get the hostname of this host object.
+                     */
                     std::string hostname() const;
 
+                    /**
+                        Set the hostname of this host object.
+                        This method is set up to return a reference 
+                        to this host object so that chaining can occur.
+                     */
                     host& hostname(const std::string new_host);
 
+                    /**
+                        Get the port value of this host object.
+                     */
                     std::string port() const;
 
+                    /**
+                        Set the port value of this host and 
+                        return a reference to this host object  
+                        to allow for chaining method calls.
+                     */
                     host& port(const std::string new_port);
+
+
+                    /**
+                        Retrieve the address information that this host 
+                        will use and set the host's hostname to it.
+                        A reference to this host object is then returned, allowing for chaining.
+                        To view what the new variable is, use the `hostname()` method.
+                     */
+                    host& retrieve_hostname(const std::set<std::string> adapter_name_options = 
+                        {network_address_families::rel_adapter}, 
+                            const std::set<std::string> family_name_options = 
+                            {network_address_families::ip_version4_address_family, 
+                                network_address_families::ip_version6_address_family});
 
             };
 
