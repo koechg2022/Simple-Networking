@@ -146,11 +146,8 @@ void test_host() {
         std::cout << "host server" << std::endl;
         networking::network_structures::host host_server;
 
-        host_server.hostname("").port(connection_port).retrieve_hostname();
-        std::cout << "host's hostname is \"" << host_server.hostname() << "\"" << std::endl;
-        std::cout << "host's port is \"" << host_server.port() << "\"" << std::endl << std::endl << std::endl;
 
-
+        host_server.port(connection_port).retrieve_hostname();
         host_server.create_connection_address();
         host_server.create_connection_socket();
         std::cout << "Successfully created the connection address and the connection socket" << std::endl;
