@@ -166,9 +166,12 @@ void test_host() {
         networking::network_structures::host host_client("", DEFAULT_PORT, true, false);
 
         host_client.port(connection_port).retrieve_hostname();
-        std::cout << "host's hostname is \"" << host_client.hostname() << "\"" << std::endl;
-        std::cout << "host's port is \"" << host_client.port() << "\"" << std::endl;
+        host_client.create_connection_address();
+        host_client.create_connection_socket();
+        // std::cout << "host's hostname is \"" << host_client.hostname() << "\"" << std::endl;
+        // std::cout << "host's port is \"" << host_client.port() << "\"" << std::endl;
 
+        std::cout << "Creating test_new host" << std::endl;
         networking::network_structures::host test_new(host_client);
 
         
