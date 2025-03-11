@@ -143,22 +143,37 @@ void test_host() {
         // For IP6
         // .retrieve_hostname({networking::network_address_families::rel_adapter}, {networking::network_address_families::ip_version6_address_family});
         
-        networking::network_structures::host host;
+        std::cout << "host server" << std::endl;
+        networking::network_structures::host host_server;
 
-        std::cout << "host's hostname is \"" << host.hostname() << "\"" << std::endl;
-        std::cout << "host's port is \"" << host.port() << "\"" << std::endl << std::endl << std::endl;
-
-        std::cout << "host's hostname is now \"" << host.hostname(DEFAULT_HOST).hostname() << "\"" << std::endl;
-        std::cout << "host's port is \"" << host.port(connection_port).port() << "\"" << std::endl << std::endl << std::endl;
-
-
-        host.hostname("").retrieve_hostname();
-        std::cout << "host's hostname is \"" << host.hostname() << "\"" << std::endl;
-        std::cout << "host's port is \"" << host.port() << "\"" << std::endl << std::endl << std::endl;
+        host_server.hostname("").port(connection_port).retrieve_hostname();
+        std::cout << "host's hostname is \"" << host_server.hostname() << "\"" << std::endl;
+        std::cout << "host's port is \"" << host_server.port() << "\"" << std::endl << std::endl << std::endl;
 
 
-        host.create_connection_address();
-        host.create_connection_socket();
+        host_server.create_connection_address();
+        host_server.create_connection_socket();
+
+    }
+
+    catch (networking::exceptions::base_exception& except) {
+        std::cerr << "Exception \"" << except.exception_type() << "\" caught" << std::endl;
+        std::cerr << "Exception message \"" << except.msg() << "\"" << std::endl;
+    }
+
+
+    try {
+
+        std::cout << "host client" << std::endl;
+        networking::network_structures::host host_client("", DEFAULT_PORT, true, false);
+
+        host_client.port(connection_port).retrieve_hostname();
+        std::cout << "host's hostname is \"" << host_client.hostname() << "\"" << std::endl;
+        std::cout << "host's port is \"" << host_client.port() << "\"" << std::endl;
+
+        networking::network_structures::host test_new(host_client);
+
+        
 
     }
 

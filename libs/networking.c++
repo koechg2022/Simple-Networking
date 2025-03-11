@@ -633,6 +633,7 @@ bool networking::network_structures::host::create_connection_socket() {
             if (valid_socket(this->connect_socket_)) {
                 break;
             }
+            this->connect_socket_ = invalid_socket;
         }
 
         if (not valid_socket(this->connect_socket_)) {
