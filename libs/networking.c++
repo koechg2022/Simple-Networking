@@ -627,13 +627,26 @@ bool networking::network_structures::host::create_connection_socket() {
     if (not valid_socket(this->connect_socket_)) {
         
         this->create_connection_address();
+        char buffer[buffer_size];
 
+        
+        std::memset(buffer, 0, buffer_size);
+        std::cout << "There are " << this->connect_address_.size() << " addresses. They produce:" << std::endl;
         for (const struct addrinfo& address : this->connect_address_) {
+
+            std::cout << "Address family: " << address.ai_family
+            << ", Socket type: " << address.ai_socktype
+            << ", Protocol: " << address.ai_protocol
+            << std::endl;
+
+            
+            getnameinfo(address.ai_addr, address.ai_addrlen, buffer, buffer_size, 0, 0, NI_NUMERICHOST);
+            
             this->connect_socket_ = socket(address.ai_family, address.ai_socktype, address.ai_protocol);
+            std::cout << "\t" << this->connect_socket_ << ".) " << std::string(buffer, std::strlen(buffer)) << std::endl;
             if (valid_socket(this->connect_socket_)) {
                 break;
             }
-            this->connect_socket_ = invalid_socket;
         }
 
         if (not valid_socket(this->connect_socket_)) {
