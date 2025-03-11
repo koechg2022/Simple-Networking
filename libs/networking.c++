@@ -664,8 +664,7 @@ networking::network_structures::host::host(const networking::network_structures:
 }
 
 networking::network_structures::host::~host() {
-    // this->close_host();
-    std::cout << ((this->close_host()) ? "Successfully closed host" : "Unsuccessfully closed host") << std::endl;
+    this->close_host();
 }
 
 networking::network_structures::host& networking::network_structures::host::operator=(const networking::network_structures::host& other) {
