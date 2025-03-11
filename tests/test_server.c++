@@ -150,7 +150,7 @@ void test_host() {
         host_server.port(connection_port).retrieve_hostname();
         host_server.create_connection_address();
         host_server.create_connection_socket();
-        std::cout << "Successfully created the connection address and the connection socket" << std::endl;
+        // std::cout << "Successfully created the connection address and the connection socket" << std::endl;
 
     }
 
