@@ -5,8 +5,6 @@
 
 #include "../headers/included"
 #include "string_functions"
-#include <cstring>
-#include <sys/socket.h>
 #include "networking"
 
 
