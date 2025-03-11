@@ -562,7 +562,7 @@ bool networking::network_structures::host::create_connection_address() {
         std::memset(&hints, 0, sizeof(hints));
         hints.ai_family = AF_UNSPEC;//(is_ipstring(this->host_)) ? AF_INET : (is_ipstring(this->host_, false)) ? AF_INET6 : AF_UNSPEC;
         hints.ai_socktype = (this->tcp_) ? SOCK_STREAM : SOCK_DGRAM;
-        hints.ai_flags = (this->serving_) ? AI_PASSIVE : hints.ai_flags;
+        hints.ai_flags = (this->serving_) ? AI_PASSIVE : 0;
 
         // Ready to call getaddrinfo
         struct addrinfo* remote_address;
@@ -676,6 +676,10 @@ bool networking::network_structures::host::close_host() {
     if (valid_socket(this->connect_socket_)) {
         close_socket(this->connect_socket_);  // Close the socket
         this->connect_socket_ = invalid_socket;  // Mark socket as invalid
+    }
+
+    if (not this->was_init_) {
+        uninitialize_network();
     }
 
     return this->connect_address_.empty() && !valid_socket(this->connect_socket_);
