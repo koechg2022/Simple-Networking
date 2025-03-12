@@ -66,7 +66,7 @@
                     unexpected_exception_type = "unexpected_exception",
                     memory_exception_type = "memory_exception",
                     initialize_network_failure_type = "initialize_network_failure",
-                    get_addrinfo_failure_type = "get_addrinfno_failure",
+                    getaddrinfo_failure_type = "get_addrinfno_failure",
                     getifaddrs_failure_type = "getifaddrs_failure",
                     greate_socket_failure_type = "greate_socket_failure",
                     create_socket_failure_type = "create_socket_failure",

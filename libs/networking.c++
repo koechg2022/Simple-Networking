@@ -166,7 +166,7 @@ networking::exceptions::initialize_network_failure::initialize_network_failure(c
     networking::exceptions::base_exception(networking::exceptions::initialize_network_failure_type, msg, print, file_name, except_line, function) {}
 
 networking::exceptions::getaddrinfo_failure::getaddrinfo_failure(const std::string msg, bool print, const std::string file_name, const int except_line, const std::string function) : 
-    networking::exceptions::base_exception(networking::exceptions::get_addrinfo_failure_type, msg, print, file_name, except_line, function) {}
+    networking::exceptions::base_exception(networking::exceptions::getaddrinfo_failure_type, msg, print, file_name, except_line, function) {}
 
 networking::exceptions::getifaddrs_failure::getifaddrs_failure(const std::string msg, bool print, const std::string file_name, const int except_line, const std::string function) : 
     networking::exceptions::base_exception(networking::exceptions::getifaddrs_failure_type, msg, print, file_name, except_line, function) {}
@@ -202,7 +202,7 @@ networking::exceptions::accept_failure::accept_failure(const std::string msg, bo
     networking::exceptions::base_exception(networking::exceptions::accept_failure_type, msg, print, file_name, except_line, function) {}
 
 networking::exceptions::create_context_failure::create_context_failure(const std::string msg, bool print, const std::string file_name, const int except_line, const std::string function) :
-    networking::exceptions::base_exception(networking::exceptions::accept_failure_type, msg, print, file_name, except_line, function) {}
+    networking::exceptions::base_exception(networking::exceptions::create_context_failure_type, msg, print, file_name, except_line, function) {}
 
 networking::exceptions::socket_information_failure::socket_information_failure(const std::string msg, bool print, const std::string file_name, const int except_line, const std::string function) :
     networking::exceptions::base_exception(networking::exceptions::socket_information_failure_type, msg, print, file_name, except_line, function) {}
