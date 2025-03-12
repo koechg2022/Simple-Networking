@@ -333,3 +333,16 @@ std::vector<std::string> string_functions::parse_to_list(const std::string parse
     return the_answer;
 }
 
+std::string string_functions::generate_random_string(size_t length) {
+    std::string the_answer;
+    the_answer.reserve(length);  // Optimize for performance
+    
+    std::srand(static_cast<unsigned int>(std::time(nullptr)));
+
+    for (size_t index = 0; index < length; ++index) {
+        char c = static_cast<char>(32 + std::rand() % (126 - 32 + 1));
+        the_answer += c;  // Directly append the character
+    }
+
+    return the_answer;
+}

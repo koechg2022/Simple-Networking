@@ -276,6 +276,12 @@
 
 
         /**
+            Generate a string of length `length` and return it.
+        */
+        std::string generate_random_string(size_t length = 12);
+
+
+        /**
             @brief Check if a std::map<std::string, data_> contains a specific key or not.
             @param to_search (std::map<std::string, data_>&) : The std::map to search. The keys are what are searched for, looking for `to_find_key`
             @param to_find_key (std::string&) : The key to search for in to_search.

@@ -134,6 +134,7 @@ void resolve_hostname_name() {
 
 void test_host() {
     
+    networking::initialize_network();
 
     try {
 
@@ -180,7 +181,7 @@ void test_host() {
         std::cerr << "Exception message \"" << except.msg() << "\"" << std::endl;
     }
 
-    
+    networking::uninitialize_network();
 }
 
 void test_server() {

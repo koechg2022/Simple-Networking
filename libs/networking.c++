@@ -204,6 +204,8 @@ networking::exceptions::accept_failure::accept_failure(const std::string msg, bo
 networking::exceptions::create_context_failure::create_context_failure(const std::string msg, bool print, const std::string file_name, const int except_line, const std::string function) :
     networking::exceptions::base_exception("accept_failure", msg, print, file_name, except_line, function) {}
 
+networking::exceptions::socket_information_failure::socket_information_failure(const std::string msg, bool print, const std::string file_name, const int except_line, const std::string function) :
+    networking::exceptions::base_exception("socket_information_failure", msg, print, file_name, except_line, function) {}
 
 bool networking::initialize_network() {
     #if defined(crap_os)
@@ -457,8 +459,11 @@ std::map<std::string, std::map<std::string, std::vector<std::string> > > network
 }
 
 bool networking::socket_is_connected(const socket_type the_socket) {
-    // int error = 0;
-    // socklen_t len = sizeof(error);
+
+    if (not valid_socket(the_socket)) {
+        return false;
+    }
+    
     int retval = 0;
 
     #ifdef _WIN32
@@ -474,7 +479,8 @@ bool networking::socket_is_connected(const socket_type the_socket) {
 
     if (retval == 0) {
         return false;  // Connection closed
-    } else if (retval < 0) {
+    } 
+    else if (retval < 0) {
         #if defined(crap_os)
             int error = 0;
             error = WSAGetLastError();
@@ -514,8 +520,144 @@ bool networking::is_ipstring(const std::string the_ip, const bool ip4) {
     return std::regex_match(the_ip, ipv6_regex);
 }
 
+bool networking::socket_is_blocking(socket_type the_socket, const bool throw_except) {
+
+    if (not valid_socket(the_socket)) {
+        return false;
+    }
+
+    #if defined(crap_os)
+        unsigned long mode = 0;
+        if (not ioctlsocket(the_socket, FIONBIO, &mode)) {
+            return mode == 0;
+        }
+    #else
+        int flags = fcntl(the_socket, F_GETFL, 0);
+        if (flags != -1) {
+            return not (flags & O_NONBLOCK);
+        }
+    #endif
+    if (throw_except) {
+        throw networking::exceptions::socket_information_failure("Failed to retrieve socket information");
+    }
+    return false;
+}
+
+bool networking::set_non_blocking(socket_type the_socket, const bool throw_except) {
+
+    if (not valid_socket(the_socket)) {
+        return false;
+    }
+
+    if (not networking::socket_is_blocking(the_socket, throw_except)) {
+        return true;
+    }
+
+    int line_;
+    std::string message;
+
+    #if defined(crap_os)
+        unsigned long mode = 1; // to enable non-blocking mode
+        line_ = __LINE__ + 1;
+        if (ioctlsocket(the_socket, FIONBIO, &mode)) {
+            message = "Failed to set the socket to non-blocking mode. Error " + 
+                        std::to_string(socket_error) + " : " + 
+                            std::string(get_socket_error_string(socket_error));
+            if (throw_except) {
+                throw networking::exceptions::socket_information_failure(message, true, __FILE__, line_, __FUNCTION__);
+            }
+            return false;
+        }
+    #else
+        // Set the socket to non-blocking
+        line_ = __LINE__ + 1;
+        int flags = fcntl(the_socket, F_GETFL, 0);
+        if (flags == -1) {
+            message = "Failed to get socket flags on this Unix system. Error " + 
+                    std::to_string(socket_error) + " : " +
+                        std::string(get_socket_error_string(socket_error));
+            if (throw_except) {
+                throw networking::exceptions::socket_information_failure(message, true, __FILE__, line_, __FUNCTION__);
+            }
+            return false;
+        }
+        line_ = __LINE__ - 1;
+        if (fcntl(the_socket, F_SETFL, flags | O_NONBLOCK) == -1) {
+            message = "Failed to set the socket to non-blocking mode. Error " + 
+                    std::to_string(socket_error) + " : " + 
+                        std::string(get_socket_error_string(socket_error));
+            if (throw_except) {
+                throw networking::exceptions::socket_information_failure(message, true, __FILE__, line_, __FUNCTION__);
+            }
+            return false;
+        }
+    #endif
+
+    return true;
+}
+
+bool networking::set_blocking(socket_type the_socket, const bool throw_except) {
+
+    if (not valid_socket(the_socket)) {
+        return false;
+    }
+
+    if (not socket_is_connected(the_socket)) {
+        return false;
+    }
+
+    std::string message;
+    int line_;
+
+    #if defined(crap_os)
+        unsigned long mode = 0; // set blocking
+        line_ = __LINE__ + 1;
+        if (ioctlsocket(the_socket ,FIONBIO, &mode)) {
+            message = "Failed to set socket to blocking mode. Error " + 
+                    std::to_string(socket_error) + " : " + 
+                        std::string(get_socket_error_string(socket_error));
+            if (throw_except) {
+                throw networking::exceptions::socket_information_failure(message, true, __FILE__, line_, __FUNCTION__);
+            }
+            return false;
+        }
+    #else
+        int flags = fcntl(the_socket, F_GETFL, 0);
+        line_ = __LINE__ + 1;
+        if (flags == -1) {
+            message = "Failed to get socket flags. Error " + 
+                std::to_string(socket_error) + " : " + 
+                    std::string(get_socket_error_string(socket_error));
+            if (throw_except) {
+                throw networking::exceptions::socket_information_failure(message, true, __FILE__, line_, __FUNCTION__);
+            }
+            return false;
+        }
+
+        if (fcntl(the_socket, F_SETFL, flags & ~O_NONBLOCK) == -1) {
+            message = "Failed to set socket to blocking mode. Error " + 
+                std::to_string(socket_error) + " : " +
+                    std::string(get_socket_error_string(socket_error));
+            if (throw_except) {
+                throw networking::exceptions::socket_information_failure(message, true, __FILE__, line_, __FUNCTION__);
+            }
+            return false;
+        }
+    #endif
+
+    return true;
+}
+
+/***********************************************************************************************/
+/************************************ structures ************************************/
+
+
 bool networking::network_structures::connected_host::client_name::operator<(const client_name& other) const {
     return this->hostname < other.hostname and this->portvalue < other.portvalue;
+}
+
+bool networking::network_structures::connected_host::client_name::operator==(const networking::network_structures::connected_host::client_name& other) const {
+    return string_functions::same_string(this->hostname, other.hostname) and string_functions::same_string(this->portvalue, other.portvalue);
 }
 
 bool networking::network_structures::connected_host::client::operator<(const client& other) const {
@@ -539,18 +681,37 @@ networking::network_structures::connected_host::server::operator bool() const {
 
 /***********************************************************************************************/
 
+/******** Host protected methods ********/
 
+bool networking::network_structures::host::tcp() const {
+    return this->tcp_;
+}
 
+networking::network_structures::host& networking::network_structures::host::tcp(const bool yes) {
+    if (not this->main_socket_connected()) {
+        this->tcp_ = yes;
+    }
+    return *this;
+}
+
+bool networking::network_structures::host::serve() const {
+    return this->serving_;
+}
+
+networking::network_structures::host& networking::network_structures::host::serve(const bool yes) {
+    if (not this->main_socket_connected()) {
+        this->serving_ = yes;
+    }
+    return *this;
+}
 
 void networking::network_structures::host::next_address() {
     this->active_address_ = (this->active_address_) ? this->active_address_->ai_next : this->active_address_;
 }
 
-
 void networking::network_structures::host::reset_address() {
     this->active_address_ = this->connect_address_;
 }
-
 
 bool networking::network_structures::host::create_connection_address() {
     
@@ -639,6 +800,23 @@ bool networking::network_structures::host::close_host() {
     return not this->connect_address_ && !valid_socket(this->connect_socket_);
 }
 
+bool networking::network_structures::host::main_socket_connected() const {
+    return networking::socket_is_connected(this->connect_socket_);
+}
+/****** Host protected methods end ******/
+
+
+
+
+
+
+
+
+
+/********** Host public methods **********/
+
+
+// Default constructor
 networking::network_structures::host::host() {
     this->host_ = this->port_ = "";
     this->connect_socket_ = invalid_socket;
@@ -649,6 +827,7 @@ networking::network_structures::host::host() {
     this->active_address_ = this->connect_address_;
 }
 
+// Parameter constructor
 networking::network_structures::host::host(const std::string host_address, const std::string port, const bool use_tcp, const bool serving) {
     this->host_ = host_address;
     this->port_ = port;
@@ -660,13 +839,16 @@ networking::network_structures::host::host(const std::string host_address, const
     this->active_address_ = this->connect_address_;
 }
 
+// Copy constructor
 networking::network_structures::host::host(const networking::network_structures::host& other) {
 
-    this->host_ = other.host_;
-    this->port_ = other.port_;
-    this->tcp_ = other.tcp_;
-    this->serving_ = other.serving_;
+    // Remove resources and close sockets for current host (nothing changes if no resources are set)
+    // this->close_host();
+
+    // Set new values from other.
+    
     this->was_init_ = other.was_init_;
+    this->hostname(other.host_).port(other.port_).tcp(other.tcp_).serve(other.serving_);
     this->connect_address_ = 0;
 
     if (other.connect_address_) {
@@ -691,13 +873,36 @@ networking::network_structures::host::host(const networking::network_structures:
 
 }
 
+// Move constructor 
+networking::network_structures::host::host(networking::network_structures::host&& other) noexcept{
+
+    this->host_ = std::move(other.host_);
+    this->port_ = std::move(other.port_);
+    this->was_init_ = other.was_init_;
+    this->tcp_ = other.tcp_;
+    this->serving_ = other.serving_;
+    this->connect_socket_ = other.connect_socket_;
+    this->connect_address_ = other.connect_address_;
+    other.connect_address_ = 0;
+
+    // Set other to default values as defined in default constructor
+    other.connect_socket_ = invalid_socket;
+    other.host_ = other.port_ = "";
+    other.tcp_ = other.serving_ = true;
+    other.was_init_ = is_init; // set to networking namespace's tracker of network is initialized (for windows)
+}
+
+// Destructor
 networking::network_structures::host::~host() {
     this->close_host();
 }
 
+// Copy asignment operator
 networking::network_structures::host& networking::network_structures::host::operator=(const networking::network_structures::host& other) {
     if (this != &other) {
         this->close_host();
+        
+        // Assignment of values
         this->host_ = other.host_;
         this->port_ = other.port_;
         this->tcp_ = other.tcp_;
@@ -727,10 +932,62 @@ networking::network_structures::host& networking::network_structures::host::oper
     return *this;
 }
 
+// Move assignment operator
+networking::network_structures::host& networking::network_structures::host::operator=(networking::network_structures::host&& other) noexcept {
+    if (this != &other) {
+        this->close_host();
+
+        this->host_ = std::move(other.host_);
+        this->port_ = std::move(other.port_);
+        this->tcp_ = other.tcp_;
+        this->serving_ = other.serving_;
+        this->was_init_ = other.was_init_;
+        this->connect_socket_ = other.connect_socket_;
+        this->connect_address_ = other.connect_address_;
+        other.connect_address_ = 0;
+
+        // Set other to default values as defined in default constructor
+        other.connect_socket_ = invalid_socket;
+        other.host_ = other.port_ = "";
+        other.tcp_ = other.serving_ = true;
+        other.was_init_ = is_init; // set to networking namespace's tracker of network is initialized (for windows)
+    }
+
+    return *this;
+}
+
+// get_socket()
 socket_type networking::network_structures::host::get_socket() const {
     return this->connect_socket_;
 }
 
+// hostname()
+std::string networking::network_structures::host::hostname() const {
+    return this->host_;
+}
+
+// hostname(const std::string new_host)
+networking::network_structures::host& networking::network_structures::host::hostname(const std::string new_host) {
+    if (not valid_socket(this->connect_socket_)) {
+        this->host_ = new_host;
+    }
+    return *this;
+}
+
+// port()
+std::string networking::network_structures::host::port() const {
+    return this->port_;
+}
+
+// port(const std::string new_port)
+networking::network_structures::host& networking::network_structures::host::port(const std::string new_port) {
+    if (not valid_socket(this->connect_socket_)) {
+        this->port_ = new_port;
+    }
+    return *this;
+}
+
+// retrieve_hostname()
 networking::network_structures::host& networking::network_structures::host::retrieve_hostname(const std::set<std::string> adapter_name_options, const std::set<std::string> family_name_options) {
 
     if (this->host_.empty()) {
@@ -776,38 +1033,533 @@ networking::network_structures::host& networking::network_structures::host::retr
     return *this;
 }
 
-std::string networking::network_structures::host::hostname() const {
-    return this->host_;
+
+// blocking()
+bool networking::network_structures::host::blocking() const {
+    if (valid_socket(this->connect_socket_)) {
+        if (networking::socket_is_connected(this->connect_socket_)) {
+            return networking::socket_is_blocking(this->connect_socket_, false);
+        }
+    }
+    return false;
 }
 
-networking::network_structures::host& networking::network_structures::host::hostname(const std::string new_host) {
-    if (not valid_socket(this->connect_socket_)) {
-        this->host_ = new_host;
+// blocking(const bool block)
+networking::network_structures::host& networking::network_structures::host::blocking(const bool block) {
+    if (valid_socket(this->connect_socket_)) {
+        if (networking::socket_is_connected(this->connect_socket_)) {
+            bool blocking = networking::socket_is_blocking(this->connect_socket_, false);
+            if (block and not blocking) {
+                // set the socket to blocking
+                
+                networking::set_blocking(this->connect_socket_, false);
+            }
+
+            else if (not block and blocking) {
+                // set the socket to non-blocking
+                
+                networking::set_non_blocking(this->connect_socket_, false);
+            }
+        }
     }
     return *this;
 }
 
-std::string networking::network_structures::host::port() const {
-    return this->port_;
-}
-
-networking::network_structures::host& networking::network_structures::host::port(const std::string new_port) {
-    if (not valid_socket(this->connect_socket_)) {
-        this->port_ = new_port;
-    }
-    return *this;
-}
-
-
-
+/******** Host public methods end ********/
 
 /***********************************************************************************************/
+/***************************************** TCP Server *****************************************/
 
 
 
 
+/********* TCP Server private methods *********/
+
+
+bool networking::network_structures::tcp_server::listening() const {
+
+    if (not valid_socket(this->connect_socket_)) {
+        return false;
+    }
+    
+    int the_answer;
+    socklen_t answer_len = sizeof(the_answer);
+
+    if (getsockopt(this->connect_socket_, SOL_SOCKET, SO_ACCEPTCONN, &the_answer, &answer_len)) {
+        throw exceptions::listen_socket_failure("Failed to determine if socket is listening. Error " + std::to_string(socket_error) + std::string(get_socket_error_string(socket_error)), true, __FILE__, __LINE__ - 1, __FUNCTION__);
+    }
+
+    if (answer_len != sizeof(the_answer)) {
+        throw exceptions::unexpected_exception("Unexpected size return value of from getsockopt. Got " + std::to_string(sizeof(the_answer)) + " instead of expected " + std::to_string(answer_len), true, __FILE__, __LINE__ - 1, __FUNCTION__);
+    }
+    return the_answer;
+}
+
+/****** TCP Server private methods end*********/
 
 
 
 
+/********* TCP Server public methods *********/
+
+
+// Default Constructor
+networking::network_structures::tcp_server::tcp_server() : 
+    networking::network_structures::host::host("", DEFAULT_PORT, true, true) {
+    this->secure_ = false;
+    this->max_socket_ = invalid_socket;
+    this->max_secure_ = invalid_secure_socket;
+    this->context_ = invalid_context;
+    this->key_file_ = this->cert_file_ = "";
+    this->secure_was_init_ = is_init_secure;
+    this->block_clients_ = true;
+}
+
+// Parameter Constructor
+networking::network_structures::tcp_server::tcp_server(const std::string hostname, const std::string port, const bool secure_server, const std::string key, const std::string cert) : 
+    networking::network_structures::host::host(hostname, port, true, true) {
+    this->secure_ = secure_server;
+    this->max_socket_ = invalid_socket;
+    this->max_secure_ = invalid_secure_socket;
+    this->context_ = invalid_context;
+    this->key_file_ = key;
+    this->cert_file_ = cert;
+    this->secure_was_init_ = is_init_secure;
+    this->block_clients_ = true;
+}
+
+// Copy Constructor
+networking::network_structures::tcp_server::tcp_server(const networking::network_structures::tcp_server& other) :
+    networking::network_structures::host(other) {
+    
+    if (this != &other) {
+
+        // Set new values from other.
+        this->secure_ = other.secure_;
+        this->max_secure_ = other.max_secure_;
+        this->max_socket_ = other.max_socket_;
+        this->context_ = other.context_;
+        this->key_file_ = other.key_file_;
+        this->cert_file_ = other.cert_file_;
+        this->secure_was_init_ = other.secure_was_init_;
+        this->block_clients_ = other.block_clients_;
+        
+        this->clients_ = other.clients_;
+    }
+    
+}
+
+// Move Constructor
+networking::network_structures::tcp_server::tcp_server(networking::network_structures::tcp_server&& other) noexcept : 
+networking::network_structures::host::host(std::move(other)) {
+    
+    if (this != &other) {
+        
+        // Set new values from other
+        this->secure_ = other.secure_;
+        this->max_secure_ = other.max_secure_;
+        other.max_secure_ = invalid_secure_socket;
+        this->max_socket_ = other.max_socket_;
+        other.max_socket_ = invalid_socket;
+        this->context_ = other.context_;
+        other.context_ = invalid_context;
+        this->key_file_ = std::move(other.key_file_);
+        this->cert_file_ = std::move(other.cert_file_);
+        this->clients_ = std::move(other.clients_);
+        this->secure_was_init_ = other.secure_was_init_;
+        this->block_clients_ = other.block_clients_;
+
+        // Set other to default values as defined in default constructor
+        other.secure_ = false;
+        other.block_clients_ = true;
+        other.key_file_.clear();
+        other.cert_file_.clear();
+
+        // In question
+        other.clients_.clear();
+        other.secure_was_init_ = is_init_secure;
+    }
+}
+
+// Destructor
+networking::network_structures::tcp_server::~tcp_server() {
+    this->close_server();
+}
+
+// Copy assignment 
+networking::network_structures::tcp_server& networking::network_structures::tcp_server::operator=(const networking::network_structures::tcp_server& other) {
+    if (this != &other) {
+        this->close_server();
+
+        // Set new values from other.
+        this->secure_ = other.secure_;
+        this->max_secure_ = other.max_secure_;
+        this->max_socket_ = other.max_socket_;
+        this->context_ = other.context_;
+        this->key_file_ = other.key_file_;
+        this->cert_file_ = other.cert_file_;
+        this->secure_was_init_ = other.secure_was_init_;
+        this->block_clients_ = other.block_clients_;
+        
+        this->clients_ = other.clients_;
+    }
+    return *this;
+}
+
+// Move assigment
+networking::network_structures::tcp_server& networking::network_structures::tcp_server::operator=(networking::network_structures::tcp_server&& other) noexcept {
+    if (this != &other) {
+        this->close_server();
+        
+        // Set new values from other
+        this->secure_ = other.secure_;
+        this->max_secure_ = other.max_secure_;
+        other.max_secure_ = invalid_secure_socket;
+        this->max_socket_ = other.max_socket_;
+        other.max_socket_ = invalid_socket;
+        this->context_ = other.context_;
+        other.context_ = invalid_context;
+        this->key_file_ = std::move(other.key_file_);
+        this->cert_file_ = std::move(other.cert_file_);
+        this->clients_ = std::move(other.clients_);
+        this->secure_was_init_ = other.secure_was_init_;
+        this->block_clients_ = other.block_clients_;
+
+        // Set other to default values as defined in default constructor
+        other.secure_ = false;
+        other.block_clients_ = true;
+        other.key_file_.clear();
+        other.cert_file_.clear();
+
+        // In question
+        other.clients_.clear();
+        other.secure_was_init_ = is_init_secure;
+
+    }
+    return *this;
+}
+
+// operator bool() const
+networking::network_structures::tcp_server::operator bool() const {
+    return (this->secure_) ? (valid_context(this->context_) and this->listening()) : this->listening();
+}
+
+// secure()
+bool networking::network_structures::tcp_server::secure() const {
+    return this->secure_;
+}
+
+// secure(const bool set_secure)
+networking::network_structures::tcp_server& networking::network_structures::tcp_server::secure(const bool set_secure) {
+    if (not *this) {
+        this->secure_ = set_secure;
+    }
+    return *this;
+}
+
+// key();
+std::string networking::network_structures::tcp_server::key() const {
+    return this->key_file_;
+}
+
+// key(const std::string new_key)
+networking::network_structures::tcp_server& networking::network_structures::tcp_server::key(const std::string new_key) {
+    if (not *this) {
+        this->key_file_ = new_key;
+    }
+    return *this;
+}
+
+// cert()
+std::string networking::network_structures::tcp_server::cert() const {
+    return this->cert_file_;
+}
+
+// cert(const std::string new_cert)
+networking::network_structures::tcp_server& networking::network_structures::tcp_server::cert(const std::string new_cert) {
+    if (not *this) {
+        this->cert_file_ = new_cert;
+    }
+    return *this;
+}
+
+// client_has_data(client&, struct timeval)
+bool networking::network_structures::tcp_server::client_has_data(networking::network_structures::connected_host::client& client, struct timeval timeout) {
+    
+    if (not networking::socket_is_connected(client.connected_socket)) {
+        return false;
+    }
+
+    fd_set ready;
+    FD_ZERO(&ready);
+    FD_SET(client.connected_socket, &ready);
+
+    if (select(client.connected_socket + 1, &ready, 0, 0, &timeout) < 0) {
+        throw exceptions::select_failure("Failed to select for client's connection socket. Error " + std::to_string(socket_error) + " : " + std::string(get_socket_error_string(socket_error)), true, __FILE__, __LINE__ - 1, __FUNCTION__);
+    }
+
+    return FD_ISSET(client.connected_socket, &ready);
+}
+
+// disconnect_client(const client& client, const bool update_max)
+networking::network_structures::tcp_server& networking::network_structures::tcp_server::disconnect_client(const networking::network_structures::connected_host::client& client, const bool update_max) {
+    networking::network_structures::connected_host::client_name name = {client.hostname, client.portvalue};
+    return this->disconnect_client(name, update_max);
+}
+
+// disconnect_client(const client_name& client_name, const bool update_max)
+networking::network_structures::tcp_server& networking::network_structures::tcp_server::disconnect_client(const networking::network_structures::connected_host::client_name& client_name, const bool update_max) {
+    /*  
+    Not secure:
+        1.) Close the connection socket
+        2.) Remove client from clients map. -
+        3.) Update max_socket. -
+
+    Secure:
+        1.) SSL_shutdown of client's secure socket.
+        2.) close client's non-secure socket.
+        3.) SSL free client's secure socket.
+        4.) Remove client from clients map. -
+        5.) Update max socket (non-secure) and max secure socket -
+    */ 
+
+    
+    // Lookup should be O(1) - unordered_map.
+    if (this->clients_.contains(client_name)) {
+        
+        network_structures::connected_host::client client = this->clients_[client_name];
+        
+        // For whether or not to update the max sockets
+        bool non_secure, yes_secure;
+        if (update_max) {
+            non_secure = (this->max_socket_ == client.connected_socket);
+            yes_secure = (this->max_secure_ == client.secure_socket);
+        }
+        
+        // Close connection (secure or non-secure)
+        (this->secure_) ? SSL_shutdown(client.secure_socket) : 0;
+        close_socket(client.connected_socket);
+        (this->secure_) ? SSL_free(client.secure_socket) : (void) 0;
+
+        // Connection is undone
+
+
+        // Update internal management now.
+        // First remove client
+        this->clients_.erase(client_name);
+
+        if (update_max) {
+            // Now update max(es). Crap OS deals with unsigned ints, so min is 0.
+            #if defined(crap_os)
+                this->max_socket_ = (non_secure) ? 0 : this->max_socket_;
+            #else
+                this->max_socket_ = (non_secure) ? invalid_socket : this->max_socket_;
+            #endif
+
+            this->max_secure_ = (yes_secure) ? invalid_secure_socket : this->max_secure_;
+                
+            if (non_secure) {
+                // Update max non-secure socket
+                for (auto& this_client : this->clients_) {
+                    this->max_socket_ = (this_client.second.connected_socket > this->max_socket_) ? this_client.second.connected_socket : this->max_socket_;
+                }
+            }
+
+        
+            if (yes_secure) {
+                // Update max secure socket
+                for (auto& this_client : this->clients_) {
+                    this->max_secure_ = (this_client.second.secure_socket > this->max_secure_) ? this_client.second.secure_socket : this->max_secure_;
+                }
+            }
+        }
+
+    }
+
+    return *this;
+    
+}
+
+// disconnect_client(const std::string name, const std::string port, const bool update_max)
+networking::network_structures::tcp_server& networking::network_structures::tcp_server::disconnect_client(const std::string name, const std::string port, const bool update_max) {
+    // const networking::network_structures::connected_host::client_name names = {name, port};
+    return this->disconnect_client((const networking::network_structures::connected_host::client_name) {name, port}, update_max);
+}
+
+// new_client(struct timeval timeout)
+networking::network_structures::connected_host::client networking::network_structures::tcp_server::new_client(struct timeval timeout) {
+    if (not *this) {
+        throw networking::exceptions::listen_socket_failure("Server is not listening...", true, __FILE__, __LINE__ - 1, __FUNCTION__);
+    }
+    networking::network_structures::connected_host::client the_answer;
+    fd_set ready;
+    FD_ZERO(&ready);
+    FD_SET(this->connect_socket_, &ready);
+
+    if (select(this->connect_socket_ + 1, &ready, 0, 0, &timeout) < 0) {
+        throw networking::exceptions::select_failure("Failed to select for server's actively listening socket. Error " + std::to_string(socket_error) + " : " + std::string(get_socket_error_string(socket_error)), true, __FILE__, __LINE__ - 1, __FUNCTION__);
+    }
+
+    if (FD_ISSET(this->connect_socket_, &ready)) {
+        // There is a new connection request
+        int line_;
+        the_answer.address_size = sizeof(the_answer.address_info);
+
+        line_ = __LINE__ + 1;
+        the_answer.connected_socket = accept(this->connect_socket_, (struct sockaddr*) &the_answer.address_info, &the_answer.address_size);
+        the_answer.connection_time = misc_functions::get_current_time();
+
+        if (not valid_socket(the_answer.connected_socket)) {
+            throw networking::exceptions::accept_failure("Failed to accept a new incomming connection. Error " + std::to_string(socket_error) + std::string(get_socket_error_string(socket_error)), true, __FILE__, line_, __FUNCTION__);
+        }
+
+        // The connection has been made
+        char address_buffer[buffer_size], port_buffer[buffer_size];
+        std::memset(address_buffer, 0, buffer_size); std::memset(port_buffer, 0, buffer_size);
+        
+        line_ = __LINE__ + 1;
+        if (getnameinfo((struct sockaddr*) &the_answer.address_info, the_answer.address_size, address_buffer, buffer_size, port_buffer, buffer_size, NI_NUMERICHOST | NI_NUMERICSERV)) {
+            
+            if (getnameinfo((struct sockaddr*) &the_answer.address_info, the_answer.address_size, address_buffer, buffer_size, port_buffer, buffer_size, NI_NAMEREQD | AI_ALL)) {
+                throw networking::exceptions::getnameinfo_failure("Failed to retrieve client's name and or client's port number. All is necessary information. Error " + std::to_string(socket_error) + " : " + std::string(get_socket_error_string(socket_error)), true, __FILE__, line_, __FUNCTION__);
+            }
+            the_answer.hostname = std::string(address_buffer);
+            the_answer.portvalue = std::string(port_buffer);
+        }
+        else {
+            the_answer.hostname = std::string(address_buffer);
+            the_answer.portvalue = std::string(port_buffer);
+        }
+
+        // Have the hostname and portvalues
+        // Now for the secure connection
+        if (this->secure_) {
+            std::string message;
+            const int space = 3 * buffer_size;
+            char buffer[space];
+
+            ERR_clear_error();
+            line_ = __LINE__ + 1;
+            the_answer.secure_socket = SSL_new(this->context_);
+            
+            if (not valid_secure_socket(the_answer.secure_socket)) {
+                ERR_error_string_n(ERR_get_error(), buffer, space);
+                message = "Failed to create a secure socket for communication with \"" + 
+                            the_answer.hostname + "\" : " + std::string(buffer);
+                throw networking::exceptions::secure_sockets_layer_error(message, true, __FILE__, line_, __FUNCTION__);
+            }
+
+            ERR_clear_error();
+            line_ = __LINE__ + 1;
+            if (not SSL_set_fd(the_answer.secure_socket, the_answer.connected_socket)) {
+                SSL_shutdown(the_answer.secure_socket);
+                close_socket(the_answer.connected_socket);
+                SSL_free(the_answer.secure_socket);
+                ERR_error_string_n(ERR_get_error(), buffer, space);
+                message = "Failed to set the connection socket as the TLS/SSL endpoint. Error - " + std::string(buffer);
+                throw networking::exceptions::secure_sockets_layer_error(message, true, __FILE__, line_, __FUNCTION__);
+            }
+
+            // int secure_accept = SSL_accept(the_answer.secure_socket);
+
+            ERR_clear_error();
+            line_ = __LINE__ + 1;
+            if (SSL_accept(the_answer.secure_socket) != 1) {
+                
+                SSL_shutdown(the_answer.secure_socket);
+                close_socket(the_answer.connected_socket);
+                SSL_free(the_answer.secure_socket);
+                ERR_error_string_n(ERR_get_error(), buffer, space);
+                message = "Failed to accept new secure TLS/SSL connection. Error - " + std::string(buffer);
+                throw networking::exceptions::secure_sockets_layer_error(message, true, __FILE__, line_, __FUNCTION__);
+            }
+
+            this->max_secure_ = (the_answer.secure_socket > this->max_secure_) ? the_answer.secure_socket : this->max_secure_;
+        }
+
+        this->max_socket_ = (the_answer.connected_socket > this->max_socket_) ? the_answer.connected_socket : this->max_socket_;
+
+    }
+
+    return the_answer;
+}
+
+// clients_with_data()
+std::vector<networking::network_structures::connected_host::client> networking::network_structures::tcp_server::clients_with_data() {
+    std::vector<networking::network_structures::connected_host::client> the_answer;
+
+    // TODO : IMPLEMENT ME
+
+
+    return the_answer;
+}
+
+// all_clients()
+std::vector<networking::network_structures::connected_host::client> networking::network_structures::tcp_server::all_clients() {
+    std::vector<networking::network_structures::connected_host::client> the_answer;
+
+    // TODO : IMPLEMENT ME
+
+    return the_answer;
+}
+
+// update()
+networking::network_structures::tcp_server& networking::network_structures::tcp_server::update() {
+
+    // TODO : IMPLEMENT ME
+
+    return *this;
+}
+
+// run(bool reuse)
+networking::network_structures::tcp_server& networking::network_structures::tcp_server::run(bool reuse) {
+
+
+    // TODO : IMPLEMENT ME
+
+    return *this;
+}
+
+// close_server()
+networking::network_structures::tcp_server& networking::network_structures::tcp_server::close_server() {
+    
+    // First disconnect all clients
+    for (auto client : this->clients_) {
+        this->disconnect_client(client.first, false); // Save on execution time
+    }
+
+    // CLose the main non-secure connection
+    this->close_host();
+    
+    // Close the secore connection
+    (this->secure_ and this->context_) ? SSL_CTX_free(this->context_) : (void) 0;
+    (not this->secure_was_init_) ? networking::uninitialize_secure_network() : true;
+    return *this;
+}
+
+// block_clients(const bool block)
+networking::network_structures::tcp_server& networking::network_structures::tcp_server::block_clients(const bool block) {
+    
+
+    // TODO : IMPLEMENT ME
+    
+    return *this;
+}
+
+
+bool networking::network_structures::tcp_server::block_clients() const {
+    return this->block_clients_;
+}
+
+
+networking::network_structures::tcp_server& networking::network_structures::tcp_server::blocking(const bool block) {
+    networking::network_structures::host::blocking(block);
+    return *this;
+}
+
+/***** TCP Server public methods end *********/
+
+
+
+/************************************* TCP Server END *****************************************/
 /***********************************************************************************************/

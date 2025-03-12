@@ -7,6 +7,7 @@
 #define _NETWORKING_FUNC_
 
     #include "../headers/included"
+    #include "misc_functions"
 
     namespace networking {
 
@@ -158,6 +159,11 @@
                     create_context_failure(const std::string msg = "Failed to create a network context", bool print = true, const std::string file_name = __FILE__, const int except_line = __LINE__, const std::string function = "Unknown function");
             };
 
+            class socket_information_failure : public base_exception {
+                public:
+                    socket_information_failure(const std::string msg = "Failed to retrieve socket information", bool print = true, const std::string file_name = __FILE__, const int except_line = __LINE__, const std::string function = "Unknown function");
+            };
+
         }
 
         
@@ -263,6 +269,22 @@
          */
         bool is_ipstring(const std::string the_ip, const bool ip4 = true);
 
+        /**
+            Check if `the_socket` is blocking or not.
+         */
+        bool socket_is_blocking(socket_type the_socket, const bool throw_except = true);
+
+        /**
+            Set the socket passed in to non-blocking. 
+            Avoid throwing an exception by setting `throw_except` as appropriate.
+         */
+        bool set_non_blocking(socket_type the_socket, const bool throw_except = true);
+
+        /**
+            Set the socket passed in to blocking.
+            Avoid throwing an exception by setting `throw_except` as appropriate.
+         */
+        bool set_blocking(socket_type the_socket, const bool throw_except = true);
         
         namespace network_structures {
 
@@ -272,10 +294,12 @@
                     std::string hostname = "", portvalue = "";
                     
                     bool operator<(const struct client_name& other) const;
+                    bool operator==(const struct client_name& other) const;
                 } client_name;
 
                 typedef struct client {
                     std::string hostname = "", portvalue = "";
+                    std::string connection_time = misc_functions::get_current_time();
                     socket_type connected_socket = invalid_socket;
                     secure_socket_type secure_socket = invalid_secure_socket;
 
@@ -307,9 +331,8 @@
 
             }
 
-
-
             class host {
+
 
                 protected:
 
@@ -318,6 +341,37 @@
                     socket_type connect_socket_;
                     bool tcp_, serving_, was_init_;
 
+
+                    /**
+                        Get the status of whether or not this host uses tcp.
+                        If `false` this host is using UDP.
+                     */
+                    bool tcp() const;
+
+                    /**
+                        Update this host to use TCP 
+                        (`yes` = true) or UDP (`yes` = false).
+                        
+                        !NOTE! If this host has a connected socket,
+                        this method will do nothing.
+                     */
+                    host& tcp(const bool yes);
+                    
+                    /**
+                        If `true`, the host's socket is set up as a 
+                        server socket. If `false` the host's socket is set 
+                        up as a client socket.
+                     */
+                    bool serve() const;
+                    
+                    /**
+                        Tell the host to set up it's connection socket 
+                        as a server socket (if `yes` is true), or 
+                        as a client socket (if `yes` is false).
+
+                        !NOTE! If the socket is connected, this will not change.
+                     */
+                    host& serve(const bool yes);
 
                     /**
                         Get the next address in the linked list
@@ -350,17 +404,29 @@
                      */
                     virtual bool close_host();
                     
+                    /**
+                        Check if the main socket for this host is still connected.
+                     */
+                    virtual bool main_socket_connected() const;
+                    
                 public:
 
+                    /**
+                        Default constructor
+                     */
                     host();
 
                     host(const std::string host_address, const std::string port = DEFAULT_PORT, const bool use_tcp = true, const bool serving = true);
 
                     host(const host& other);
 
+                    host(host&& other) noexcept;
+
                     ~host();
 
                     host& operator=(const host& other);
+
+                    host& operator=(host&& other) noexcept;
 
                     /**
                         Get the socket of this host object
@@ -402,16 +468,46 @@
                             const std::set<std::string> family_name_options = 
                             {network_address_families::ip_version4_address_family, 
                                 network_address_families::ip_version6_address_family});
+                    
+                    /**
+                        Get the status of the host's active socket. 
+                        If `true` is returned, the host's active socket 
+                        is blocking, otherwise, `false` is returned if the host's 
+                        active socket is non-blocking.
+                     */
+                    bool blocking() const;
+
+                    /**
+                        Set the host's active socket to blocking 
+                        if `block` is set to `true`, otherwise sets the 
+                        socket's active socket to non-blocking if `block` 
+                        is `false`.
+
+                        Also if an attempt is made to set the host's 
+                        socket to what is currently is, nothing happens.
+                     */
+                    virtual host& blocking(const bool block = true);
 
             };
-
 
             class tcp_server : public host {
 
                 private:
                     
+                    bool secure_, secure_was_init_, block_clients_;
+                    socket_type max_socket_;
+                    secure_socket_type max_secure_;
+                    context_type context_;
+                    std::string key_file_, cert_file_;
+                    std::unordered_map<connected_host::client_name, connected_host::client> clients_;
+
                     
-                    std::unordered_map<connected_host::client_name, connected_host::client> clients;
+                    
+
+                    // tcp_server& _close_server();
+
+                    bool listening() const;
+
 
 
 
@@ -419,30 +515,152 @@
 
                     tcp_server();
 
-                    tcp_server(const std::string host, const std::string port = DEFAULT_PORT, bool secure = false);
+                    tcp_server(const std::string hostname, const std::string port = DEFAULT_PORT, const bool secure_server = false, const std::string key = "", const std::string cert = "");
 
                     tcp_server(const tcp_server& other);
 
-                    operator bool() const;
+                    tcp_server(tcp_server&& other) noexcept;
+
+                    ~tcp_server();
 
                     tcp_server& operator=(const tcp_server& other);
 
+                    tcp_server& operator=(tcp_server&& other) noexcept;
+
+                    operator bool() const;
+
+                    /**
+                        Check if the server is secure or not.
+                     */
+                    bool secure() const;
+
+                    /**
+                        Update this server to be a secure server or not.
+                        
+                        !NOTE! Server cannot be updated while it's running.
+                     */
+                    tcp_server& secure(const bool set_secure);
+
+                    
+                    /**
+                        Get the key that this server uses for secure connections.
+                     */
+                    std::string key() const;
+
+                    /**
+                        Update the key file that this server will use for secure connections.
+                        !NOTE! If the server is running, the key will not update.
+                     */
+                    tcp_server& key(const std::string new_key);
+
+                    
+                    /**
+                        Get the certificate file that this server uses for seure connections.
+                     */
+                    std::string cert() const;
+
+
+                    /**
+                        Update the certificate file that this server uses for secure connecions.
+                        !NOTE! If the server is running, the certificate will not update.
+                     */
+                    tcp_server& cert(const std::string new_cert);
+
+                    /**
+                        Check if the client passed in has data to be read or not.
+                     */
+                    bool client_has_data(connected_host::client& client, struct timeval timeout = {0, 200});
+
+                    /**
+                        Disconnects the client passed in, provided the client is indeed connected.
+                     */
+                    tcp_server& disconnect_client(const connected_host::client& client, const bool update_max = true);
+
+                    /**
+                        Disconnect the client with the `hostname` and `port` in the 
+                        `connected_host::client_name` client object. If the `update_max` flag is 
+                        true, then the max sockets are also updated.
+                     */
+                    tcp_server& disconnect_client(const connected_host::client_name& client_name, const bool update_max = true);
+
+                    
+                    /**
+                        Disconnect the client with the hostname `name` and the port value `port`.
+                     */
+                    tcp_server& disconnect_client(const std::string name, const std::string port, const bool update_max = true);
+
+                    /**
+                        Accept a new connection request from a new client and return the connection 
+                        information of the new client.
+                     */
+                    connected_host::client new_client(struct timeval timeout = {0, 200});
+
+                    /**
+                        Get all the clients that have data to be read.
+                     */
+                    std::vector<connected_host::client> clients_with_data();
+
+                    /**
+                        Get all the clients that are currently connected to this server.
+                     */
+                    std::vector<connected_host::client> all_clients();
+
+                    /**
+                        Update all the connected clients and disreguard 
+                        the connections that are closed or not longer in use.
+                     */
+                    tcp_server& update();
+
+                    /**
+                        Start the tcp_server.
+
+                        
+                            * The parameter reuse is a flag that when true, 
+                            will have the server set the listening socket to 
+                            reuse.
+                     */
+                    tcp_server& run(bool reuse = true);
+
+                    /**
+                        Shut down the server.
+                     */
+                    tcp_server& close_server();
+
+                    /**
+                        Set all the sockets connected to clients 
+                        to non blocking (if `block` is `false`), 
+                        or to blocking (if `block` is `true`).
+                     */
+                    tcp_server& block_clients(const bool block = true);
+
+                    /**
+                        Get the current status of the client 
+                        connection sockets.
+                     */
+                    bool block_clients() const;
+
+                    /**
+                        Set the listening socket to blocking
+                        (if `block` is `true`) or non-blocking 
+                        (if `block` is `false`).
+                     */
+                    tcp_server& blocking(const bool block);
 
             };
 
+            class tcp_client : public host {
 
-            class tcp_client {
+                private:
+                    bool secure_;
+                    std::string connection_time;
 
+                public:
+
+
+                    tcp_client();
+
+                    tcp_client(const std::string host_address, const std::string = DEFAULT_PORT, const bool secure = false);
             };
-
-
-            // TODO : IMPLEMENT THESE server methods
-
-            
-            class tcp_server_multithread : public host {};
-
-
-            class tcp_server_multiprocess : public host {};
 
         }
 
