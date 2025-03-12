@@ -4,8 +4,8 @@
 
 
 #include "../headers/included"
-#include "string_functions"
 #include "networking"
+#include "string_functions"
 
 
 
@@ -659,6 +659,8 @@ bool networking::network_structures::connected_host::client_name::operator<(cons
 bool networking::network_structures::connected_host::client_name::operator==(const networking::network_structures::connected_host::client_name& other) const {
     return string_functions::same_string(this->hostname, other.hostname) and string_functions::same_string(this->portvalue, other.portvalue);
 }
+
+
 
 bool networking::network_structures::connected_host::client::operator<(const client& other) const {
     return this->connected_socket < other.connected_socket;

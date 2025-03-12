@@ -292,6 +292,9 @@
         #include <csignal>
     #endif
 
+    #if (defined(mac_os) and not defined(_LIBCPP_FUNCTIONAL)) or (defined(linux_os) and not defined(_GLIBCXX_FUNCTIONAL)) or (defined(crap_os) and not defined(_FUNCTIONAL_))
+        #include <functional>
+    #endif
 
 
 
@@ -358,13 +361,6 @@
         }
 
     #endif
-
-
-    // inline struct sockaddr_storage empty_sockaddr() {
-    //     sockaddr_storage the_answer;
-    //     std::memset(&the_answer, 0, sizeof(the_answer));
-    //     return the_answer;
-    // }
 
 
 #endif

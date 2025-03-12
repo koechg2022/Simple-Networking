@@ -9,6 +9,8 @@
     #include "../headers/included"
     #include "misc_functions"
 
+
+
     namespace networking {
 
         namespace {
@@ -285,6 +287,11 @@
             Avoid throwing an exception by setting `throw_except` as appropriate.
          */
         bool set_blocking(socket_type the_socket, const bool throw_except = true);
+
+
+    }
+
+    namespace networking {
         
         namespace network_structures {
 
@@ -296,6 +303,28 @@
                     bool operator<(const struct client_name& other) const;
                     bool operator==(const struct client_name& other) const;
                 } client_name;
+
+            }
+
+        }
+
+    }
+
+namespace std {
+    template <> struct hash<networking::network_structures::connected_host::client_name> {
+        size_t operator()(const networking::network_structures::connected_host::client_name& cn) const {
+            size_t h1 = std::hash<std::string>{}(cn.hostname);
+            size_t h2 = std::hash<std::string>{}(cn.portvalue);
+            return h1 ^ (h2 << 1); // or use boost::hash_combine
+        }
+    };
+}
+
+    namespace networking {
+
+        namespace network_structures {
+
+            namespace connected_host {
 
                 typedef struct client {
                     std::string hostname = "", portvalue = "";
@@ -464,10 +493,10 @@
                         To view what the new variable is, use the `hostname()` method.
                      */
                     host& retrieve_hostname(const std::set<std::string> adapter_name_options = 
-                        {network_address_families::rel_adapter}, 
+                        {networking::network_address_families::rel_adapter}, 
                             const std::set<std::string> family_name_options = 
-                            {network_address_families::ip_version4_address_family, 
-                                network_address_families::ip_version6_address_family});
+                            {networking::network_address_families::ip_version4_address_family, 
+                                networking::network_address_families::ip_version6_address_family});
                     
                     /**
                         Get the status of the host's active socket. 
@@ -665,6 +694,8 @@
         }
 
     }
+
+    
 
 
 #endif
