@@ -62,6 +62,26 @@
 
         namespace exceptions {
 
+            const std::string base_exception_type = "base_exception",
+                    unexpected_exception_type = "unexpected_exception",
+                    memory_exception_type = "memory_exception",
+                    initialize_network_failure_type = "initialize_network_failure",
+                    get_addrinfo_failure_type = "get_addrinfno_failure",
+                    getifaddrs_failure_type = "getifaddrs_failure",
+                    greate_socket_failure_type = "greate_socket_failure",
+                    create_socket_failure_type = "create_socket_failure",
+                    bind_socket_failure_type = "bind_socket_failure",
+                    listen_socket_failure_type = "listen_socket_failure",
+                    select_failure_type = "select_failure",
+                    getnameinfo_failure_type = "getnameinfo_failure",
+                    connect_failure_type = "connect_failure",
+                    certificate_or_key_error_type = "certificate_or_key_error",
+                    secure_sockets_layer_error_type = "secure_sockets_layer_error",
+                    certificate_error_type = "certificate_error",
+                    accept_failure_type = "accept_failure",
+                    create_context_failure_type = "create_context_failure",
+                    socket_information_failure_type = "socket_information_failure";
+
             class base_exception {
 
                 protected:
@@ -70,7 +90,7 @@
                 
                 public:
 
-                    base_exception(const std::string name = "Exception", const std::string msg = "Simple exception thrown", bool print = true, const std::string file_name = __FILE__, const int except_line = __LINE__, const std::string function = "Unknown function");
+                    base_exception(const std::string name = base_exception_type, const std::string msg = "Simple exception thrown", bool print = true, const std::string file_name = __FILE__, const int except_line = __LINE__, const std::string function = "Unknown function");
 
                     ~base_exception() throw();
 

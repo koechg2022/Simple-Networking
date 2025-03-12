@@ -157,55 +157,55 @@ const std::string networking::exceptions::base_exception::exception_type() const
 
 
 networking::exceptions::unexpected_exception::unexpected_exception(const std::string msg, bool print, const std::string file_name, const int except_line, const std::string function) : 
-    networking::exceptions::base_exception("unexpected_exception", msg, print, file_name, except_line, function) {}
+    networking::exceptions::base_exception(networking::exceptions::unexpected_exception_type, msg, print, file_name, except_line, function) {}
 
 networking::exceptions::memory_exception::memory_exception(const std::string msg, bool print, const std::string file_name, const int except_line, const std::string function) : 
-    networking::exceptions::base_exception("memory_exception", msg, print, file_name, except_line, function) {}
+    networking::exceptions::base_exception(networking::exceptions::memory_exception_type, msg, print, file_name, except_line, function) {}
 
 networking::exceptions::initialize_network_failure::initialize_network_failure(const std::string msg, bool print, const std::string file_name, const int except_line, const std::string function) : 
-    networking::exceptions::base_exception("initialize_network_failure", msg, print, file_name, except_line, function) {}
+    networking::exceptions::base_exception(networking::exceptions::initialize_network_failure_type, msg, print, file_name, except_line, function) {}
 
 networking::exceptions::getaddrinfo_failure::getaddrinfo_failure(const std::string msg, bool print, const std::string file_name, const int except_line, const std::string function) : 
-    networking::exceptions::base_exception("getaddrinfo_failure", msg, print, file_name, except_line, function) {}
+    networking::exceptions::base_exception(networking::exceptions::get_addrinfo_failure_type, msg, print, file_name, except_line, function) {}
 
 networking::exceptions::getifaddrs_failure::getifaddrs_failure(const std::string msg, bool print, const std::string file_name, const int except_line, const std::string function) : 
-    networking::exceptions::base_exception("getifaddrs_failure", msg, print, file_name, except_line, function) {}
+    networking::exceptions::base_exception(networking::exceptions::getifaddrs_failure_type, msg, print, file_name, except_line, function) {}
 
 networking::exceptions::create_socket_failure::create_socket_failure(const std::string msg, bool print, const std::string file_name, const int except_line, const std::string function) : 
-    networking::exceptions::base_exception("create_socket_failure", msg, print, file_name, except_line, function) {}
+    networking::exceptions::base_exception(networking::exceptions::create_socket_failure_type, msg, print, file_name, except_line, function) {}
 
 networking::exceptions::bind_socket_failure::bind_socket_failure(const std::string msg, bool print, const std::string file_name, const int except_line, const std::string function) : 
-    networking::exceptions::base_exception("bind_socket_failure", msg, print, file_name, except_line, function) {}
+    networking::exceptions::base_exception(networking::exceptions::bind_socket_failure_type, msg, print, file_name, except_line, function) {}
 
 networking::exceptions::listen_socket_failure::listen_socket_failure(const std::string msg, bool print, const std::string file_name, const int except_line, const std::string function) : 
-    networking::exceptions::base_exception("listen_socket_failure", msg, print, file_name, except_line, function) {}
+    networking::exceptions::base_exception(networking::exceptions::listen_socket_failure_type, msg, print, file_name, except_line, function) {}
 
 networking::exceptions::select_failure::select_failure(const std::string msg, bool print, const std::string file_name, const int except_line, const std::string function) : 
-    networking::exceptions::base_exception("select_failure", msg, print, file_name, except_line, function) {}
+    networking::exceptions::base_exception(networking::exceptions::select_failure_type, msg, print, file_name, except_line, function) {}
 
 networking::exceptions::getnameinfo_failure::getnameinfo_failure(const std::string msg, bool print, const std::string file_name, const int except_line, const std::string function) : 
-    networking::exceptions::base_exception("getnameinfo_failure", msg, print, file_name, except_line, function) {}
+    networking::exceptions::base_exception(networking::exceptions::getnameinfo_failure_type, msg, print, file_name, except_line, function) {}
 
 networking::exceptions::connect_failure::connect_failure(const std::string msg, bool print, const std::string file_name, const int except_line, const std::string function) : 
-    networking::exceptions::base_exception("connect_failure", msg, print, file_name, except_line, function) {}
+    networking::exceptions::base_exception(networking::exceptions::connect_failure_type, msg, print, file_name, except_line, function) {}
 
 networking::exceptions::certificate_or_key_error::certificate_or_key_error(const std::string msg, bool print, const std::string file_name, const int except_line, const std::string function) : 
-    networking::exceptions::base_exception("certificate_or_key_error", msg, print, file_name, except_line, function) {}
+    networking::exceptions::base_exception(networking::exceptions::certificate_or_key_error_type, msg, print, file_name, except_line, function) {}
         
 networking::exceptions::secure_sockets_layer_error::secure_sockets_layer_error(const std::string msg, bool print, const std::string file_name, const int except_line, const std::string function) :
-    networking::exceptions::base_exception("secure_sockets_layer_error", msg, print, file_name, except_line, function) {}
+    networking::exceptions::base_exception(networking::exceptions::secure_sockets_layer_error_type, msg, print, file_name, except_line, function) {}
 
 networking::exceptions::certificate_error::certificate_error(const std::string msg, bool print, const std::string file_name, const int except_line, const std::string function) :
-    networking::exceptions::base_exception("certificate_error", msg, print, file_name, except_line, function) {}
+    networking::exceptions::base_exception(networking::exceptions::certificate_error_type, msg, print, file_name, except_line, function) {}
 
 networking::exceptions::accept_failure::accept_failure(const std::string msg, bool print, const std::string file_name, const int except_line, const std::string function) :
-    networking::exceptions::base_exception("accept_failure", msg, print, file_name, except_line, function) {}
+    networking::exceptions::base_exception(networking::exceptions::accept_failure_type, msg, print, file_name, except_line, function) {}
 
 networking::exceptions::create_context_failure::create_context_failure(const std::string msg, bool print, const std::string file_name, const int except_line, const std::string function) :
-    networking::exceptions::base_exception("accept_failure", msg, print, file_name, except_line, function) {}
+    networking::exceptions::base_exception(networking::exceptions::accept_failure_type, msg, print, file_name, except_line, function) {}
 
 networking::exceptions::socket_information_failure::socket_information_failure(const std::string msg, bool print, const std::string file_name, const int except_line, const std::string function) :
-    networking::exceptions::base_exception("socket_information_failure", msg, print, file_name, except_line, function) {}
+    networking::exceptions::base_exception(networking::exceptions::socket_information_failure_type, msg, print, file_name, except_line, function) {}
 
 bool networking::initialize_network() {
     #if defined(crap_os)
@@ -1492,9 +1492,33 @@ networking::network_structures::connected_host::client networking::network_struc
 
 // clients_with_data()
 std::vector<networking::network_structures::connected_host::client> networking::network_structures::tcp_server::clients_with_data() {
+    
     std::vector<networking::network_structures::connected_host::client> the_answer;
+    std::string message = "Socket is not listening...";
+    int line_ = __LINE__ + 1;
+    if (not valid_socket(this->connect_socket_)) {
+        throw networking::exceptions::listen_socket_failure(message, true, __FILE__, line_, __FUNCTION__);
+    }
+    
+    message = "Socket is not connected...";
+    line_ = __LINE__ + 1;
+    if (not this->main_socket_connected()) {
+        throw networking::exceptions::connect_failure(message, true, __FILE__, line_, __FUNCTION__);
+    }
 
-    // TODO : IMPLEMENT ME
+    try {
+        if (not this->listening()) {
+            return the_answer;
+        }
+    }
+    catch (networking::exceptions::base_exception& except) {
+        return the_answer;
+    }
+
+    // TODO : IMPLEMENT ME - Finish writing out the code to get all clients with data to be read.
+    
+    // listening socket is listening
+
 
 
     return the_answer;
@@ -1504,7 +1528,7 @@ std::vector<networking::network_structures::connected_host::client> networking::
 std::vector<networking::network_structures::connected_host::client> networking::network_structures::tcp_server::all_clients() {
     std::vector<networking::network_structures::connected_host::client> the_answer;
 
-    // TODO : IMPLEMENT ME
+    // TODO : IMPLEMENT ME - all_clients()
 
     return the_answer;
 }
@@ -1512,7 +1536,7 @@ std::vector<networking::network_structures::connected_host::client> networking::
 // update()
 networking::network_structures::tcp_server& networking::network_structures::tcp_server::update() {
 
-    // TODO : IMPLEMENT ME
+    // TODO : IMPLEMENT ME - update()
 
     return *this;
 }
@@ -1521,7 +1545,7 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
 networking::network_structures::tcp_server& networking::network_structures::tcp_server::run(bool reuse) {
 
 
-    // TODO : IMPLEMENT ME
+    // TODO : IMPLEMENT ME - run(bool reuse)
 
     return *this;
 }
@@ -1547,7 +1571,7 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
 networking::network_structures::tcp_server& networking::network_structures::tcp_server::block_clients(const bool block) {
     
 
-    // TODO : IMPLEMENT ME
+    // TODO : IMPLEMENT ME - block_clients(const bool block)
     
     return *this;
 }
