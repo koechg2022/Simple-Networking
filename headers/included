@@ -176,6 +176,10 @@
             #include <sys/fcntl.h>
         #endif
 
+        #if (defined(mac_os) and not defined(_SYS_POLL_H_)) or (defined(linux_os) and not defined(_SYS_POLL_H_))
+            #include <poll.h>
+        #endif
+
 
         // For dealing with adapters
         #define ifaddrs_adapter_type struct ifaddrs*

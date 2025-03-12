@@ -6,46 +6,15 @@
 #include "../headers/included"
 #include "networking"
 #include "string_functions"
+#include <sys/poll.h>
+#include <unordered_map>
 
-
-
-
-
-
-
-
-
-
-
-namespace networking {
-
-    static bool clean_on_except = true;
-
-    namespace {
-
-        #if defined(crap_os)
-            bool is_init = false;
-        #else
-            const bool is_init = true;
-        #endif
-
-        bool is_init_secure = false;
-
-        const std::string ip6_regex_pattern = std::string("^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}") + 
-            std::string("|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}") +
-            std::string("|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}") +
-            std::string("){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:)") + 
-            std::string("{1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6}") + 
-            std::string(")|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}") + 
-            std::string("|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}") + 
-            std::string("(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1") + 
-            std::string("{0,1}[0-9]){0,1}[0-9])\\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$");
-    }
-    
-}
 
 /***********************************************************************************************/
+
+
 /************************************ Networking Info funcs ************************************/
+
 
 std::set<std::string> networking::network_address_families::get_address_families() {
     std::set<std::string> the_answer;
@@ -137,23 +106,35 @@ std::string networking::network_address_families::resolve_address_family_to_stri
     return the_answer;
 }
 
+
+/***********************************************************************************************/
+
+
+
+//                                             *
+
+
+
+/************************************ Networking Exceptions ************************************/
+
 networking::exceptions::base_exception::base_exception(const std::string name, const std::string msg, bool print, const std::string file_name, const int except_line, const std::string function) {
     this->except_name = name;
     this->message = msg;
     this->file = file_name;
     this->line = except_line;
     this->func = function;
-    if (print) {
-        std::fprintf(stderr, "\"%s\" Thrown:\n%s:%s:line, %d:\n%s\n", this->except_name.c_str(), this->file.c_str(), this->func.c_str(), this->line, this->message.c_str());
-    }
+    this->print_ = print;
+    // if (print) {
+    //     std::fprintf(stderr, "\"%s\" Thrown:\n%s:%s:line, %d:\n%s\n", this->except_name.c_str(), this->file.c_str(), this->func.c_str(), this->line, this->message.c_str());
+    // }
 }
 
 
-/***********************************************************************************************/
-/************************************ Networking Exceptions ************************************/
-
-
-networking::exceptions::base_exception::~base_exception() throw() {}
+networking::exceptions::base_exception::~base_exception() throw() {
+    if (this->print_) {
+        std::fprintf(stderr, "\"%s\" Thrown:\n%s:%s:line, %d:\n%s\n", this->except_name.c_str(), this->file.c_str(), this->func.c_str(), this->line, this->message.c_str());
+    }
+}
 
 const std::string networking::exceptions::base_exception::msg() const {
     return "\"" + this->except_name + "\" Thrown:\n" + this->file + ":" + this->func + "line, " + std::to_string(this->line) + "\n" + this->message.c_str() + "\n";
@@ -216,11 +197,15 @@ networking::exceptions::socket_information_failure::socket_information_failure(c
     networking::exceptions::base_exception(networking::exceptions::socket_information_failure_type, msg, print, file_name, except_line, function) {}
 
 
-
-
 /***********************************************************************************************/
-/************************************ Networking Functions ************************************/
 
+
+
+//                                             *
+
+
+
+/************************************ Networking Functions ************************************/
 
 
 bool networking::initialize_network() {
@@ -685,6 +670,13 @@ bool networking::set_blocking(socket_type the_socket, const bool throw_except) {
 }
 
 /***********************************************************************************************/
+
+
+
+//                                             *
+
+
+
 /***************************************** structures ******************************************/
 
 
@@ -714,10 +706,16 @@ networking::network_structures::connected_host::server::operator bool() const {
 }
 
 
-
 /***********************************************************************************************/
 
+
+
+//                                             *
+
+
+
 /******** Host protected methods ********/
+
 
 bool networking::network_structures::host::tcp() const {
     return this->tcp_;
@@ -844,7 +842,7 @@ bool networking::network_structures::host::main_socket_connected() const {
 
 
 
-
+//                *
 
 
 
@@ -1112,32 +1110,62 @@ networking::network_structures::host& networking::network_structures::host::bloc
 /********* TCP Server private methods *********/
 
 
-bool networking::network_structures::tcp_server::listening() const {
+bool networking::network_structures::tcp_server::listening(const bool throw_except) const {
 
     if (not valid_socket(this->connect_socket_)) {
         return false;
     }
-    
+
+    bool was_blocking = networking::socket_is_blocking(this->connect_socket_, throw_except);
+
+    if (was_blocking) {
+        networking::set_non_blocking(this->connect_socket_, throw_except);
+    }
+
     #if defined(unix)
         int the_answer;
     #else
         char the_answer;
     #endif
     socklen_t answer_len = sizeof(the_answer);
-
+    std::string message;
+    int line_ = __LINE__ + 1;
     if (getsockopt(this->connect_socket_, SOL_SOCKET, SO_ACCEPTCONN, &the_answer, &answer_len)) {
-        throw exceptions::listen_socket_failure("Failed to determine if socket is listening. Error " + std::to_string(socket_error) + std::string(get_socket_error_string(socket_error)), true, __FILE__, __LINE__ - 1, __FUNCTION__);
+        if (throw_except) {
+            message = "Failed to determine if socket is listening. Error " + 
+                std::to_string(socket_error) + 
+                    std::string(get_socket_error_string(socket_error));
+            throw exceptions::listen_socket_failure(message, true, __FILE__, line_, __FUNCTION__);
+        }
+        if (was_blocking) {
+            networking::set_blocking(this->connect_socket_, throw_except);
+        }
+        return false;
     }
 
+    line_ = __LINE__ + 1;
     if (answer_len != sizeof(the_answer)) {
-        throw exceptions::unexpected_exception("Unexpected size return value of from getsockopt. Got " + std::to_string(sizeof(the_answer)) + " instead of expected " + std::to_string(answer_len), true, __FILE__, __LINE__ - 1, __FUNCTION__);
+        if (throw_except) {
+            message = "Unexpected size return value of from getsockopt. Got " + 
+                        std::to_string(sizeof(the_answer)) + 
+                            " instead of expected " + std::to_string(answer_len);
+                    throw exceptions::unexpected_exception(message, true, __FILE__, line_, __FUNCTION__);
+        }
+        if (was_blocking) {
+            networking::set_blocking(this->connect_socket_, throw_except);
+        }
+        return false;
+    }
+    if (was_blocking) {
+        networking::set_blocking(this->connect_socket_, throw_except);
     }
     return the_answer;
 }
 
-/****** TCP Server private methods end*********/
+/****** TCP Server private methods end ********/
 
 
+//                *
 
 
 /********* TCP Server public methods *********/
@@ -1389,27 +1417,29 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
         this->clients_.erase(client_name);
 
         if (update_max) {
-            // Now update max(es). Crap OS deals with unsigned ints, so min is 0.
-            #if defined(crap_os)
-                this->max_socket_ = (non_secure) ? 0 : this->max_socket_;
-            #else
-                this->max_socket_ = (non_secure) ? invalid_socket : this->max_socket_;
-            #endif
+            
+            // Now update max(es). Crap OS deals with unsigned ints, and unix deals with regular ints.
+            // Work around it to set each to the first client's socket.
+            
+            this->max_socket_ = (non_secure) ? this->clients_.begin()->second.connected_socket : this->max_socket_;
 
-            this->max_secure_ = (yes_secure) ? invalid_secure_socket : this->max_secure_;
-                
-            if (non_secure) {
-                // Update max non-secure socket
-                for (auto& this_client : this->clients_) {
-                    this->max_socket_ = (this_client.second.connected_socket > this->max_socket_) ? this_client.second.connected_socket : this->max_socket_;
+            this->max_secure_ = (yes_secure) ? this->clients_.begin()->second.secure_socket : this->max_secure_;
+            
+
+            if (not this->clients_.empty()) {
+                if (non_secure) {
+                    // Update max non-secure socket
+                    for (auto& this_client : this->clients_) {
+                        this->max_socket_ = (this_client.second.connected_socket > this->max_socket_) ? this_client.second.connected_socket : this->max_socket_;
+                    }
                 }
-            }
 
-        
-            if (yes_secure) {
-                // Update max secure socket
-                for (auto& this_client : this->clients_) {
-                    this->max_secure_ = (this_client.second.secure_socket > this->max_secure_) ? this_client.second.secure_socket : this->max_secure_;
+            
+                if (yes_secure) {
+                    // Update max secure socket
+                    for (auto& this_client : this->clients_) {
+                        this->max_secure_ = (this_client.second.secure_socket > this->max_secure_) ? this_client.second.secure_socket : this->max_secure_;
+                    }
                 }
             }
         }
@@ -1428,8 +1458,12 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
 
 // new_client(struct timeval timeout)
 networking::network_structures::connected_host::client networking::network_structures::tcp_server::new_client(struct timeval timeout) {
+    
+
     if (not *this) {
-        throw networking::exceptions::listen_socket_failure("Server is not listening...", true, __FILE__, __LINE__ - 1, __FUNCTION__);
+        int line_ = __LINE__ - 1;
+        std::string message = "Server is not listening...";
+        throw networking::exceptions::listen_socket_failure(message, true, __FILE__, line_, __FUNCTION__);
     }
     networking::network_structures::connected_host::client the_answer;
     fd_set ready;
@@ -1528,32 +1562,78 @@ networking::network_structures::connected_host::client networking::network_struc
 std::vector<networking::network_structures::connected_host::client> networking::network_structures::tcp_server::clients_with_data() {
     
     std::vector<networking::network_structures::connected_host::client> the_answer;
-    std::string message = "Socket is not listening...";
-    int line_ = __LINE__ + 1;
-    if (not valid_socket(this->connect_socket_)) {
-        throw networking::exceptions::listen_socket_failure(message, true, __FILE__, line_, __FUNCTION__);
-    }
     
-    message = "Socket is not connected...";
-    line_ = __LINE__ + 1;
-    if (not this->main_socket_connected()) {
-        throw networking::exceptions::connect_failure(message, true, __FILE__, line_, __FUNCTION__);
-    }
-
-    try {
-        if (not this->listening()) {
-            return the_answer;
-        }
-    }
-    catch (networking::exceptions::base_exception& except) {
-        return the_answer;
-    }
 
     // TODO : IMPLEMENT ME - Finish writing out the code to get all clients with data to be read.
+    std::vector<networking::network_structures::connected_host::client_name> to_remove;
     
-    // listening socket is listening
+    if (this->clients_.size() < FD_SETSIZE) {
+        // Use select because there is a managable amout of sockets to deal with.
+        
+        fd_set ready;
+        FD_ZERO(&ready);
+        for (const auto& client : this->clients_) {
+            if (not networking::socket_is_connected(client.second.connected_socket)) {
+                to_remove.emplace_back(client.first);
+                continue;
+            }
+            
+            // client is still connected
+            FD_SET(client.second.connected_socket, &ready);
+        }
 
+        // ready has all the clients that have data to be read
+        for (const auto& client : this->clients_) {
+            if (FD_ISSET(client.second.connected_socket, &ready)) {
+                the_answer.emplace_back(client.second);
+            }
+        }
+    }
 
+    else {
+        // There are a lot of clients connected. Best to use poll
+        int ready;
+        std::vector<pollfd> check_polls;
+        std::unordered_map<socket_type, networking::network_structures::connected_host::client_name> to_check;
+
+        for (const auto& client : this->clients_) {
+            if (not networking::socket_is_connected(client.second.connected_socket)) {
+                to_remove.emplace_back(client.first);
+                continue;
+            }
+            pollfd this_poll = {client.second.connected_socket, POLLIN, 0};
+            check_polls.emplace_back(this_poll);
+            to_check.insert({client.second.connected_socket, client.first});
+        }
+
+        #if defined(crap_os)
+            int line_ = __LINE__ + 1;
+            ready = WSAPoll(check_polls.data(), check_polls.size(), 0);
+        #else
+            int line_ = __LINE__ + 1;
+            ready = poll(check_polls.data(), check_polls.size(), 0);
+        #endif
+
+        if (ready < 0) {
+            std::string message = "Failed to select for ready socket with poll(). Error " + 
+                            std::to_string(socket_error) + 
+                                " : " + std::string(get_socket_error_string(socket_error));
+            throw networking::exceptions::select_failure(message, true, __FILE__, line_, __FUNCTION__);
+        }
+
+        for (const auto& sock : check_polls) {
+            
+            // Does the socket have data to read?
+            if (sock.revents & POLLIN) {
+                the_answer.emplace_back(this->clients_[to_check[sock.fd]]);
+            }
+        }
+        
+    }
+
+    for (const auto& remove : to_remove) {
+        this->clients_.erase(remove);
+    }
 
     return the_answer;
 }
