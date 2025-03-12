@@ -1084,7 +1084,11 @@ bool networking::network_structures::tcp_server::listening() const {
         return false;
     }
     
-    int the_answer;
+    #if defined(unix)
+        int the_answer;
+    #else
+        char the_answer;
+    #endif
     socklen_t answer_len = sizeof(the_answer);
 
     if (getsockopt(this->connect_socket_, SOL_SOCKET, SO_ACCEPTCONN, &the_answer, &answer_len)) {
