@@ -177,7 +177,7 @@
         #endif
 
         #if (defined(mac_os) and not defined(_SYS_POLL_H_)) or (defined(linux_os) and not defined(_SYS_POLL_H_))
-            #include <poll.h>
+            #include <sys/poll.h>
         #endif
 
 

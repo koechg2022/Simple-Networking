@@ -6,8 +6,6 @@
 #include "../headers/included"
 #include "networking"
 #include "string_functions"
-#include <sys/poll.h>
-#include <unordered_map>
 
 
 /***********************************************************************************************/
