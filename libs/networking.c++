@@ -44,6 +44,9 @@ namespace networking {
     
 }
 
+/***********************************************************************************************/
+/************************************ Networking Info funcs ************************************/
+
 std::set<std::string> networking::network_address_families::get_address_families() {
     std::set<std::string> the_answer;
     the_answer.insert(unspec_address_family);
@@ -145,6 +148,11 @@ networking::exceptions::base_exception::base_exception(const std::string name, c
     }
 }
 
+
+/***********************************************************************************************/
+/************************************ Networking Exceptions ************************************/
+
+
 networking::exceptions::base_exception::~base_exception() throw() {}
 
 const std::string networking::exceptions::base_exception::msg() const {
@@ -207,6 +215,14 @@ networking::exceptions::create_context_failure::create_context_failure(const std
 networking::exceptions::socket_information_failure::socket_information_failure(const std::string msg, bool print, const std::string file_name, const int except_line, const std::string function) :
     networking::exceptions::base_exception(networking::exceptions::socket_information_failure_type, msg, print, file_name, except_line, function) {}
 
+
+
+
+/***********************************************************************************************/
+/************************************ Networking Functions ************************************/
+
+
+
 bool networking::initialize_network() {
     #if defined(crap_os)
         if (not is_init) {
@@ -253,7 +269,6 @@ bool networking::uninitialize_secure_network() {
     }
     return not is_init_secure;
 }
-
 
 std::vector<std::string> networking::resolve_hostname(const std::string hostname, const std::string port, const bool name) {
     
@@ -458,15 +473,17 @@ std::map<std::string, std::map<std::string, std::vector<std::string> > > network
 
 }
 
-bool networking::socket_is_connected(const socket_type the_socket) {
+bool networking::socket_is_connected(const socket_type the_socket, const bool throw_except) {
 
     if (not valid_socket(the_socket)) {
         return false;
     }
+
+    bool was_blocking = networking::socket_is_blocking(the_socket, throw_except);
     
     int retval = 0;
 
-    #ifdef _WIN32
+    #if defined(crap_os)
         u_long mode = 1;  // 1 to enable non-blocking socket
         ioctlsocket(the_socket, FIONBIO, &mode);
     #else
@@ -475,9 +492,10 @@ bool networking::socket_is_connected(const socket_type the_socket) {
     #endif
 
     char buffer[1];
+    int line_ = __LINE__ + 1;
     retval = recv(the_socket, buffer, 1, MSG_PEEK);
 
-    if (retval == 0) {
+    if (not retval) {
         return false;  // Connection closed
     } 
     else if (retval < 0) {
@@ -485,13 +503,31 @@ bool networking::socket_is_connected(const socket_type the_socket) {
             int error = 0;
             error = WSAGetLastError();
             if (error != WSAEWOULDBLOCK) {
+                if (was_blocking) {
+                    networking::set_blocking(the_socket, false);
+                }
+                if (throw_except) {
+                    std::string message = "Failed to retrieve socket connection information.";
+                    throw networking::exceptions::socket_information_failure(message, true, __FILE__, line_, __FUNCTION__);
+                }
                 return false;  // Error occurred
             }
         #else
             if (errno != EWOULDBLOCK && errno != EAGAIN) {
+                if (was_blocking) {
+                    networking::set_blocking(the_socket, false);
+                }
+                if (throw_except) {
+                    std::string message = "Failed to retrieve socket connection information.";
+                    throw networking::exceptions::socket_information_failure(message, true, __FILE__, line_, __FUNCTION__);
+                }
                 return false;  // Error occurred
             }
         #endif
+    }
+
+    if (was_blocking) {
+        networking::set_blocking(the_socket, throw_except);
     }
 
     return true;  // Connection is still alive
@@ -649,7 +685,7 @@ bool networking::set_blocking(socket_type the_socket, const bool throw_except) {
 }
 
 /***********************************************************************************************/
-/************************************ structures ************************************/
+/***************************************** structures ******************************************/
 
 
 bool networking::network_structures::connected_host::client_name::operator<(const client_name& other) const {
@@ -659,8 +695,6 @@ bool networking::network_structures::connected_host::client_name::operator<(cons
 bool networking::network_structures::connected_host::client_name::operator==(const networking::network_structures::connected_host::client_name& other) const {
     return string_functions::same_string(this->hostname, other.hostname) and string_functions::same_string(this->portvalue, other.portvalue);
 }
-
-
 
 bool networking::network_structures::connected_host::client::operator<(const client& other) const {
     return this->connected_socket < other.connected_socket;

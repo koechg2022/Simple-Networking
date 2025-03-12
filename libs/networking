@@ -278,7 +278,7 @@
             @param the_socket (`const socket_type`) : The socket to check if it's connected or not.
             @returns `true` if `the_socket` is connected, `false` otherwise.
          */
-        bool socket_is_connected(const socket_type the_socket);
+        bool socket_is_connected(const socket_type the_socket, const bool throw_except = true);
 
         /**
             @brief Check if `the_ip` is an `IP version 4` or an `IP version 6` 
