@@ -347,6 +347,7 @@
 
                 typedef struct client_name {
                     std::string hostname = "", portvalue = "";
+                    socket_type sock = invalid_socket;
                     
                     bool operator<(const struct client_name& other) const;
                     bool operator==(const struct client_name& other) const;
@@ -363,7 +364,8 @@
             size_t operator()(const networking::network_structures::connected_host::client_name& cn) const {
                 size_t h1 = std::hash<std::string>{}(cn.hostname);
                 size_t h2 = std::hash<std::string>{}(cn.portvalue);
-                return h1 ^ (h2 << 1); // or use boost::hash_combine
+                size_t h3 = std::hash<socket_type>{}(cn.sock);
+                return h1 ^ (h2 << 1) ^ (h3 << 2); // or use boost::hash_combine
             }
         };
     }
