@@ -783,7 +783,6 @@
                      */
                     tcp_server& print_exceptions(const bool print_except);
 
-
                     /**
                         Trying something to allow for chaining.
                      */
