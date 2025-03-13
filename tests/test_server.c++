@@ -347,6 +347,7 @@ void test_secure_server() {
     bool secure = true;
     std::string message;
     networking::network_structures::tcp_server server("", DEFAULT_PORT, secure, "../files/key.pem", "../files/cert.pem");
+    server.print_exceptions(false);
     
     try {
         server.retrieve_hostname();
@@ -394,7 +395,6 @@ void test_secure_server() {
 
     try {
 
-        server.print_exceptions(false);
         networking::network_structures::connected_host::client new_client;
         std::vector<networking::network_structures::connected_host::client> clients;
         
