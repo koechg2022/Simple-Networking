@@ -157,6 +157,9 @@ int main(int len, char** args) {
         else {
             std::cout << "Unrecognized test \"" << args[index] << "\". Acceptable arguments are:" << std::endl;
             for (const auto& arg : test_args_caps) {
+                if (arg.second.empty()) {
+                    std::cout << arg.first << " points to empty" << std::endl;
+                }
                 std::cout << "\t\"" << arg.second << "\"" << std::endl;
             }
         }
@@ -402,7 +405,6 @@ void test_secure_server() {
         char msg[count];
 
         std::cout << "Connect to host with \"" << server.hostname() << " : " << server.port() << "\"" << std::endl;
-        // std::cout << "Note, FD_SETSIZE = " << FD_SETSIZE << std::endl;
 
         while (server) {
 
