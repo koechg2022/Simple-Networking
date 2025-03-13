@@ -1376,7 +1376,7 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
 
 // operator bool() const
 networking::network_structures::tcp_server::operator bool() const {
-    return (this->secure_) ? (valid_context(this->context_) and this->listening_) : this->listening_;
+    return (this->secure_) ? (valid_context(this->context_) and this->listening_ and valid_socket(this->connect_socket_)) : this->listening_ and valid_socket(this->connect_socket_);
 }
 
 // secure()
@@ -1594,7 +1594,7 @@ networking::network_structures::connected_host::client networking::network_struc
                 throw networking::exceptions::secure_sockets_layer_error(message, this->print_except_, __FILE__, line_, __FUNCTION__);
             }
 
-            ERR_clear_error();
+            // ERR_clear_error();
             line_ = __LINE__ + 1;
             if (not SSL_set_fd(the_answer.secure_socket, the_answer.connected_socket)) {
                 SSL_shutdown(the_answer.secure_socket);
@@ -1607,7 +1607,7 @@ networking::network_structures::connected_host::client networking::network_struc
 
             // int secure_accept = SSL_accept(the_answer.secure_socket);
 
-            ERR_clear_error();
+            // ERR_clear_error();
             line_ = __LINE__ + 1;
             if (SSL_accept(the_answer.secure_socket) != 1) {
                 
