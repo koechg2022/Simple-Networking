@@ -381,7 +381,7 @@ void test_secure_server() {
             if (string_functions::has_keyboard_input()) {
                 message = string_functions::get_input();
 
-                if (string_functions::same_string(message, server_args_caps[EXIT]) or string_functions::same_string(message, server_args_lower[EXIT_])) {
+                if (string_functions::same_string(message, server_args_caps[EXIT]) or string_functions::same_string(message, server_args_lower[EXIT])) {
                     server.close_server();
                 }
 
