@@ -1637,7 +1637,7 @@ std::vector<networking::network_structures::connected_host::client> networking::
 
     std::vector<networking::network_structures::connected_host::client_name> to_remove;
     
-    if (this->clients_.size() < FD_SETSIZE) {
+    if (this->clients_.size() < 1024) {
         // Use select because there is a managable amout of sockets to deal with.
         
         fd_set ready;
