@@ -553,7 +553,7 @@ void test_secure_server() {
                             if (std::stoul(message) == 0) {
                                 std::cout << "Cannot select \"0\" client..." << std::endl;
                                 message = "N/A";
-                                break;
+                                // break;
                             }
                             if (std::stoul(message) - 1 < clients.size()) {
                                 new_client = clients[std::stoul(message) - 1];
@@ -564,6 +564,10 @@ void test_secure_server() {
                         for (const auto& this_client : clients) {
                             if (string_functions::same_string(this_client.hostname, message)) {
                                 new_client = this_client;
+                                std::cout << "Selected new client. Now new_client's information is" << std::endl;
+                                std::cout << "Hostname : " << new_client.hostname << std::endl;
+                                std::cout << "Port : " << new_client.portvalue << std::endl;
+                                std::cout << "Socket : " << new_client.connected_socket << std::endl;
                                 break;
                             }
                         }
