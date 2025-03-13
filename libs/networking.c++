@@ -1460,6 +1460,7 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
 
     
     // Lookup should be O(1) - unordered_map.
+    std::cout << "disconnect_client is saying that host \"" << client_name.hostname << "\" is " << (this->clients_.contains(client_name) ? "in" : "not in") << " the map" << std::endl;
     if (this->clients_.contains(client_name)) {
         
         network_structures::connected_host::client client = this->clients_[client_name];
