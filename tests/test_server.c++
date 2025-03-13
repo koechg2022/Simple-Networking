@@ -189,15 +189,20 @@ void test_server() {
     // std::cout << UNDER_CONSTRUCTION << std::endl;
     
     try {
+        bool secure = true;
         networking::network_structures::tcp_server server;
-        std::cout << "Successfully created a tcp_server object" << std::endl;
-        
-        std::cout << "Currently, sever is " << (server.secure() ? "secure" : "not secure") << std::endl;
-        std::cout << "And now the server is " << (server.secure(false).secure() ? "secure" : "not secure") << std::endl;
+
+        std::cout << "Certificate is \"" << server.cert("../files/cert.pem").cert() << "\"" << std::endl;
+        std::cout << "Key is \"" << server.key("../files/key.pem").cert() << "\"" << std::endl;
+        server.secure(secure);
+        server.retrieve_hostname();
+        server.run();
+        std::cout << (server ? "Successfully started " : "Failed to start ") << ((secure) ? "secure" : "non secure") << " server" << std::endl;
+
     }
 
     catch (networking::exceptions::base_exception& except) {
-        std::cerr << "Caught exception " << except.exception_type() << std::endl << std::endl;
+        std::cerr << std::endl << std::endl << "Caught exception " << except.exception_type() << std::endl << std::endl;
     }
 }
 

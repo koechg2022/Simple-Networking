@@ -10,6 +10,33 @@
     #include "misc_functions"
 
 
+    namespace networking {
+
+        static bool clean_on_except = true;
+
+        namespace {
+
+            #if defined(crap_os)
+                bool is_init = false;
+            #else
+                const bool is_init = true;
+            #endif
+
+            bool is_init_secure = false;
+
+            const std::string ip6_regex_pattern = std::string("^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}") + 
+                std::string("|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}") +
+                std::string("|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}") +
+                std::string("){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:)") + 
+                std::string("{1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6}") + 
+                std::string(")|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}") + 
+                std::string("|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}") + 
+                std::string("(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1") + 
+                std::string("{0,1}[0-9]){0,1}[0-9])\\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$");
+        }
+        
+    }
+
 
     namespace networking {
 
@@ -554,11 +581,15 @@
 
                 private:
                     
-                    bool secure_, secure_was_init_, block_clients_, certified_;
-                    socket_type max_socket_;
-                    secure_socket_type max_secure_;
-                    context_type context_;
-                    std::string key_file_, cert_file_;
+                    bool secure_ = false, 
+                        secure_was_init_ = networking::is_init_secure, 
+                        block_clients_ = true, 
+                        certified_ = false, 
+                        listening_ = false;
+                    socket_type max_socket_ = invalid_socket;
+                    secure_socket_type max_secure_ = invalid_secure_socket;
+                    context_type context_ = invalid_context;
+                    std::string key_file_ = "", cert_file_ = "";
                     std::unordered_map<connected_host::client_name, connected_host::client> clients_;
 
                     
@@ -566,7 +597,7 @@
 
                     // tcp_server& _close_server();
 
-                    bool listening(const bool throw_except = false) const;
+                    // bool listening() const;
 
                     bool create_context();
 
@@ -728,35 +759,4 @@
         }
 
     }
-
-
-    namespace networking {
-
-        static bool clean_on_except = true;
-
-        namespace {
-
-            #if defined(crap_os)
-                bool is_init = false;
-            #else
-                const bool is_init = true;
-            #endif
-
-            bool is_init_secure = false;
-
-            const std::string ip6_regex_pattern = std::string("^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}") + 
-                std::string("|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}") +
-                std::string("|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}") +
-                std::string("){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:)") + 
-                std::string("{1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6}") + 
-                std::string(")|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}") + 
-                std::string("|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}") + 
-                std::string("(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1") + 
-                std::string("{0,1}[0-9]){0,1}[0-9])\\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$");
-        }
-        
-    }
-    
-
-
 #endif
