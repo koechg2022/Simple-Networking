@@ -381,11 +381,11 @@ void test_secure_server() {
             if (string_functions::has_keyboard_input()) {
                 message = string_functions::get_input();
 
-                if (string_functions::same_string(message, server_args_caps[EXIT]) or string_functions::same_string(message, server_args_caps[EXIT_])) {
+                if (string_functions::same_string(message, server_args_caps[EXIT]) or string_functions::same_string(message, server_args_lower[EXIT_])) {
                     server.close_server();
                 }
 
-                else if (string_functions::same_string(message, "list clients") or string_functions::same_string(message, "lc")) {
+                else if (string_functions::same_string(message, server_args_caps[LIST_CLIENTS]) or string_functions::same_string(message, server_args_lower[LIST_CLIENTS_])) {
                     
                     clients = server.all_clients();
                     for (const auto& this_client : clients) {
@@ -476,7 +476,6 @@ void test_secure_server() {
                 }
 
                 else {
-                    std::cout << "server_args_caps[" << EXIT << "] : " << server_args_caps[EXIT] << std::endl;
                     std::cerr << "Unrecognized input : \"" << message << "\"" << std::endl;
                 }
             }
