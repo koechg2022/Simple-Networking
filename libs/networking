@@ -715,7 +715,7 @@
                         Accept a new connection request from a new client and return the connection 
                         information of the new client.
                      */
-                    connected_host::client new_client(struct timeval timeout = {0, 200});
+                    connected_host::client new_client(struct timeval timeout = {0, 100});
 
                     /**
                         Get all the clients that have data to be read.

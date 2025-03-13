@@ -1465,7 +1465,7 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
 
     
     // Lookup should be O(1) - unordered_map.
-    std::cout << "disconnect_client is saying that host \"" << client_name.hostname << "\" is " << (this->clients_.contains(client_name) ? "in" : "not in") << " the map" << std::endl;
+    // std::cout << "disconnect_client is saying that host \"" << client_name.hostname << "\" is " << (this->clients_.contains(client_name) ? "in" : "not in") << " the map" << std::endl;
     if (this->clients_.contains(client_name)) {
         
         network_structures::connected_host::client client = this->clients_[client_name];
@@ -1479,7 +1479,7 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
         
         // Close connection (secure or non-secure)
         bool s = ((valid_secure_socket(client.secure_socket)) ? SSL_shutdown(client.secure_socket) : 0);
-        std::cout << (s ? "s is true" : "s is false") << std::endl;
+        // std::cout << (s ? "s is true" : "s is false") << std::endl;
         close_socket(client.connected_socket);
         (this->secure_) ? SSL_free(client.secure_socket) : (void) 0;
 
@@ -1490,7 +1490,7 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
         // First remove client
         (disconnect_from_set) ? this->clients_.erase(client_name) : 0;
 
-        if (update_max) {
+        if (update_max and not this->clients_.empty()) {
             
             // Now update max(es). Crap OS deals with unsigned ints, and unix deals with regular ints.
             // Work around it to set each to the first client's socket.
