@@ -191,6 +191,7 @@ void test_server() {
     try {
         networking::network_structures::tcp_server server;
         std::cout << "Successfully created a tcp_server object" << std::endl;
+        server.secure(false);
         server.run();
         std::cout << "Server is running. Connect to server using \"" << server.hostname() << ":" << server.port() << "\"" << std::endl;
         std::cout << "Successfully started server. Closing it down now" << std::endl;
