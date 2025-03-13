@@ -480,7 +480,10 @@ void test_secure_server() {
                 }
 
                 else {
-                    std::cerr << "Unrecognized input : \"" << message << "\"" << std::endl;
+                    std::cerr << "Unrecognized input : \"" << message << "\". Acceptable server arguments are:" << std::endl;
+                    for (const auto& arg : server_args_caps) {
+                        std::cout << "\t\"" << arg.second << "\"" << std::endl;
+                    }
                 }
             }
 
