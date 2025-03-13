@@ -349,7 +349,7 @@ void test_secure_server() {
                     bytes = SSL_read(client.secure_socket, msg, count);
                     
                     if (bytes < 1) {
-                        std::cout << "Client disconnected" << std::endl;
+                        std::cout << "Client \"" << client.hostname << "\" disconnected." << std::endl;
                         server.disconnect_client(client);
                         continue;
                     }
