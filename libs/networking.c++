@@ -1478,7 +1478,7 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
         }
         
         // Close connection (secure or non-secure)
-        bool s = ((valid_secure_socket(client.secure_socket)) ? SSL_shutdown(client.secure_socket) : 0);
+        // bool s = ((valid_secure_socket(client.secure_socket)) ? SSL_shutdown(client.secure_socket) : 0);
         // std::cout << (s ? "s is true" : "s is false") << std::endl;
         close_socket(client.connected_socket);
         (this->secure_) ? SSL_free(client.secure_socket) : (void) 0;
