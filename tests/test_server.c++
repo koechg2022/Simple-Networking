@@ -416,10 +416,15 @@ void test_secure_server() {
                     message = "";
                     new_client = networking::network_structures::connected_host::client();
                     while (message.empty() or not string_functions::same_string(message, "N/A"))  {
-                        message = string_functions::get_input("Client to message");
+                        message = string_functions::get_input("Client to message : ");
                         if (string_functions::all_numbers(message.c_str())) {
-                            if (std::stoul(message) < clients.size()) {
-                                new_client = clients[std::stoul(message)];
+                            if (std::stoul(message) == 0) {
+                                std::cout << "Cannot select \"0\" client..." << std::endl;
+                                message = "N/A";
+                                break;
+                            }
+                            if (std::stoul(message) - 1 < clients.size()) {
+                                new_client = clients[std::stoul(message) - 1];
                                 break;
                             }
                         }
