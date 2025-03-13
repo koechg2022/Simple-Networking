@@ -264,21 +264,19 @@ void test_server() {
     
     bool secure = false;
     
-    networking::network_structures::tcp_server server;
-    server.print_exceptions(false).secure(secure);
-    networking::network_structures::connected_host::client new_client;
-    std::vector<networking::network_structures::connected_host::client> clients;
-    std::string message;
-    const int count = 3 * kilo_byte;
-    int bytes;
-    char msg[count];
 
-
-    server.secure(false);
-    server.retrieve_hostname();
-    server.print_on_exceptions(false);
 
     try {
+        networking::network_structures::tcp_server server;
+        
+        networking::network_structures::connected_host::client new_client;
+        std::vector<networking::network_structures::connected_host::client> clients;
+        std::string message;
+        const int count = 3 * kilo_byte;
+        int bytes;
+        char msg[count];
+
+        server.secure(secure).retrieve_hostname().print_on_exceptions(false);
         
         if (not server.run()) {
             std::cerr << "Failed to start server" << std::endl;
@@ -287,37 +285,45 @@ void test_server() {
         std::cout << "Connect to host with \"" << server.hostname() << " : " << server.port() << "\"" << std::endl;
 
         while (server) {
-            new_client = server.new_client();
+
+            new_client = server.new_client({0, 200000});
 
             if (valid_socket(new_client.connected_socket)) {
                 std::cout << "New connection from \"" << new_client.hostname << "\" at " << new_client.connection_time << std::endl;
             }
 
-            clients = server.clients_with_data();
 
-            // There is/are clients with data?
-            for (const auto& this_client : clients) {
-                bytes = recv(this_client.connected_socket, msg, count, 0);
+            
+            if (not (clients = server.clients_with_data()).empty()) {
+                for (const auto& client : clients) {
+                    bytes = SSL_read(client.secure_socket, msg, count);
+                    
+                    if (bytes < 1) {
+                        std::cout << "Client \"" << client.hostname << "\" disconnected." << std::endl;
+                        server.disconnect_client(client);
+                        continue;
+                    }
 
-                if (bytes < 1) {
-                    std::cout << "Unexpected disconnect from \"" << this_client.hostname << "\"" << std::endl;
-                    server.disconnect_client(this_client);
-                    continue;
+                    std::cout << "Message from \"" << client.hostname << "\"" << std::endl;
+                    std::cout << std::string(msg, bytes) << std::endl;
                 }
-
-                std::cout << "Message from client : " << std::string(msg) << std::endl;
             }
+
 
             if (string_functions::has_keyboard_input()) {
                 message = string_functions::get_input();
 
-                if (string_functions::same_string(message, "exit()") or string_functions::same_string(message, "exit")) {
+                if (string_functions::same_string(message, server_args_caps[EXIT]) or string_functions::same_string(message, server_args_lower[EXIT])) {
                     server.close_server();
                 }
 
-                else if (string_functions::same_string(message, "list clients") or string_functions::same_string(message, "lc")) {
+                else if (string_functions::same_string(message, server_args_caps[LIST_CLIENTS]) or string_functions::same_string(message, server_args_lower[LIST_CLIENTS])) {
                     
                     clients = server.all_clients();
+                    if (clients.empty()) {
+                        std::cout << "No clients connected..." << std::endl;
+                        std::cout << "------------------------------------------------" << std::endl;
+                    }
                     for (const auto& this_client : clients) {
                         std::cout << "Host : " << 
                                     this_client.hostname << ", Port :" << 
@@ -327,10 +333,155 @@ void test_server() {
                     }
                 }
 
+                else if (string_functions::same_string(message, server_args_caps[BROADCAST]) or string_functions::same_string(message, server_args_lower[BROADCAST])) {
+                    clients = server.all_clients();
+                    if (clients.empty()) {
+                        std::cout << "No clients to message..." << std::endl;
+                        continue;
+                    }
+
+                    message = string_functions::get_input("Message to broadcast : ");
+                    if (message.empty()) {
+                        continue;
+                    }
+                    for (const auto& client : clients) {
+                        bytes = SSL_write(client.secure_socket, message.c_str(), message.length());
+
+                        if (bytes < 1) {
+                            std::cerr << "Failed to send message to \"" << message << "\"" << std::endl;
+                            continue;
+                        }
+                        std::cout << "Sent " << bytes << " out of " << message.length() << " bytes to \"" << client.hostname << "\"" << std::endl;
+                    }
+                }
+
+                else if (string_functions::same_string(message, server_args_caps[MESSAGE_CLIENT]) or string_functions::same_string(message, server_args_lower[MESSAGE_CLIENT])) {
+
+                    // Print the clients
+                    clients = server.all_clients();
+                    if (clients.empty()) {
+                        std::cout << "No clients to message" << std::endl;
+                    }
+                    bytes = 1;
+                    for (const auto& this_client : clients) {
+                        std::cout << bytes << ".)\t" << this_client.hostname << std::endl;
+                        std::cout << "------------------------------------------------" << std::endl;
+                        bytes++;
+                    }
+                    message = "";
+                    new_client = networking::network_structures::connected_host::client();
+                    while (message.empty() or not string_functions::same_string(message, "N/A"))  {
+                        message = string_functions::get_input("Client to message : ");
+                        if (string_functions::all_numbers(message.c_str())) {
+                            if (std::stoul(message) == 0) {
+                                std::cout << "Cannot select \"0\" client..." << std::endl;
+                                message = "N/A";
+                                break;
+                            }
+                            if (std::stoul(message) - 1 < clients.size()) {
+                                new_client = clients[std::stoul(message) - 1];
+                                break;
+                            }
+                        }
+
+                        for (const auto& this_client : clients) {
+                            if (string_functions::same_string(this_client.hostname, message)) {
+                                new_client = this_client;
+                                break;
+                            }
+                        }
+
+                        if (not new_client.hostname.empty() or string_functions::same_string(message, "N/A")) {
+                            break;
+                        }
+
+                        std::cout << "Unrecognized host : \"" << message << "\"" << std::endl;
+                        message = "";
+                    }
+
+                    if (not new_client.hostname.empty()) {
+                        message = string_functions::get_input("Message to send : ");
+                        bytes = SSL_write(new_client.secure_socket, message.c_str(), message.length());
+                        if (bytes < 1) {
+                            std::cerr << "Failed to send message to \"" << new_client.hostname << "\"" << std::endl;
+                            server.disconnect_client(new_client);
+                            continue;
+                        }
+                        std::cout << "Sent " << bytes << " out of " << message.length() << " to \"" << new_client.hostname << "\"" << std::endl;
+                    }
+
+                }
+
+                else if (string_functions::same_string(message, server_args_caps[DISCONNECT_CLIENT]) or string_functions::same_string(message, server_args_lower[DISCONNECT_CLIENT])) {
+
+                    // Print the clients
+                    clients = server.all_clients();
+                    if (clients.empty()) {
+                        std::cout << "No clients to disconnect" << std::endl;
+                    }
+                    bytes = 1;
+                    for (const auto& this_client : clients) {
+                        std::cout << bytes << ".)\t" << this_client.hostname << std::endl;
+                        std::cout << "------------------------------------------------" << std::endl;
+                        bytes++;
+                    }
+                    message = "";
+                    new_client = networking::network_structures::connected_host::client();
+                    while (message.empty() or not string_functions::same_string(message, "N/A"))  {
+                        message = string_functions::get_input("Client to disconnect : ");
+                        if (string_functions::all_numbers(message.c_str())) {
+                            if (std::stoul(message) == 0) {
+                                std::cout << "Cannot select \"0\" client..." << std::endl;
+                                message = "N/A";
+                                // break;
+                            }
+                            if (std::stoul(message) - 1 < clients.size()) {
+                                new_client = clients[std::stoul(message) - 1];
+                                break;
+                            }
+                        }
+
+                        for (const auto& this_client : clients) {
+                            if (string_functions::same_string(this_client.hostname, message)) {
+                                new_client = this_client;
+                                break;
+                            }
+                        }
+
+                        if (not new_client.hostname.empty() or string_functions::same_string(message, "N/A")) {
+                            break;
+                        }
+
+                        std::cout << "Unrecognized host : \"" << message << "\"" << std::endl;
+                        message = "";
+                    }
+
+                    if (not new_client.hostname.empty()) {
+                        server.disconnect_client(new_client, true, true);
+                        clients = server.all_clients();
+                        bytes = 0;
+                        for (const auto& this_client : clients) {
+                            if (this_client == new_client) {
+                                bytes = 1;
+                                break;
+                            }
+                        }
+                        if (not bytes) {
+                            std::cout << "Successfully disconnected client \"" << new_client.hostname << "\"" << std::endl;
+                            continue;
+                        }
+                        std::cout << "Did not disconnected client \"" << new_client.hostname << "\"" << std::endl;
+                    }
+                }
+
                 else {
-                    std::cerr << "Unrecognized input : \"" << message << "\"" << std::endl;
+                    std::cerr << "Unrecognized input : \"" << message << "\". Acceptable server arguments are:" << std::endl;
+                    for (const auto& arg : server_args_caps) {
+                        std::cout << "\t\"" << arg.second << "\"" << std::endl;
+                    }
                 }
             }
+
 
         }
         
