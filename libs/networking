@@ -435,7 +435,7 @@
                     bool tcp_ = true, 
                         serving_ = true, 
                         was_init_ = networking::is_init, 
-                        print_except_ = true;;
+                        print_except_ = true, throw_except_ = true;
 
 
                     /**
@@ -485,25 +485,26 @@
                         Create the address information for this 
                         host to use to create the connection socket.
                      */
-                    virtual bool create_connection_address();
+                    bool create_connection_address();
 
                     /**
                         Create the connection socket that this 
                         host will use for connections.
                      */
-                    virtual bool create_connection_socket();
+                    bool create_connection_socket();
 
                     /**
                         Disconnect this host's socket, 
                         uninitialize the network if it was originally uninitialized,
                         and free the address information if it was in use.
                      */
-                    virtual bool close_host();
+                    bool close_host();
                     
                     /**
                         Check if the main socket for this host is still connected.
                      */
-                    virtual bool main_socket_connected() const;
+                    bool main_socket_connected() const;
+                    
                     
                 public:
 
@@ -539,7 +540,7 @@
                         This method is set up to return a reference 
                         to this host object so that chaining can occur.
                      */
-                    host& hostname(const std::string new_host);
+                    virtual host& hostname(const std::string new_host);
 
                     /**
                         Get the port value of this host object.
@@ -551,7 +552,7 @@
                         return a reference to this host object  
                         to allow for chaining method calls.
                      */
-                    host& port(const std::string new_port);
+                    virtual host& port(const std::string new_port);
 
                     /**
                         Retrieve the address information that this host 
@@ -559,7 +560,7 @@
                         A reference to this host object is then returned, allowing for chaining.
                         To view what the new variable is, use the `hostname()` method.
                      */
-                    host& retrieve_hostname(const std::set<std::string> adapter_name_options = 
+                    virtual host& retrieve_hostname(const std::set<std::string> adapter_name_options = 
                         {networking::network_address_families::rel_adapter}, 
                             const std::set<std::string> family_name_options = 
                             {networking::network_address_families::ip_version4_address_family, 
@@ -587,12 +588,24 @@
                     /**
                         Set the flag for whether or not to print exceptions when they're thrown
                      */
-                    host& print_on_exceptions(const bool print);
+                    virtual host& print_on_exceptions(const bool print);
 
                     /**
                         Print the exceptions when they are thrown.
                      */
                     bool print_on_exceptions() const;
+
+                    /**
+                        Set the host to either throw exceptions when errors occur
+                        when `exception_` is `true`, and not to throw 
+                        exceptions when an error occurs if `exception_` is `false`
+                     */
+                    virtual host& throw_exception(const bool exception_ = true);
+
+                    /**
+                        Check if this host throws exceptions on errors, or not.
+                     */
+                    bool throw_exception() const;
 
             };
 
