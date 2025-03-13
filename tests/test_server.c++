@@ -26,6 +26,9 @@ const std::string
                   DISCONNECT_CLIENT = "disconnect client", DISCONNECT_CLIENT_ = "dc";
                   
 
+
+
+// For running file
 std::unordered_map<std::string, std::string> test_args_caps = {
     {LIST_ADAPTERS, LIST_ADAPTERS},
     {RESOLVE_HOST, RESOLVE_HOST},
@@ -46,9 +49,14 @@ std::unordered_map<std::string, std::string> test_args_lower = {
     {TEST_SERVER, TEST_SERVER_},
     {TEST_CLIENT, TEST_CLIENT_},
     {TEST_SECURE_SERVER, TEST_SECURE_SERVER_},
-    {TEST_SECURE_CLIENT, TEST_SECURE_CLIENT_}
+    {TEST_SECURE_CLIENT, TEST_SECURE_CLIENT_},
+    {TEST_WINDOWS, TEST_WINDOWS_}
 };
 
+
+
+
+// For running server
 std::unordered_map<std::string, std::string> server_args_caps = {
     {EXIT, EXIT},
     {BROADCAST, BROADCAST},
@@ -57,6 +65,7 @@ std::unordered_map<std::string, std::string> server_args_caps = {
     {DISCONNECT_CLIENT, DISCONNECT_CLIENT}
 };
 
+// For running client
 std::unordered_map<std::string, std::string> server_args_lower = {
     {EXIT, EXIT_},
     {BROADCAST, BROADCAST_},
@@ -100,47 +109,47 @@ int main(int len, char** args) {
     int index;
     for (index = 1; index < len; index++) {
         
-        if (string_functions::same_string(std::string(args[index]), test_args_caps[LIST_ADAPTERS]) or string_functions::same_string(std::string(args[index]), "la")) {
+        if (string_functions::same_string(std::string(args[index]), test_args_caps[LIST_ADAPTERS]) or string_functions::same_string(std::string(args[index]), test_args_lower[LIST_ADAPTERS])) {
             std::printf("Printing adapters for this machine:\n");
             list_machine_adapters();
         }
 
-        else if (string_functions::same_string(std::string(args[index]), test_args_caps[RESOLVE_HOST]) or string_functions::same_string(std::string(args[index]), "rh")) {
+        else if (string_functions::same_string(std::string(args[index]), test_args_caps[RESOLVE_HOST]) or string_functions::same_string(std::string(args[index]), test_args_lower[RESOLVE_HOST])) {
             std::printf("Resolving hostname:\n");
             resolve_hostname();
         }
 
-        else if (string_functions::same_string(std::string(args[index]), test_args_caps[RESOLVE_HOST_NAME]) or string_functions::same_string(std::string(args[index]), "rhn")) {
+        else if (string_functions::same_string(std::string(args[index]), test_args_caps[RESOLVE_HOST_NAME]) or string_functions::same_string(std::string(args[index]), test_args_lower[RESOLVE_HOST_NAME])) {
             std::printf("Resolving hostname name:\n");
             resolve_hostname_name();
         }
 
-        else if (string_functions::same_string(args[index], test_args_caps[TEST_HOST]) or string_functions::same_string(args[index], "th")) {
+        else if (string_functions::same_string(args[index], test_args_caps[TEST_HOST]) or string_functions::same_string(args[index], test_args_lower[TEST_HOST])) {
             std::printf("Testing host:\n");
             test_host();
         }
         
-        else if (string_functions::same_string(args[index], test_args_caps[TEST_SERVER]) or string_functions::same_string(args[index], "ts")) {
+        else if (string_functions::same_string(args[index], test_args_caps[TEST_SERVER]) or string_functions::same_string(args[index], test_args_lower[TEST_SERVER])) {
             std::printf("Running test server:\n");
             test_server();
         }
 
-        else if (string_functions::same_string(args[index], test_args_caps[TEST_SECURE_SERVER]) or string_functions::same_string(args[index], "tss")) {
+        else if (string_functions::same_string(args[index], test_args_caps[TEST_SECURE_SERVER]) or string_functions::same_string(args[index], test_args_lower[TEST_SECURE_SERVER])) {
             std::printf("Running test secure server:\n");
             test_secure_server();
         }
 
-        else if (string_functions::same_string(args[index], test_args_caps[TEST_CLIENT]) or string_functions::same_string(args[index], "tc")) {
+        else if (string_functions::same_string(args[index], test_args_caps[TEST_CLIENT]) or string_functions::same_string(args[index], test_args_lower[TEST_CLIENT])) {
             std::printf("Running test client:\n");
             test_client();
         }
 
-        else if (string_functions::same_string(args[index], test_args_caps[TEST_SECURE_CLIENT]) or string_functions::same_string(args[index], "tsc")) {
+        else if (string_functions::same_string(args[index], test_args_caps[TEST_SECURE_CLIENT]) or string_functions::same_string(args[index], test_args_lower[TEST_SECURE_CLIENT])) {
             std::printf("Running test secure client:\n");
             test_secure_client();
         }
 
-        else if (string_functions::same_string(args[index], test_args_caps[TEST_WINDOWS]) or string_functions::same_string(args[index], "wt")) {
+        else if (string_functions::same_string(args[index], test_args_caps[TEST_WINDOWS]) or string_functions::same_string(args[index], test_args_lower[TEST_WINDOWS])) {
             std::printf("Running windows tests:\n");
             windows_tests();
         }
