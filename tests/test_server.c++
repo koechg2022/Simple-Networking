@@ -189,10 +189,11 @@ void test_server() {
     // std::cout << UNDER_CONSTRUCTION << std::endl;
     
     try {
-        networking::network_structures::tcp_server server;
+        networking::network_structures::tcp_server server, server_chaining;
         std::cout << "Successfully created a tcp_server object" << std::endl;
         server.secure(false);
         server.run();
+        server_chaining.secure(false).run();
         std::cout << "Server is running. Connect to server using \"" << server.hostname() << ":" << server.port() << "\"" << std::endl;
         std::cout << "Successfully started server. Closing it down now" << std::endl;
         server.close_server();
