@@ -334,7 +334,7 @@ void test_secure_server() {
 
         while (server) {
 
-            new_client = server.new_client();
+            new_client = server.new_client({0, 200000});
 
             if (valid_socket(new_client.connected_socket)) {
                 std::cout << "New connection from \"" << new_client.hostname << "\" at " << new_client.connection_time << std::endl;

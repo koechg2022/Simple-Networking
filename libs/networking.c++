@@ -1642,6 +1642,7 @@ std::vector<networking::network_structures::connected_host::client> networking::
         FD_ZERO(&ready);
         for (const auto& client : this->clients_) {
             if (not networking::socket_is_connected(client.second.connected_socket)) {
+                std::cout
                 to_remove.emplace_back(client.first);
                 continue;
             }
@@ -1653,7 +1654,8 @@ std::vector<networking::network_structures::connected_host::client> networking::
         // ready has all the clients that have data to be read
         for (const auto& client : this->clients_) {
             if (FD_ISSET(client.second.connected_socket, &ready)) {
-                the_answer.emplace_back(client.second);
+                // the_answer.emplace_back(client.second);
+                the_answer.push_back(client.second);
             }
         }
     }
@@ -1700,6 +1702,7 @@ std::vector<networking::network_structures::connected_host::client> networking::
     }
 
     for (const auto& remove : to_remove) {
+        this->disconnect_client(remove);
         this->clients_.erase(remove);
     }
 

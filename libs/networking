@@ -677,7 +677,7 @@
                     /**
                         Check if the client passed in has data to be read or not.
                      */
-                    bool client_has_data(connected_host::client& client, struct timeval timeout = {0, 20000});
+                    bool client_has_data(connected_host::client& client, struct timeval timeout = {0, 200});
 
                     /**
                         Disconnects the client passed in, provided the client is indeed connected.
