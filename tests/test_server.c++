@@ -586,8 +586,7 @@ void test_secure_server() {
                         clients = server.all_clients();
                         bytes = 0;
                         for (const auto& this_client : clients) {
-                            if (string_functions::same_string(this_client.hostname, new_client.hostname) and 
-                                    string_functions::same_string(this_client.portvalue, new_client.portvalue)) {
+                            if (this_client == new_client) {
                                 bytes = 1;
                                 break;
                             }
