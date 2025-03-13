@@ -1,5 +1,6 @@
 
 #include "headers"
+#include "string_functions"
 // #include "included"
 // #include "networking"
 // #include "string_functions"
@@ -585,7 +586,8 @@ void test_secure_server() {
                         clients = server.all_clients();
                         bytes = 0;
                         for (const auto& this_client : clients) {
-                            if (this_client == new_client) {
+                            if (string_functions::same_string(this_client.hostname, new_client.hostname) and 
+                                    string_functions::same_string(this_client.portvalue, new_client.portvalue)) {
                                 bytes = 1;
                                 break;
                             }
