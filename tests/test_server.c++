@@ -577,7 +577,7 @@ void test_secure_server() {
                     }
 
                     if (not new_client.hostname.empty()) {
-                        server.disconnect_client(new_client);
+                        server.disconnect_client(new_client, true, true);
                         clients = server.all_clients();
                         bytes = 0;
                         for (const auto& this_client : clients) {
