@@ -1636,12 +1636,16 @@ std::vector<networking::network_structures::connected_host::client> networking::
     
 
     std::vector<networking::network_structures::connected_host::client_name> to_remove;
+
+    std::string message;
+    int line_;
     
     if (this->clients_.size() < 1024) {
         // Use select because there is a managable amout of sockets to deal with.
         
         fd_set ready;
         FD_ZERO(&ready);
+        struct timeval timeout = {0, 200};
         for (const auto& client : this->clients_) {
             if (not networking::socket_is_connected(client.second.connected_socket)) {
                 // to_remove.emplace_back(client.first);
@@ -1651,6 +1655,12 @@ std::vector<networking::network_structures::connected_host::client> networking::
             
             // client is still connected
             FD_SET(client.second.connected_socket, &ready);
+        }
+
+        if (select(this->max_socket_ + 1, &ready, 0, 0, &timeout) < 0) {
+            line_ = __LINE__ - 1;
+            message = "Failed to select for sockets with data. Error " + std::to_string(socket_error) + " : " + std::string(get_socket_error_string(socket_error));
+            throw networking::exceptions::select_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
         }
 
         // ready has all the clients that have data to be read
