@@ -1642,8 +1642,8 @@ std::vector<networking::network_structures::connected_host::client> networking::
         FD_ZERO(&ready);
         for (const auto& client : this->clients_) {
             if (not networking::socket_is_connected(client.second.connected_socket)) {
-                std::cout
-                to_remove.emplace_back(client.first);
+                // to_remove.emplace_back(client.first);
+                to_remove.push_back(client.first);
                 continue;
             }
             
