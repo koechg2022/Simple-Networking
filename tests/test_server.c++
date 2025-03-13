@@ -3,11 +3,29 @@
 #include "included"
 #include "networking"
 #include "string_functions"
-// #include "networking"
-// #include "included"
-// #include "string_functions"
 
+// (string_functions::same_string(message, "exit()") or string_functions::same_string(message, "exit"))
+// (string_functions::same_string(message, "list clients") or string_functions::same_string(message, "lc"))
+// (string_functions::same_string(message, "broadcast") or string_functions::same_string(message, "brdcst"))
+// (string_functions::same_string(message, "message client") or string_functions::same_string(message, "mc"))
+const std::string EXIT = "exit()", EXIT_ = "exit",
+                  LIST_CLIENTS = "list clients", LIST_CLIENTS_ = "lc",
+                  BROADCAST = "broadcast", BROADCAST_ = "brdcst",
+                  MESSAGE_CLIENT = "message client", MESSAGE_CLIENT_ = "mc";
 
+std::unordered_map<std::string, std::string> server_args_caps = {
+    {EXIT, EXIT},
+    {BROADCAST, BROADCAST},
+    {LIST_CLIENTS, LIST_CLIENTS},
+    {MESSAGE_CLIENT, MESSAGE_CLIENT}
+};
+
+std::unordered_map<std::string, std::string> server_args_lower = {
+    {EXIT, EXIT_},
+    {BROADCAST, BROADCAST_},
+    {LIST_CLIENTS, LIST_CLIENTS_},
+    {MESSAGE_CLIENT, MESSAGE_CLIENT_}
+};
 
 const std::string UNDER_CONSTRUCTION = "UNDER CONSTRUCTION";
 const std::string connection_port = "5500";
@@ -363,7 +381,7 @@ void test_secure_server() {
             if (string_functions::has_keyboard_input()) {
                 message = string_functions::get_input();
 
-                if (string_functions::same_string(message, "exit()") or string_functions::same_string(message, "exit")) {
+                if (string_functions::same_string(message, server_args_caps[EXIT]) or string_functions::same_string(message, server_args_caps[EXIT_])) {
                     server.close_server();
                 }
 
