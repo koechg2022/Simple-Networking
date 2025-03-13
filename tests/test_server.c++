@@ -486,6 +486,7 @@ void test_secure_server() {
                     for (const auto& this_client : clients) {
                         std::cout << bytes << ".)\t" << this_client.hostname << std::endl;
                         std::cout << "------------------------------------------------" << std::endl;
+                        bytes++;
                     }
                     message = "";
                     new_client = networking::network_structures::connected_host::client();
