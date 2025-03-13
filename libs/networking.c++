@@ -1914,10 +1914,11 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
 networking::network_structures::tcp_server& networking::network_structures::tcp_server::close_server() {
     
     // First disconnect all clients
+    std::cout << "There are " << this->clients_.size() << " clients currently connected" << std::endl;
     for (auto client : this->clients_) {
         this->disconnect_client(client.first, false); // Save on execution time
     }
-    std::cout << "In the tcp_server destructor..." << std::endl;
+    std::cout << "In the tcp_server::close_server()..." << std::endl;
 
     // CLose the main non-secure connection
     // this->close_host();
