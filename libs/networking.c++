@@ -1961,7 +1961,6 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
     return *this;
 }
 
-
 bool networking::network_structures::tcp_server::block_clients() const {
     return this->block_clients_;
 }

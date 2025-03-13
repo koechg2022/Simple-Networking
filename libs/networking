@@ -727,7 +727,7 @@
                             will have the server set the listening socket to 
                             reuse.
                      */
-                    tcp_server& run(const int listen_limit = 100, const bool reuse = true, const bool block = true);
+                    tcp_server& run(const int listen_limit = 10, const bool reuse = true, const bool block = true);
 
                     /**
                         Shut down the server.
