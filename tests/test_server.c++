@@ -388,6 +388,10 @@ void test_secure_server() {
                 else if (string_functions::same_string(message, server_args_caps[LIST_CLIENTS]) or string_functions::same_string(message, server_args_lower[LIST_CLIENTS_])) {
                     
                     clients = server.all_clients();
+                    if (clients.empty()) {
+                        std::cout << "No clients connected..." << std::endl;
+                        std::cout << "------------------------------------------------" << std::endl;
+                    }
                     for (const auto& this_client : clients) {
                         std::cout << "Host : " << 
                                     this_client.hostname << ", Port :" << 
