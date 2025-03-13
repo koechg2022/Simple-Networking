@@ -586,7 +586,7 @@ void test_secure_server() {
                                 break;
                             }
                         }
-                        if (not bytes) {
+                        if (bytes) {
                             std::cout << "Successfully disconnected client \"" << new_client.hostname << "\"" << std::endl;
                             continue;
                         }
