@@ -158,9 +158,6 @@ int main(int len, char** args) {
         else {
             std::cout << "Unrecognized test \"" << args[index] << "\". Acceptable arguments are:" << std::endl;
             for (const auto& arg : test_args_caps) {
-                if (arg.second.empty()) {
-                    std::cout << arg.first << " points to empty" << std::endl;
-                }
                 std::cout << "\t\"" << arg.second << "\"" << std::endl;
             }
         }
