@@ -564,10 +564,10 @@ void test_secure_server() {
                         for (const auto& this_client : clients) {
                             if (string_functions::same_string(this_client.hostname, message)) {
                                 new_client = this_client;
-                                std::cout << "Selected new client. Now new_client's information is" << std::endl;
-                                std::cout << "Hostname : " << new_client.hostname << std::endl;
-                                std::cout << "Port : " << new_client.portvalue << std::endl;
-                                std::cout << "Socket : " << new_client.connected_socket << std::endl;
+                                // std::cout << "Selected new client. Now new_client's information is" << std::endl;
+                                // std::cout << "Hostname : " << new_client.hostname << std::endl;
+                                // std::cout << "Port : " << new_client.portvalue << std::endl;
+                                // std::cout << "Socket : " << new_client.connected_socket << std::endl;
                                 break;
                             }
                         }
@@ -590,7 +590,7 @@ void test_secure_server() {
                                 break;
                             }
                         }
-                        if (bytes == 1) {
+                        if (bytes == 0) {
                             std::cout << "Successfully disconnected client \"" << new_client.hostname << "\"" << std::endl;
                             continue;
                         }
