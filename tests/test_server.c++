@@ -476,6 +476,7 @@ void test_secure_server() {
                 }
 
                 else {
+                    std::cout << "server_args_caps[" << EXIT << "] : " << server_args_caps[EXIT] << std::endl;
                     std::cerr << "Unrecognized input : \"" << message << "\"" << std::endl;
                 }
             }
