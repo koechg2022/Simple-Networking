@@ -338,6 +338,7 @@ void test_secure_server() {
 
             if (valid_socket(new_client.connected_socket)) {
                 std::cout << "New connection from \"" << new_client.hostname << "\" at " << new_client.connection_time << std::endl;
+                server.close_server();
             }
             std::cout << "Retrieving clients with data" << std::endl;
             clients = server.clients_with_data();
