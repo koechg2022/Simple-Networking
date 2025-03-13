@@ -1934,7 +1934,7 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
 networking::network_structures::tcp_server& networking::network_structures::tcp_server::close_server() {
     
     // First disconnect all clients
-    std::cout << "There are " << this->clients_.size() << " clients currently connected" << std::endl;
+    // std::cout << "There are " << this->clients_.size() << " clients currently connected" << std::endl;
     for (auto client : this->clients_) {
         this->disconnect_client(client.first, false, false); // Save on execution time
     }
@@ -1945,8 +1945,8 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
     // this->close_host();
     
     // Close the secore connection
-    (valid_socket(this->connect_socket_)) ? close_socket(this->connect_socket_) : 0;
-    this->connect_socket_ = invalid_socket;
+    // (valid_socket(this->connect_socket_)) ? close_socket(this->connect_socket_) : 0;
+    // this->connect_socket_ = invalid_socket;
     (this->secure_ and this->context_) ? SSL_CTX_free(this->context_) : (void) 0;
     this->context_ = invalid_context;
     this->max_secure_ = invalid_secure_socket;
