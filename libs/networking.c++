@@ -817,7 +817,7 @@ bool networking::network_structures::host::create_connection_socket() {
 }
 
 bool networking::network_structures::host::close_host() {
-
+    std::cout << "In the close_host" << std::endl;
     if (valid_socket(this->connect_socket_)) {
         close_socket(this->connect_socket_);  // Close the socket
         this->connect_socket_ = invalid_socket;  // Mark socket as invalid
@@ -1915,18 +1915,21 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
     for (auto client : this->clients_) {
         this->disconnect_client(client.first, false); // Save on execution time
     }
+    std::cout << "In the tcp_server destructor..." << std::endl;
 
     // CLose the main non-secure connection
-    this->close_host();
+    // this->close_host();
     
     // Close the secore connection
     (valid_socket(this->connect_socket_)) ? close_socket(this->connect_socket_) : 0;
     this->connect_socket_ = invalid_socket;
     (this->secure_ and this->context_) ? SSL_CTX_free(this->context_) : (void) 0;
     this->context_ = invalid_context;
+    this->max_secure_ = invalid_secure_socket;
+    this->max_socket_ = invalid_socket;
+    this->key_file_ = this->cert_file_ = "";
     (not this->secure_was_init_) ? networking::uninitialize_secure_network() : true;
     this->listening_ = false;
-    // std::cout << "Calling close_server()" << std::endl;
     return *this;
 }
 
