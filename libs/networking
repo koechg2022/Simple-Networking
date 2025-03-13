@@ -554,7 +554,7 @@
 
                 private:
                     
-                    bool secure_, secure_was_init_, block_clients_;
+                    bool secure_, secure_was_init_, block_clients_, certified_;
                     socket_type max_socket_;
                     secure_socket_type max_secure_;
                     context_type context_;
@@ -568,6 +568,9 @@
 
                     bool listening(const bool throw_except = false) const;
 
+                    bool create_context();
+
+                    bool set_cert_and_key();
 
 
 
@@ -669,7 +672,7 @@
                         Update all the connected clients and disreguard 
                         the connections that are closed or not longer in use.
                      */
-                    tcp_server& update();
+                    tcp_server& update(const bool reuse = true);
 
                     /**
                         Start the tcp_server.
@@ -679,7 +682,7 @@
                             will have the server set the listening socket to 
                             reuse.
                      */
-                    tcp_server& run(bool reuse = true);
+                    tcp_server& run(const int listen_limit = 100, const bool reuse = true, const bool block = true);
 
                     /**
                         Shut down the server.
