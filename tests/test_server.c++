@@ -385,7 +385,7 @@ void test_secure_server() {
                     server.close_server();
                 }
 
-                else if (string_functions::same_string(message, server_args_caps[LIST_CLIENTS]) or string_functions::same_string(message, server_args_lower[LIST_CLIENTS_])) {
+                else if (string_functions::same_string(message, server_args_caps[LIST_CLIENTS]) or string_functions::same_string(message, server_args_lower[LIST_CLIENTS])) {
                     
                     clients = server.all_clients();
                     if (clients.empty()) {
