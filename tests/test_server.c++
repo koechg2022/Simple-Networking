@@ -153,6 +153,13 @@ int main(int len, char** args) {
             std::printf("Running windows tests:\n");
             windows_tests();
         }
+
+        else {
+            std::cout << "Unrecognized test \"" << args[index] << "\". Acceptable arguments are:" << std::endl;
+            for (const auto& arg : test_args_caps) {
+                std::cout << "\t\"" << arg.second << "\"" << std::endl;
+            }
+        }
     }
 
     return 0;
