@@ -1920,7 +1920,10 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
     this->close_host();
     
     // Close the secore connection
+    (valid_socket(this->connect_socket_)) ? close_socket(this->connect_socket_) : 0;
+    this->connect_socket_ = invalid_socket;
     (this->secure_ and this->context_) ? SSL_CTX_free(this->context_) : (void) 0;
+    this->context_ = invalid_context;
     (not this->secure_was_init_) ? networking::uninitialize_secure_network() : true;
     this->listening_ = false;
     // std::cout << "Calling close_server()" << std::endl;
