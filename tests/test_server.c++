@@ -342,38 +342,9 @@ void test_secure_server() {
                 std::cout << "New connection from \"" << new_client.hostname << "\" at " << new_client.connection_time << std::endl;
             }
 
-            // clients = server.all_clients();
-            // if (not clients.empty()) {
-            //     fd_set ready_sockets;
-                
-            //     FD_ZERO(&ready_sockets);
-            //     socket_type max_sock = clients.begin()->connected_socket;
-            //     for (const auto& client : clients) {
-            //         FD_SET(client.connected_socket, &ready_sockets);
-            //         max_sock = (client.connected_socket > max_sock) ? client.connected_socket : max_sock;
-            //     }
 
-            //     if (select(max_sock + 1, &ready_sockets, 0, 0, &timeout) < 0) {
-            //         std::cerr << "Failed to select for active sockets" << std::endl;
-            //         server.close_server();
-            //     }
-
-            //     for (const auto& client : clients) {
-            //         if (FD_ISSET(client.connected_socket, &ready_sockets)) {
-            //             bytes = SSL_read(client.secure_socket, msg, count);
-            //             if (bytes < 1) {
-            //                 server.disconnect_client(client);
-            //                 continue;
-            //             }
-            //             std::cout << "Message from \"" << client.hostname << "\":" << std::endl;
-            //             std::cout << std::string(msg, bytes) << std::endl << std::endl;
-            //         }
-            //     }
-            // }
-
-
-            clients = server.clients_with_data();
-            if (not clients.empty()) {
+            
+            if (not (clients = server.clients_with_data()).empty()) {
                 for (const auto& client : clients) {
                     bytes = SSL_read(client.secure_socket, msg, count);
                     
