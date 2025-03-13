@@ -338,26 +338,7 @@ void test_secure_server() {
 
             if (valid_socket(new_client.connected_socket)) {
                 std::cout << "New connection from \"" << new_client.hostname << "\" at " << new_client.connection_time << std::endl;
-                server.close_server();
             }
-            std::cout << "Retrieving clients with data" << std::endl;
-            clients = server.clients_with_data();
-
-            if (not clients.empty()) {
-                // There is/are clients with data?
-                for (const auto& this_client : clients) {
-                    bytes = SSL_read(this_client.secure_socket, msg, count);
-
-                    if (bytes < 1) {
-                        std::cout << "Unexpected disconnect from \"" << this_client.hostname << "\"" << std::endl;
-                        server.disconnect_client(this_client);
-                        continue;
-                    }
-
-                    std::cout << "Message from client : " << std::string(msg) << std::endl;
-                }
-            }
-            
 
 
             if (string_functions::has_keyboard_input()) {
