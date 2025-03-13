@@ -1442,13 +1442,13 @@ bool networking::network_structures::tcp_server::client_has_data(networking::net
 }
 
 // disconnect_client(const client& client, const bool update_max)
-networking::network_structures::tcp_server& networking::network_structures::tcp_server::disconnect_client(const networking::network_structures::connected_host::client& client, const bool update_max) {
+networking::network_structures::tcp_server& networking::network_structures::tcp_server::disconnect_client(const networking::network_structures::connected_host::client& client, const bool update_max, const bool disconnect_from_set) {
     networking::network_structures::connected_host::client_name name = {client.hostname, client.portvalue};
-    return this->disconnect_client(name, update_max);
+    return this->disconnect_client(name, update_max, disconnect_from_set);
 }
 
 // disconnect_client(const client_name& client_name, const bool update_max)
-networking::network_structures::tcp_server& networking::network_structures::tcp_server::disconnect_client(const networking::network_structures::connected_host::client_name& client_name, const bool update_max) {
+networking::network_structures::tcp_server& networking::network_structures::tcp_server::disconnect_client(const networking::network_structures::connected_host::client_name& client_name, const bool update_max, const bool disconnect_from_set) {
     /*  
     Not secure:
         1.) Close the connection socket
@@ -1488,7 +1488,7 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
 
         // Update internal management now.
         // First remove client
-        this->clients_.erase(client_name);
+        (disconnect_from_set) ? this->clients_.erase(client_name) : 0;
 
         if (update_max) {
             
@@ -1525,9 +1525,9 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
 }
 
 // disconnect_client(const std::string name, const std::string port, const bool update_max)
-networking::network_structures::tcp_server& networking::network_structures::tcp_server::disconnect_client(const std::string name, const std::string port, const bool update_max) {
+networking::network_structures::tcp_server& networking::network_structures::tcp_server::disconnect_client(const std::string name, const std::string port, const bool update_max, const bool disconnect_from_set) {
     // const networking::network_structures::connected_host::client_name names = {name, port};
-    return this->disconnect_client((const networking::network_structures::connected_host::client_name) {name, port}, update_max);
+    return this->disconnect_client((const networking::network_structures::connected_host::client_name) {name, port}, update_max, disconnect_from_set);
 }
 
 // new_client(struct timeval timeout)

@@ -696,20 +696,20 @@
                     /**
                         Disconnects the client passed in, provided the client is indeed connected.
                      */
-                    tcp_server& disconnect_client(const connected_host::client& client, const bool update_max = true);
+                    tcp_server& disconnect_client(const connected_host::client& client, const bool update_max = true, const bool remove_from_set = true);
 
                     /**
                         Disconnect the client with the `hostname` and `port` in the 
                         `connected_host::client_name` client object. If the `update_max` flag is 
                         true, then the max sockets are also updated.
                      */
-                    tcp_server& disconnect_client(const connected_host::client_name& client_name, const bool update_max = true);
+                    tcp_server& disconnect_client(const connected_host::client_name& client_name, const bool update_max = true, const bool remove_from_set = true);
 
                     
                     /**
                         Disconnect the client with the hostname `name` and the port value `port`.
                      */
-                    tcp_server& disconnect_client(const std::string name, const std::string port, const bool update_max = true);
+                    tcp_server& disconnect_client(const std::string name, const std::string port, const bool update_max = true, const bool remove_from_set = true);
 
                     /**
                         Accept a new connection request from a new client and return the connection 
