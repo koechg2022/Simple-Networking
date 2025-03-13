@@ -404,6 +404,8 @@
 
                     bool operator<(const client& other) const;
 
+                    bool operator==(const client& other) const;
+
                     operator bool() const;
                 } client;
 

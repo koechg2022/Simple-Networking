@@ -701,6 +701,10 @@ networking::network_structures::connected_host::client::operator bool() const {
     return valid_socket(this->connected_socket);
 }
 
+bool networking::network_structures::connected_host::client::operator==(const networking::network_structures::connected_host::client& other) const {
+    return string_functions::same_string(this->hostname, other.hostname) and string_functions::same_string(this->portvalue,other.portvalue);
+}
+
 bool networking::network_structures::connected_host::server::operator<(const server& other) const {
     return this->hostname < other.hostname and 
         this->portvalue < other.portvalue;
