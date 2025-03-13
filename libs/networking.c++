@@ -7,8 +7,7 @@
 #include "networking"
 #include "string_functions"
 #include <filesystem>
-#include <openssl/err.h>
-#include <sys/socket.h>
+
 
 
 /***********************************************************************************************/
@@ -225,13 +224,13 @@ bool networking::initialize_network() {
 }
 
 bool networking::initialize_secure_network() {
-    if (not is_init_secure) {
+    if (not networking::is_init_secure) {
         SSL_library_init();
         OpenSSL_add_all_algorithms();
         SSL_load_error_strings();
-        is_init_secure = true;
+        networking::is_init_secure = true;
     }
-    return is_init_secure;
+    return networking::is_init_secure;
 }
 
 bool networking::uninitialize_network() {
@@ -249,11 +248,11 @@ bool networking::uninitialize_network() {
 }
 
 bool networking::uninitialize_secure_network() {
-    if (is_init_secure) {
+    if (networking::is_init_secure) {
         OPENSSL_cleanup();
-        is_init_secure = false;
+        networking::is_init_secure = false;
     }
-    return not is_init_secure;
+    return not networking::is_init_secure;
 }
 
 std::vector<std::string> networking::resolve_hostname(const std::string hostname, const std::string port, const bool name) {
@@ -262,7 +261,7 @@ std::vector<std::string> networking::resolve_hostname(const std::string hostname
 
     if (not was_init) {
         if (not initialize_network()) {
-            (clean_on_except) ? uninitialize_network() : true;
+            (networking::clean_on_except) ? uninitialize_network() : true;
             throw exceptions::initialize_network_failure("Failed to initialize. ", true, __FILE__, __LINE__ - 2, "resolve_host_name");
         }
     }
@@ -275,7 +274,7 @@ std::vector<std::string> networking::resolve_hostname(const std::string hostname
     hints.ai_flags = AI_ALL;
 
     if (getaddrinfo(hostname.c_str(), port.c_str(), &hints, &all_addresses)) {
-        (clean_on_except and not was_init) ? uninitialize_network() : true;
+        (networking::clean_on_except and not was_init) ? uninitialize_network() : true;
         throw exceptions::getaddrinfo_failure("Failed to get address information for host " + hostname, true, __FILE__, __LINE__ - 2, "resolve_hostname");
     }
 
@@ -308,7 +307,7 @@ std::map<std::string, std::map<std::string, std::vector<std::string> > > network
     if (not was_init) {
 
         if (not initialize_network()) {
-            (clean_on_except) ? uninitialize_network() : true;
+            (networking::clean_on_except) ? uninitialize_network() : true;
             throw exceptions::initialize_network_failure("Failed to initialize. ", true, __FILE__, __LINE__ - 2, __FUNCTION__);
         }
     }
@@ -328,7 +327,7 @@ std::map<std::string, std::map<std::string, std::vector<std::string> > > network
             this_line = __LINE__ - 1;
 
             if (not all_adapters) {
-                (clean_on_except) ? uninitialize_network() : true;
+                (networking::clean_on_except) ? uninitialize_network() : true;
                 throw exceptions::memory_exception("Failed to aquire " + std::to_string(memory_size) + " bytes of memory", true, __FILE__, this_line, __FUNCTION__);
             }
 
@@ -344,7 +343,7 @@ std::map<std::string, std::map<std::string, std::vector<std::string> > > network
             }
 
             else {
-                (clean_on_except) ? uninitialize_network() : true;
+                (networking::clean_on_except) ? uninitialize_network() : true;
                 ifaddrs_free_adapters(all_adapters);
                 throw exceptions::unexpected_exception("An unexpected exception occured while trying to retrieve this machine's network adapter information", true, __FILE__, this_line, __FUNCTION__);
             }
@@ -354,7 +353,7 @@ std::map<std::string, std::map<std::string, std::vector<std::string> > > network
     #else
 
         if (getifaddrs(&all_adapters)) {
-            (clean_on_except) ? uninitialize_network() : true;
+            (networking::clean_on_except) ? uninitialize_network() : true;
             throw exceptions::getifaddrs_failure("Failed to retrieve adater information", true, __FILE__, __LINE__ - 2, __FUNCTION__);
         }
 
@@ -1260,7 +1259,7 @@ networking::network_structures::tcp_server::tcp_server() :
     this->max_secure_ = invalid_secure_socket;
     this->context_ = invalid_context;
     this->key_file_ = this->cert_file_ = "";
-    this->secure_was_init_ = is_init_secure;
+    this->secure_was_init_ = networking::is_init_secure;
     this->block_clients_ = true;
 }
 
@@ -1273,7 +1272,7 @@ networking::network_structures::tcp_server::tcp_server(const std::string hostnam
     this->context_ = invalid_context;
     this->key_file_ = key;
     this->cert_file_ = cert;
-    this->secure_was_init_ = is_init_secure;
+    this->secure_was_init_ = networking::is_init_secure;
     this->block_clients_ = true;
     this->certified_ = false;
 }
@@ -1329,7 +1328,7 @@ networking::network_structures::host::host(std::move(other)) {
 
         // In question
         other.clients_.clear();
-        other.secure_was_init_ = is_init_secure;
+        other.secure_was_init_ = networking::is_init_secure;
     }
 }
 
@@ -1387,7 +1386,7 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
 
         // In question
         other.clients_.clear();
-        other.secure_was_init_ = is_init_secure;
+        other.secure_was_init_ = networking::is_init_secure;
 
     }
     return *this;
@@ -1815,7 +1814,7 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
             ERR_clear_error();
         }
         
-        if (this->secure_ and not is_init_secure) {
+        if (this->secure_ and not networking::is_init_secure) {
             if (not networking::initialize_secure_network()) {
                 line_ = __LINE__ - 1;
                 ERR_error_string_n(ERR_get_error(), msg, count * buffer_size);
