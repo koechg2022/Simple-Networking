@@ -613,8 +613,10 @@
                     //     std::hash<networking::network_structures::connected_host::client_name>,
                     //     std::equal_to<networking::network_structures::connected_host::client_name>
                     // > clients_;
-                    std::map<networking::network_structures::connected_host::client_name, 
-                                    networking::network_structures::connected_host::client> clients_;
+                    std::unordered_map<networking::network_structures::connected_host::client_name, 
+                                    networking::network_structures::connected_host::client,
+                                        std::hash<networking::network_structures::connected_host::client_name>,
+                                            std::equal_to<networking::network_structures::connected_host::client_name> > clients_;
 
                     
                     
