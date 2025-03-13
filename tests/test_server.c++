@@ -1,5 +1,6 @@
 
 #include "headers"
+#include "networking"
 // #include "networking"
 // #include "included"
 // #include "string_functions"
@@ -185,7 +186,16 @@ void test_host() {
 }
 
 void test_server() {
-    std::cout << UNDER_CONSTRUCTION << std::endl;
+    // std::cout << UNDER_CONSTRUCTION << std::endl;
+    
+    try {
+        networking::network_structures::tcp_server server;
+        std::cout << "Successfully created a tcp_server object" << std::endl;
+    }
+
+    catch (networking::exceptions::base_exception& except) {
+        std::cerr << "Caught exception " << except.exception_type() << std::endl << std::endl;
+    }
 }
 
 void test_secure_server() {
