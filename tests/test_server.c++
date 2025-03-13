@@ -397,8 +397,59 @@ void test_secure_server() {
                             std::cerr << "Failed to send message to \"" << message << "\"" << std::endl;
                             continue;
                         }
-                        std::cout << "Sent " << bytes << " out of " << message.length() << " bytes." << std::endl;
+                        std::cout << "Sent " << bytes << " out of " << message.length() << " bytes to \"" << client.hostname << "\"" << std::endl;
                     }
+                }
+
+                else if (string_functions::same_string(message, "message client") or string_functions::same_string(message, "mc")) {
+
+                    // Print the clients
+                    clients = server.all_clients();
+                    if (clients.empty()) {
+                        std::cout << "No clients to message" << std::endl;
+                    }
+                    bytes = 1;
+                    for (const auto& this_client : clients) {
+                        std::cout << bytes << ".)\t" << this_client.hostname << std::endl;
+                        std::cout << "------------------------------------------------" << std::endl;
+                    }
+                    message = "";
+                    new_client = networking::network_structures::connected_host::client();
+                    while (message.empty() or not string_functions::same_string(message, "N/A"))  {
+                        message = string_functions::get_input("Client to message");
+                        if (string_functions::all_numbers(message.c_str())) {
+                            if (std::stoul(message) < clients.size()) {
+                                new_client = clients[std::stoul(message)];
+                                break;
+                            }
+                        }
+
+                        for (const auto& this_client : clients) {
+                            if (string_functions::same_string(this_client.hostname, message)) {
+                                new_client = this_client;
+                                break;
+                            }
+                        }
+
+                        if (not new_client.hostname.empty() or string_functions::same_string(message, "N/A")) {
+                            break;
+                        }
+
+                        std::cout << "Unrecognized host : \"" << message << "\"" << std::endl;
+                        message = "";
+                    }
+
+                    if (not new_client.hostname.empty()) {
+                        message = string_functions::get_input("Message to send : ");
+                        bytes = SSL_write(new_client.secure_socket, message.c_str(), message.length());
+                        if (bytes < 1) {
+                            std::cerr << "Failed to send message to \"" << new_client.hostname << "\"" << std::endl;
+                            server.disconnect_client(new_client);
+                            continue;
+                        }
+                        std::cout << "Sent " << bytes << " out of " << message.length() << " to \"" << new_client.hostname << "\"" << std::endl;
+                    }
+
                 }
 
                 else {
