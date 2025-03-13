@@ -37,7 +37,8 @@ std::unordered_map<std::string, std::string> test_args_caps = {
     {TEST_SERVER, TEST_SERVER},
     {TEST_CLIENT, TEST_CLIENT},
     {TEST_SECURE_SERVER, TEST_SECURE_SERVER},
-    {TEST_SECURE_CLIENT, TEST_SECURE_CLIENT}
+    {TEST_SECURE_CLIENT, TEST_SECURE_CLIENT},
+    {TEST_WINDOWS, TEST_WINDOWS}
 };
 
 
