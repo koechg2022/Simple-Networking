@@ -1640,7 +1640,7 @@ std::vector<networking::network_structures::connected_host::client> networking::
     std::string message;
     int line_;
     
-    if (this->clients_.size() < 1024) {
+    if (this->clients_.size() < FD_SETSIZE) {
         // Use select because there is a managable amout of sockets to deal with.
         
         fd_set ready;

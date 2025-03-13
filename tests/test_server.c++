@@ -326,13 +326,13 @@ void test_secure_server() {
         server.print_exceptions(false);
         networking::network_structures::connected_host::client new_client;
         std::vector<networking::network_structures::connected_host::client> clients;
-        timeval timeout = {0, 200};
+        
         const int count = 3 * kilo_byte;
         int bytes;
         char msg[count];
 
         std::cout << "Connect to host with \"" << server.hostname() << " : " << server.port() << "\"" << std::endl;
-        std::cout << "Note, FD_SETSIZE = " << FD_SETSIZE << std::endl;
+        // std::cout << "Note, FD_SETSIZE = " << FD_SETSIZE << std::endl;
 
         while (server) {
 
