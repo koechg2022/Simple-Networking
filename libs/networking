@@ -350,6 +350,10 @@
                     
                     bool operator<(const struct client_name& other) const;
                     bool operator==(const struct client_name& other) const;
+
+                    ~client_name();
+
+
                 } client_name;
 
             }

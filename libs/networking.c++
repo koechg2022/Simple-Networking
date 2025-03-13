@@ -688,6 +688,11 @@ bool networking::network_structures::connected_host::client_name::operator==(con
     return string_functions::same_string(this->hostname, other.hostname) and string_functions::same_string(this->portvalue, other.portvalue);
 }
 
+networking::network_structures::connected_host::client_name::~client_name() {
+    this->hostname.clear();
+    this->portvalue.clear();
+}
+
 bool networking::network_structures::connected_host::client::operator<(const client& other) const {
     return this->connected_socket < other.connected_socket;
 }
