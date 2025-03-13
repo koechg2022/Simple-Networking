@@ -401,7 +401,7 @@ void test_secure_server() {
                     }
                 }
 
-                else if (string_functions::same_string(message, "broadcast") or string_functions::same_string(message, "brdcst")) {
+                else if (string_functions::same_string(message, server_args_caps[BROADCAST]) or string_functions::same_string(message, server_args_lower[BROADCAST])) {
                     clients = server.all_clients();
                     if (clients.empty()) {
                         std::cout << "No clients to message..." << std::endl;
@@ -423,7 +423,7 @@ void test_secure_server() {
                     }
                 }
 
-                else if (string_functions::same_string(message, "message client") or string_functions::same_string(message, "mc")) {
+                else if (string_functions::same_string(message, server_args_caps[MESSAGE_CLIENT]) or string_functions::same_string(message, server_args_lower[MESSAGE_CLIENT])) {
 
                     // Print the clients
                     clients = server.all_clients();
