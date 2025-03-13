@@ -2090,16 +2090,18 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
     return *this;
 }
 
+// block_clients() const
 bool networking::network_structures::tcp_server::block_clients() const {
     return this->block_clients_;
 }
 
-
+// blocking(const bool block)
 networking::network_structures::tcp_server& networking::network_structures::tcp_server::blocking(const bool block) {
     networking::network_structures::host::blocking(block);
     return *this;
 }
 
+// print_exceptions(const bool print_except)
 networking::network_structures::tcp_server& networking::network_structures::tcp_server::print_exceptions(const bool print_except) {
     this->print_except_ = print_except;
     return *this;
