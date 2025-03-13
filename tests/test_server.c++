@@ -1,9 +1,11 @@
 
 #include "headers"
 #include "string_functions"
-// #include "included"
-// #include "networking"
-// #include "string_functions"
+
+
+
+
+bool secure;
 
 
 
@@ -112,42 +114,38 @@ int main(int len, char** args) {
     for (index = 1; index < len; index++) {
         
         if (string_functions::same_string(std::string(args[index]), test_args_caps[LIST_ADAPTERS]) or string_functions::same_string(std::string(args[index]), test_args_lower[LIST_ADAPTERS])) {
-            std::printf("Printing adapters for this machine:\n");
             list_machine_adapters();
         }
 
         else if (string_functions::same_string(std::string(args[index]), test_args_caps[RESOLVE_HOST]) or string_functions::same_string(std::string(args[index]), test_args_lower[RESOLVE_HOST])) {
-            std::printf("Resolving hostname:\n");
             resolve_hostname();
         }
 
         else if (string_functions::same_string(std::string(args[index]), test_args_caps[RESOLVE_HOST_NAME]) or string_functions::same_string(std::string(args[index]), test_args_lower[RESOLVE_HOST_NAME])) {
-            std::printf("Resolving hostname name:\n");
             resolve_hostname_name();
         }
 
         else if (string_functions::same_string(args[index], test_args_caps[TEST_HOST]) or string_functions::same_string(args[index], test_args_lower[TEST_HOST])) {
-            std::printf("Testing host:\n");
             test_host();
         }
         
         else if (string_functions::same_string(args[index], test_args_caps[TEST_SERVER]) or string_functions::same_string(args[index], test_args_lower[TEST_SERVER])) {
-            std::printf("Running test server:\n");
+            secure = false;
             test_server();
         }
 
         else if (string_functions::same_string(args[index], test_args_caps[TEST_SECURE_SERVER]) or string_functions::same_string(args[index], test_args_lower[TEST_SECURE_SERVER])) {
-            std::printf("Running test secure server:\n");
+            secure = true;
             test_secure_server();
         }
 
         else if (string_functions::same_string(args[index], test_args_caps[TEST_CLIENT]) or string_functions::same_string(args[index], test_args_lower[TEST_CLIENT])) {
-            std::printf("Running test client:\n");
+            secure = false;
             test_client();
         }
 
         else if (string_functions::same_string(args[index], test_args_caps[TEST_SECURE_CLIENT]) or string_functions::same_string(args[index], test_args_lower[TEST_SECURE_CLIENT])) {
-            std::printf("Running test secure client:\n");
+            secure = true;
             test_secure_client();
         }
 
@@ -262,10 +260,6 @@ void test_host() {
 void test_server() {
     // std::cout << UNDER_CONSTRUCTION << std::endl;
     
-    bool secure = false;
-    
-
-
     try {
         networking::network_structures::tcp_server server;
         
@@ -282,7 +276,7 @@ void test_server() {
             std::cerr << "Failed to start server" << std::endl;
         }
 
-        std::cout << "Connect to host with \"" << server.hostname() << " : " << server.port() << "\"" << std::endl;
+        std::cout << "Connect to host with http \"" << server.hostname() << " : " << server.port() << "\"" << std::endl;
 
         while (server) {
 
@@ -496,65 +490,22 @@ void test_server() {
 }
 
 void test_secure_server() {
-    bool secure = true;
-    std::string message;
-    networking::network_structures::tcp_server server("", DEFAULT_PORT, secure, "../files/key.pem", "../files/cert.pem");
-    server.print_exceptions(false);
-    
-    try {
-        server.retrieve_hostname();
-        if (server.hostname().empty()) {
-            std::cerr << "Failed to retrieve hostname. Not gonna start server..." << std::endl;
-            return;
-        }
-        std::cout << "Successfully retrieved hostname. Gonna proceed to start server..." << std::endl;
-    }
-
-    catch(networking::exceptions::base_exception& except) {
-        std::cerr << "Caught exception : " << except.exception_type() << std::endl;
-        return;
-    }
-
-    try {
-
-        if (not server.secure(secure).secure()) {
-            std::cerr << "Server is not secure. Not going to start server." << std::endl;
-            return;
-        }
-        std::cout << "Server is secure. Gonna proceed to start server..." << std::endl;
-    }
-
-    catch (networking::exceptions::base_exception& except) {
-        std::cerr << "Caught exception : " << except.exception_type() << std::endl;
-        return;
-    }
-
-    try {
-
-        if (not server.run()) {
-            std::cerr << "Server failed to start running. Not gonna start server." << std::endl;
-            return;
-        }
-
-        std::cout << "Server was successfully started." << std::endl;
-    }
-
-    catch (networking::exceptions::base_exception& except) {
-        std::cerr << "Caught exception" << except.exception_type() << std::endl;
-        return;
-    }
 
 
     try {
+
+        networking::network_structures::tcp_server server("", DEFAULT_PORT, secure, "../files/key.pem", "../files/cert.pem");
+        server.print_exceptions(false);
 
         networking::network_structures::connected_host::client new_client;
         std::vector<networking::network_structures::connected_host::client> clients;
         
+        std::string message;
         const int count = 3 * kilo_byte;
         int bytes;
         char msg[count];
 
-        std::cout << "Connect to host with \"" << server.hostname() << " : " << server.port() << "\"" << std::endl;
+        std::cout << "Connect to host with https \"" << server.hostname() << " : " << server.port() << "\"" << std::endl;
 
         while (server) {
 
