@@ -2107,6 +2107,12 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
     return *this;
 }
 
+// throw_exception(const bool exception_)
+networking::network_structures::tcp_server& networking::network_structures::tcp_server::throw_exception(const bool exception_) {
+    this->throw_except_ = exception_;
+    return *this;
+}
+
 /***** TCP Server public methods end *********/
 
 

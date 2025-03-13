@@ -778,7 +778,16 @@
                      */
                     tcp_server& blocking(const bool block);
 
+                    /**
+                        Set the host to print exceptions for tcp_server and not 
+                     */
                     tcp_server& print_exceptions(const bool print_except);
+
+
+                    /**
+                        Trying something to allow for chaining.
+                     */
+                    tcp_server& throw_exception(const bool exception_ = true);
 
             };
 
