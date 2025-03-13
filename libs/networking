@@ -423,10 +423,13 @@
 
                 protected:
 
-                    std::string host_, port_;
-                    address_information* connect_address_, *active_address_;
-                    socket_type connect_socket_;
-                    bool tcp_, serving_, was_init_;
+                    std::string host_ = "", port_ = "";
+                    address_information* connect_address_ = 0, *active_address_ = 0;
+                    socket_type connect_socket_ = invalid_socket;
+                    bool tcp_ = true, 
+                        serving_ = true, 
+                        was_init_ = networking::is_init, 
+                        print_except_ = true;;
 
 
                     /**
@@ -575,6 +578,16 @@
                      */
                     virtual host& blocking(const bool block = true);
 
+                    /**
+                        Set the flag for whether or not to print exceptions when they're thrown
+                     */
+                    host& print_on_exceptions(const bool print);
+
+                    /**
+                        Print the exceptions when they are thrown.
+                     */
+                    bool print_on_exceptions() const;
+
             };
 
             class tcp_server : public host {
@@ -586,6 +599,7 @@
                         block_clients_ = true, 
                         certified_ = false, 
                         listening_ = false;
+                        
                     socket_type max_socket_ = invalid_socket;
                     secure_socket_type max_secure_ = invalid_secure_socket;
                     context_type context_ = invalid_context;
@@ -739,6 +753,8 @@
                         (if `block` is `false`).
                      */
                     tcp_server& blocking(const bool block);
+
+                    tcp_server& print_exceptions(const bool print_except);
 
             };
 

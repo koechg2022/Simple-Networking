@@ -1,6 +1,8 @@
 
 #include "headers"
+#include "included"
 #include "networking"
+#include "string_functions"
 // #include "networking"
 // #include "included"
 // #include "string_functions"
@@ -188,26 +190,207 @@ void test_host() {
 void test_server() {
     // std::cout << UNDER_CONSTRUCTION << std::endl;
     
+    bool secure = false;
+    
+    networking::network_structures::tcp_server server;
+    server.print_exceptions(false).secure(secure);
+    networking::network_structures::connected_host::client new_client;
+    std::vector<networking::network_structures::connected_host::client> clients;
+    std::string message;
+    const int count = 3 * kilo_byte;
+    int bytes;
+    char msg[count];
+
+
+    server.secure(false);
+    server.retrieve_hostname();
+    server.print_on_exceptions(false);
+
     try {
-        bool secure = true;
-        networking::network_structures::tcp_server server;
+        
+        if (not server.run()) {
+            std::cerr << "Failed to start server" << std::endl;
+        }
 
-        std::cout << "Certificate is \"" << server.cert("../files/cert.pem").cert() << "\"" << std::endl;
-        std::cout << "Key is \"" << server.key("../files/key.pem").cert() << "\"" << std::endl;
-        server.secure(secure);
-        server.retrieve_hostname();
-        server.run();
-        std::cout << (server ? "Successfully started " : "Failed to start ") << ((secure) ? "secure" : "non secure") << " server" << std::endl;
+        std::cout << "Connect to host with \"" << server.hostname() << " : " << server.port() << "\"" << std::endl;
 
+        while (server) {
+            new_client = server.new_client();
+
+            if (valid_socket(new_client.connected_socket)) {
+                std::cout << "New connection from \"" << new_client.hostname << "\" at " << new_client.connection_time << std::endl;
+            }
+
+            clients = server.clients_with_data();
+
+            // There is/are clients with data?
+            for (const auto& this_client : clients) {
+                bytes = recv(this_client.connected_socket, msg, count, 0);
+
+                if (bytes < 1) {
+                    std::cout << "Unexpected disconnect from \"" << this_client.hostname << "\"" << std::endl;
+                    server.disconnect_client(this_client);
+                    continue;
+                }
+
+                std::cout << "Message from client : " << std::string(msg) << std::endl;
+            }
+
+            if (string_functions::has_keyboard_input()) {
+                message = string_functions::get_input();
+
+                if (string_functions::same_string(message, "exit()") or string_functions::same_string(message, "exit")) {
+                    server.close_server();
+                }
+
+                else if (string_functions::same_string(message, "list clients") or string_functions::same_string(message, "lc")) {
+                    
+                    clients = server.all_clients();
+                    for (const auto& this_client : clients) {
+                        std::cout << "Host : " << 
+                                    this_client.hostname << ", Port :" << 
+                                    this_client.portvalue << ", Connection time : " <<
+                                    this_client.connection_time << std::endl;
+                        std::cout << "------------------------------------------------" << std::endl;
+                    }
+                }
+
+                else {
+                    std::cerr << "Unrecognized input : \"" << message << "\"" << std::endl;
+                }
+            }
+
+        }
+        
     }
 
     catch (networking::exceptions::base_exception& except) {
-        std::cerr << std::endl << std::endl << "Caught exception " << except.exception_type() << std::endl << std::endl;
+        std::cerr << "Caught exception : " << except.exception_type() << std::endl;
+        std::cerr << "Error message \"" << except.msg() << "\"" << std::endl;
     }
+    
+
 }
 
 void test_secure_server() {
-    std::cout << UNDER_CONSTRUCTION << std::endl;
+    bool secure = true;
+    std::string message;
+    networking::network_structures::tcp_server server("", DEFAULT_PORT, secure, "../files/key.pem", "../files/cert.pem");
+    
+    try {
+        server.retrieve_hostname();
+        if (server.hostname().empty()) {
+            std::cerr << "Failed to retrieve hostname. Not gonna start server..." << std::endl;
+            return;
+        }
+        std::cout << "Successfully retrieved hostname. Gonna proceed to start server..." << std::endl;
+    }
+
+    catch(networking::exceptions::base_exception& except) {
+        std::cerr << "Caught exception : " << except.exception_type() << std::endl;
+        return;
+    }
+
+    try {
+
+        if (not server.secure(secure).secure()) {
+            std::cerr << "Server is not secure. Not going to start server." << std::endl;
+            return;
+        }
+        std::cout << "Server is secure. Gonna proceed to start server..." << std::endl;
+    }
+
+    catch (networking::exceptions::base_exception& except) {
+        std::cerr << "Caught exception : " << except.exception_type() << std::endl;
+        return;
+    }
+
+    try {
+
+        if (not server.run()) {
+            std::cerr << "Server failed to start running. Not gonna start server." << std::endl;
+            return;
+        }
+
+        std::cout << "Server was successfully started." << std::endl;
+    }
+
+    catch (networking::exceptions::base_exception& except) {
+        std::cerr << "Caught exception" << except.exception_type() << std::endl;
+        return;
+    }
+
+
+    try {
+
+        server.print_exceptions(false);
+        networking::network_structures::connected_host::client new_client;
+        std::vector<networking::network_structures::connected_host::client> clients;
+        const int count = 3 * kilo_byte;
+        int bytes;
+        char msg[count];
+
+        std::cout << "Connect to host with \"" << server.hostname() << " : " << server.port() << "\"" << std::endl;
+
+        while (server) {
+
+            new_client = server.new_client();
+
+            if (valid_socket(new_client.connected_socket)) {
+                std::cout << "New connection from \"" << new_client.hostname << "\" at " << new_client.connection_time << std::endl;
+            }
+
+            clients = server.clients_with_data();
+
+            // There is/are clients with data?
+            for (const auto& this_client : clients) {
+                bytes = SSL_read(this_client.secure_socket, msg, count);
+
+                if (bytes < 1) {
+                    std::cout << "Unexpected disconnect from \"" << this_client.hostname << "\"" << std::endl;
+                    server.disconnect_client(this_client);
+                    continue;
+                }
+
+                std::cout << "Message from client : " << std::string(msg) << std::endl;
+            }
+            
+
+
+            if (string_functions::has_keyboard_input()) {
+                message = string_functions::get_input();
+
+                if (string_functions::same_string(message, "exit()") or string_functions::same_string(message, "exit")) {
+                    server.close_server();
+                }
+
+                else if (string_functions::same_string(message, "list clients") or string_functions::same_string(message, "lc")) {
+                    
+                    clients = server.all_clients();
+                    for (const auto& this_client : clients) {
+                        std::cout << "Host : " << 
+                                    this_client.hostname << ", Port :" << 
+                                    this_client.portvalue << ", Connection time : " <<
+                                    this_client.connection_time << std::endl;
+                        std::cout << "------------------------------------------------" << std::endl;
+                    }
+                }
+
+                else {
+                    std::cerr << "Unrecognized input : \"" << message << "\"" << std::endl;
+                }
+            }
+
+
+        }
+    }
+
+    catch (networking::exceptions::base_exception& except) {
+        std::cerr << "Exception caught : " << except.exception_type() << std::endl;
+        std::cerr << except.msg() << std::endl;
+    }
+
+    // std::cout << UNDER_CONSTRUCTION << std::endl;
 }
 
 void test_client() {
