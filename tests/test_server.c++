@@ -532,6 +532,68 @@ void test_secure_server() {
 
                 }
 
+                else if (string_functions::same_string(message, server_args_caps[DISCONNECT_CLIENT]) or string_functions::same_string(message, server_args_lower[DISCONNECT_CLIENT])) {
+
+                    // Print the clients
+                    clients = server.all_clients();
+                    if (clients.empty()) {
+                        std::cout << "No clients to disconnect" << std::endl;
+                    }
+                    bytes = 1;
+                    for (const auto& this_client : clients) {
+                        std::cout << bytes << ".)\t" << this_client.hostname << std::endl;
+                        std::cout << "------------------------------------------------" << std::endl;
+                        bytes++;
+                    }
+                    message = "";
+                    new_client = networking::network_structures::connected_host::client();
+                    while (message.empty() or not string_functions::same_string(message, "N/A"))  {
+                        message = string_functions::get_input("Client to disconnect : ");
+                        if (string_functions::all_numbers(message.c_str())) {
+                            if (std::stoul(message) == 0) {
+                                std::cout << "Cannot select \"0\" client..." << std::endl;
+                                message = "N/A";
+                                break;
+                            }
+                            if (std::stoul(message) - 1 < clients.size()) {
+                                new_client = clients[std::stoul(message) - 1];
+                                break;
+                            }
+                        }
+
+                        for (const auto& this_client : clients) {
+                            if (string_functions::same_string(this_client.hostname, message)) {
+                                new_client = this_client;
+                                break;
+                            }
+                        }
+
+                        if (not new_client.hostname.empty() or string_functions::same_string(message, "N/A")) {
+                            break;
+                        }
+
+                        std::cout << "Unrecognized host : \"" << message << "\"" << std::endl;
+                        message = "";
+                    }
+
+                    if (not new_client.hostname.empty()) {
+                        server.disconnect_client(new_client);
+                        clients = server.all_clients();
+                        bytes = 0;
+                        for (const auto& this_client : clients) {
+                            if (this_client == new_client) {
+                                bytes = 1;
+                                break;
+                            }
+                        }
+                        if (not bytes) {
+                            std::cout << "Successfully disconnected client \"" << new_client.hostname << "\"" << std::endl;
+                            continue;
+                        }
+                        std::cout << "Did not disconnected client \"" << new_client.hostname << "\"" << std::endl;
+                    }
+                }
+
                 else {
                     std::cerr << "Unrecognized input : \"" << message << "\". Acceptable server arguments are:" << std::endl;
                     for (const auto& arg : server_args_caps) {
