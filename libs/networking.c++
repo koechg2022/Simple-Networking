@@ -1621,7 +1621,7 @@ networking::network_structures::connected_host::client networking::network_struc
         }
 
         this->max_socket_ = (the_answer.connected_socket > this->max_socket_) ? the_answer.connected_socket : this->max_socket_;
-
+        this->clients_.insert({{the_answer.hostname, the_answer.portvalue}, the_answer});
     }
 
     return the_answer;
