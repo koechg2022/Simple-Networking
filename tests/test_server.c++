@@ -332,6 +332,7 @@ void test_secure_server() {
         char msg[count];
 
         std::cout << "Connect to host with \"" << server.hostname() << " : " << server.port() << "\"" << std::endl;
+        std::cout << "Note, FD_SETSIZE = " << FD_SETSIZE << std::endl;
 
         while (server) {
 
