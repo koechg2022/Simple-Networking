@@ -1536,6 +1536,7 @@ networking::network_structures::connected_host::client networking::network_struc
     }
     networking::network_structures::connected_host::client the_answer;
     fd_set ready;
+    std::string message;
     FD_ZERO(&ready);
     FD_SET(this->connect_socket_, &ready);
 
@@ -1553,7 +1554,8 @@ networking::network_structures::connected_host::client networking::network_struc
         the_answer.connection_time = misc_functions::get_current_time();
 
         if (not valid_socket(the_answer.connected_socket)) {
-            throw networking::exceptions::accept_failure("Failed to accept a new incomming connection. Error " + std::to_string(socket_error) + std::string(get_socket_error_string(socket_error)), true, __FILE__, line_, __FUNCTION__);
+            message = "Failed to accept a new incomming connection. Error " + std::to_string(socket_error) + std::string(get_socket_error_string(socket_error));
+            throw networking::exceptions::accept_failure(message, true, __FILE__, line_, __FUNCTION__);
         }
 
         // The connection has been made
