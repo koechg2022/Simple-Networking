@@ -379,6 +379,28 @@ void test_secure_server() {
                     }
                 }
 
+                else if (string_functions::same_string(message, "broadcast") or string_functions::same_string(message, "brdcst")) {
+                    clients = server.all_clients();
+                    if (clients.empty()) {
+                        std::cout << "No clients to message..." << std::endl;
+                        continue;
+                    }
+
+                    message = string_functions::get_input("Message to broadcast : ");
+                    if (message.empty()) {
+                        continue;
+                    }
+                    for (const auto& client : clients) {
+                        bytes = SSL_write(client.secure_socket, message.c_str(), message.length());
+
+                        if (bytes < 1) {
+                            std::cerr << "Failed to send message to \"" << message << "\"" << std::endl;
+                            continue;
+                        }
+                        std::cout << "Sent " << bytes << " out of " << message.length() << " bytes." << std::endl;
+                    }
+                }
+
                 else {
                     std::cerr << "Unrecognized input : \"" << message << "\"" << std::endl;
                 }

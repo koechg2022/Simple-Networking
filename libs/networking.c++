@@ -1947,6 +1947,7 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
     // Close the secore connection
     // (valid_socket(this->connect_socket_)) ? close_socket(this->connect_socket_) : 0;
     // this->connect_socket_ = invalid_socket;
+    
     (this->secure_ and this->context_) ? SSL_CTX_free(this->context_) : (void) 0;
     this->context_ = invalid_context;
     this->max_secure_ = invalid_secure_socket;
