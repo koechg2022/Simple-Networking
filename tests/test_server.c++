@@ -747,6 +747,7 @@ void test_client() {
 void test_secure_client() {
     networking::network_structures::tcp_client client(string_functions::get_input("Host to connect to : "));
     std::cout << "Successfully created client object" << std::endl;
+    
     client.port(connection_port);
     client.secure(true);
 

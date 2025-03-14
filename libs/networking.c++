@@ -2400,6 +2400,7 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
         
         // Now create the address information struct, and the socket
         if (not this->create_connection_address()) {
+            std::cerr << "Failing to create connection address..." << std::endl;
             line_ = __LINE__ - 1;
             message = "Failed to create connection socket. Error " + std::to_string(socket_error) + " : " + std::string(get_socket_error_string(socket_error));
             if (this->throw_except_) {
