@@ -2652,7 +2652,7 @@ bool networking::network_structures::tcp_client::message(struct timeval timeout)
     FD_ZERO(&the_answer);
     FD_SET(this->connect_socket_, &the_answer);
 
-    if (select(this->connect_socket_, &the_answer, 0, 0, &timeout) < 0) {
+    if (select(this->connect_socket_ + 1, &the_answer, 0, 0, &timeout) < 0) {
         std::string message;
         int line_ =__LINE__ - 1;
         message = "Failed to select for listening socket. Error " + 
