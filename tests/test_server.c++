@@ -780,8 +780,9 @@ void test_secure_client() {
     std::string message;
     networking::network_structures::connected_host::server connection_info;
     const int count = 3 * kilo_byte;
-    int bytes;
+    int bytes, flags = 0;
     char msg[count];
+    struct timeval timeout = {0, 200};
 
     std::cout << "Connection subject name : " << client.get_subject_name() << std::endl;
     std::cout << "Connection issuer name : " << client.get_issuer_name() << std::endl;
@@ -792,7 +793,7 @@ void test_secure_client() {
         if (client.message()) {
             // Client has a message
             bytes = count;
-            if (not client.message(msg, bytes, 0)) {
+            if (not client.message_client(msg, bytes, flags, timeout)) {
                 std::cerr << "Connection closed" << std::endl;
                 client.close_client();
                 continue;
@@ -811,10 +812,28 @@ void test_secure_client() {
 
             else if (string_functions::same_string(message, client_args_caps[CONNECTION_INFO]) or string_functions::same_string(message, client_args_lower[CONNECTION_INFO])) {
                 connection_info = client.connection_information();
+                std::cout << "Server connetion Information:" << std::endl;
+                std::cout << "\tHostname : " << connection_info.hostname << std::endl;
+                std::cout << "\tPortvalue : " << connection_info.portvalue << std::endl;
+                std::cout << "\tConnection socket : " << connection_info.connect_socket << std::endl;
+                std::cout << "\tSecure connection socket : " << connection_info.secure_socket << std::endl;
             }
 
             else if (string_functions::same_string(message, client_args_caps[MESSAGE_SERVER]) or string_functions::same_string(message, client_args_lower[MESSAGE_SERVER])) {
+                
                 std::cout << UNDER_CONSTRUCTION << std::endl;
+                continue;
+
+                message = string_functions::get_input("Message to send : ");
+                bytes = (int) message.length();
+
+                if (not client.message_server((char*) message.c_str(), bytes, 0)) {
+                    std::cout << "Disconnecting..." << std::endl;
+                    client.close_client();
+                    continue;
+                }
+
+                std::cout << "Successfully sent " << message.length() << " bytes" << std::endl;
             }
 
             else {

@@ -2635,6 +2635,8 @@ bool networking::network_structures::tcp_client::message(struct timeval timeout)
         return false;
     }
 
+    timeout.tv_sec = (timeout.tv_sec < 0) ? 0 : timeout.tv_sec;
+    timeout.tv_sec = (timeout.tv_usec < 0) ? 200 : timeout.tv_usec;
 
     fd_set the_answer;
     FD_ZERO(&the_answer);
@@ -2652,6 +2654,100 @@ bool networking::network_structures::tcp_client::message(struct timeval timeout)
         return false;
     }
     return FD_ISSET(this->connect_socket_, &the_answer);
+}
+
+bool networking::network_structures::tcp_client::message_client(const char* msg, int& bytes, int flags, struct timeval timeout, bool check_ready) {
+    if (not *this) {
+        return false;
+    }
+
+    // Client is connected
+    int bytes_ = bytes, line_;
+    bool the_answer = true, ready_state = true;
+    std::string message;
+    if (check_ready) {
+        fd_set ready;
+        FD_ZERO(&ready);
+        FD_SET(this->connect_socket_, &ready);
+        if (select(this->connect_socket_ + 1, &ready, 0, 0, &timeout) < 0) {
+            line_ = __LINE__ - 1;
+            message = "Failed to select for active client socket. Error " + std::to_string(socket_error) + " \"" + std::string(get_socket_error_string(socket_error)) + "\"";
+            if (this->throw_except_) {
+                throw networking::exceptions::select_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
+            }
+            std::cerr << message << std::endl;
+            return false;
+        }
+        ready_state = FD_ISSET(this->connect_socket_, &ready);
+    }
+    
+    if (networking::socket_is_blocking(this->connect_socket_, this->throw_except_)){
+
+        // Socket is blocking
+        if (not ready_state) {
+            return false;
+        }
+
+        // TODO IMPLEMENT recv/SSL_read in blocking
+
+    }
+
+    else {
+        // Socket is not blocking
+        if (not ready_state) {
+            return false;
+        }
+
+        // TODO IMPLEMENT recv/SSL_read in non-blocking
+
+    }
+
+    return the_answer;
+}
+
+
+bool networking::network_structures::tcp_client::message_server(const char* msg, int& bytes, int flags) {
+    if (not *this) {
+        return false;
+    }
+
+    // Client is connected
+    int bytes_ = bytes, line_, total_;
+    bool the_answer = true;
+    std::string message;
+
+    
+    if (networking::socket_is_blocking(this->connect_socket_)) {
+
+        // Socket is blocking. Simple send while total_ < bytes
+        total_ = 0;
+        line_ = __LINE__ + 2;
+        while (total_ < bytes) {
+            bytes_ = (this->secure_) ? SSL_write(this->secure_socket_, msg, bytes) : send(this->connect_socket_, msg, bytes, flags);
+            if (bytes_ < 1) {
+                bytes = bytes_;
+                message = "Failed to send bytes. Only sent " + 
+                    std::to_string(bytes - total_) + " to server. Error " + std::to_string(socket_error) + 
+                        std::string(get_socket_error_string(socket_error));
+                if (this->throw_except_) {
+                    throw networking::exceptions::socket_information_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
+                }
+                std::cerr << message << std::endl;
+            }
+            total_ = total_ + bytes_;
+        }
+        
+        the_answer = total_ == bytes;
+        bytes = total_;
+    }
+
+    else {
+
+        // Socket is not blocking. Could get false negative errors. Check for them
+        // TODO : IMPLEMENT ME
+    }
+
+    return the_answer;
 }
 
 /************************************** TCP Client END *****************************************/
