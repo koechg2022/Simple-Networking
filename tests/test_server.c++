@@ -508,6 +508,10 @@ void test_secure_server() {
         int bytes;
         char msg[count];
 
+        if (not server.run()) {
+            return;
+        }
+
         std::cout << "Connect to host with https \"" << server.hostname() << " : " << server.port() << "\"" << std::endl;
 
         while (server) {
