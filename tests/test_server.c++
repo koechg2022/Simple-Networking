@@ -78,7 +78,7 @@ std::unordered_map<std::string, std::string> server_args_lower = {
     {DISCONNECT_CLIENT, DISCONNECT_CLIENT_}
 };
 
-const std::string UNDER_CONSTRUCTION = "UNDER CONSTRUCTION";
+// const std::string UNDER_CONSTRUCTION = "UNDER CONSTRUCTION";
 const std::string connection_port = "5500";
 
 
@@ -721,13 +721,19 @@ void test_secure_server() {
 }
 
 void test_client() {
-    networking::network_structures::tcp_client client(string_functions::get_input(), connection_port);
+    networking::network_structures::tcp_client client(string_functions::get_input("Host to connect to : "));
+    client.port(connection_port);
+    client.secure();
 
     std::cout << "Successfully creates client object" << std::endl;
 }
 
 void test_secure_client() {
-    std::cout << UNDER_CONSTRUCTION << std::endl;
+    networking::network_structures::tcp_client client(string_functions::get_input("Host to connect to : "));
+    client.port(connection_port);
+    client.secure(true);
+    
+    std::cout << "Successfully created client object" << std::endl;
 }
 
 void windows_tests() {
