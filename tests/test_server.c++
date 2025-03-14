@@ -213,76 +213,38 @@ int main(int len, char** args) {
 
 
 std::unordered_map<std::string, std::string> parse_url(const std::string url, const std::unordered_map<std::string, std::string> default_values) {
-    std::unordered_map<std::string, std::string> the_answer;
+    std::unordered_map<std::string, std::string> the_answer = default_values;
     
-    unsigned long start, end;
+    size_t start = 0, end;
     
-    // First find the protocol
-    start = 0;
-    end = string_functions::first_index_of(url, "://");
+    // Protocol
+    end = url.find("://");
     if (end != std::string::npos) {
-        the_answer.insert({PROTOCOL, url.substr(start, end)});
+        the_answer[PROTOCOL] = url.substr(start, end);
         start = end + 3;
     }
+
+    // Hostname and Port
+    end = url.find_first_of("/#", start);
+    std::string host_port = url.substr(start, end - start);
+    size_t colon_pos = host_port.find(':');
+    if (colon_pos != std::string::npos) {
+        the_answer[HOSTNAME] = host_port.substr(0, colon_pos);
+        the_answer[PORT] = host_port.substr(colon_pos + 1);
+    }
     else {
-        the_answer.insert({PROTOCOL, default_values.at(PROTOCOL)});
+        the_answer[HOSTNAME] = host_port;
     }
 
-    
-    
-    // PORT
-    end = start;
-    while (end < url.length() and 
-            not string_functions::same_char(url[end], ':') and 
-                not string_functions::same_char(url[end], '/') and 
-                    not string_functions::same_char(url[end], '#')) end++;
-
-    
-    the_answer[PORT] = default_values.at(PORT);
-    if (end < url.length() and string_functions::same_char(url[end], ':')) {
-        end++;
+    // Path
+    if (end != std::string::npos && url[end] == '/') {
         start = end;
-        while (end < url.length() and 
-                not string_functions::same_char(url[end], '/') and 
-                    string_functions::same_char(url[end], '#')) end++;
-        if (end < url.length()) {
-            the_answer[PORT] = url.substr(start, end);
-            start = end;
-        }
+        end = url.find('#', start);
+        the_answer[PATH] = url.substr(start, end - start);
     }
 
-    // HOSTNAME
-    the_answer[HOSTNAME] = default_values.at(HOSTNAME);
-    while (end < url.length() and 
-            not string_functions::same_char(url[end], '/') and 
-                not string_functions::same_char(url[end], '#')) end++;
-    
-    if (end < url.length()) {
-        end++;
-        start = end;
-        while (end < url.length() and 
-                not string_functions::same_char(url[end], '#')) end++;
-        
-        if (end > start) {
-            the_answer[HOSTNAME] = url.substr(start, end);
-            end++;
-        }
-    }
-    start = end;
-
-
-    the_answer[PATH] = default_values.at(PATH);
-    while (end < url.length() and not string_functions::same_char(url[end], '#')) end++;
-
-    if ((end == url.length() and end > start) or (end < url.length() and string_functions::same_char(url[end], '#'))) {
-        the_answer[PATH] = url.substr(start, end);
-        end++;
-        start = end;
-    }
-
-    while (end < url.length() and not string_functions::same_char(url[end], '#')) end++;
-
-    if (end < url.length() and string_functions::same_char(url[end], '#')) {
+    // Hash
+    if (end != std::string::npos && url[end] == '#') {
         the_answer[HASH] = url.substr(end + 1);
     }
 
