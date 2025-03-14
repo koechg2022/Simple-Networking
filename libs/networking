@@ -673,9 +673,6 @@
                         !NOTE! Server cannot be updated while it's running.
                         
                         
-                        TODO : Update this so that it can be called and used to change
-                        the connection type from secure to unsecure and vise versa
-                        while the server is running and/or while there are clients already connected.
                      */
                     tcp_server& secure(const bool set_secure);
 

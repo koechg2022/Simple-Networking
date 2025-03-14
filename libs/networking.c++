@@ -4,6 +4,7 @@
 
 
 #include "../headers/included"
+#include "misc_functions"
 #include "string_functions"
 // #include <chrono>
 // #include <openssl/ssl.h>
@@ -2456,6 +2457,7 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
             return *this;
         }
 
+        this->connect_time_ = misc_functions::get_current_time();
         std::cout << "Socket is now connected" << std::endl;
         // Connection socket is now connected!.
         // The rest of the connection establishment deals with secure
