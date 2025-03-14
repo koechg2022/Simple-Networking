@@ -2629,5 +2629,30 @@ std::string networking::network_structures::tcp_client::get_issuer_name(const st
     return the_answer;
 }
 
+bool networking::network_structures::tcp_client::message(struct timeval timeout) {
+
+    if (not *this) {
+        return false;
+    }
+
+
+    fd_set the_answer;
+    FD_ZERO(&the_answer);
+    FD_SET(this->connect_socket_, &the_answer);
+
+    if (select(this->connect_socket_, &the_answer, 0, 0, &timeout) < 0) {
+        std::string message;
+        int line_ =__LINE__ - 1;
+        message = "Failed to select for listening socket. Error " + 
+                std::to_string(socket_error) + " : " + std::string(get_socket_error_string(socket_error)) + "\"";
+        if (this->throw_except_) {
+            throw networking::exceptions::select_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
+        }
+        std::cerr << message << std::endl;
+        return false;
+    }
+    return FD_ISSET(this->connect_socket_, &the_answer);
+}
+
 /************************************** TCP Client END *****************************************/
 /***********************************************************************************************/

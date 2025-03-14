@@ -26,7 +26,10 @@ const std::string
                   LIST_CLIENTS = "list clients", LIST_CLIENTS_ = "lc",
                   BROADCAST = "broadcast", BROADCAST_ = "brdcst",
                   MESSAGE_CLIENT = "message client", MESSAGE_CLIENT_ = "mc",
-                  DISCONNECT_CLIENT = "disconnect client", DISCONNECT_CLIENT_ = "dc";
+                  DISCONNECT_CLIENT = "disconnect client", DISCONNECT_CLIENT_ = "dc",
+                  MESSAGE_SERVER = "message server", MESSAGE_SERVER_ = "ms",
+                  CONNECTION_INFO = "connection information", CONNECTION_INFO_ = "ci",
+                  CLOSE_CLIENT = "close client", CLOSE_CLIENT_ = "cc";
                   
 
 
@@ -69,7 +72,7 @@ std::unordered_map<std::string, std::string> server_args_caps = {
     {DISCONNECT_CLIENT, DISCONNECT_CLIENT}
 };
 
-// For running client
+// For running server too
 std::unordered_map<std::string, std::string> server_args_lower = {
     {EXIT, EXIT_},
     {BROADCAST, BROADCAST_},
@@ -78,7 +81,25 @@ std::unordered_map<std::string, std::string> server_args_lower = {
     {DISCONNECT_CLIENT, DISCONNECT_CLIENT_}
 };
 
-// const std::string UNDER_CONSTRUCTION = "UNDER CONSTRUCTION";
+
+
+// For running client
+std::unordered_map<std::string, std::string> client_args_caps = {
+    {EXIT, EXIT},
+    {CONNECTION_INFO, CONNECTION_INFO},
+    {MESSAGE_SERVER, MESSAGE_SERVER}
+};
+
+// For running server too
+std::unordered_map<std::string, std::string> client_args_lower = {
+    {EXIT, EXIT_},
+    {CONNECTION_INFO, CONNECTION_INFO_},
+    {MESSAGE_SERVER, MESSAGE_SERVER_}
+};
+
+
+
+const std::string UNDER_CONSTRUCTION = "UNDER CONSTRUCTION";
 const std::string connection_port = "5500";
 
 
@@ -756,8 +777,57 @@ void test_secure_client() {
         return;
     }
 
-    std::cout << "Successfully created connection" << std::endl;
-    
+    std::string message;
+    networking::network_structures::connected_host::server connection_info;
+    const int count = 3 * kilo_byte;
+    int bytes;
+    char msg[count];
+
+    std::cout << "Connection subject name : " << client.get_subject_name() << std::endl;
+    std::cout << "Connection issuer name : " << client.get_issuer_name() << std::endl;
+    std::cout << "Connection was established at : " << client.connection_time() << std::endl;
+
+    while (client) {
+
+        if (client.message()) {
+            // Client has a message
+            bytes = count;
+            if (not client.message(msg, bytes, 0)) {
+                std::cerr << "Connection closed" << std::endl;
+                client.close_client();
+                continue;
+            }
+
+            std::cout << " Message from server:" << std::endl;
+            std::cout << "\"" << std::string(msg, bytes) << "\"" << std::endl;
+        }
+
+        if (string_functions::has_keyboard_input()) {
+            message = string_functions::get_input();
+
+            if (string_functions::same_string(message, client_args_caps[EXIT]) or string_functions::same_string(message, client_args_lower[EXIT])) {
+                client.close_client();
+            }
+
+            else if (string_functions::same_string(message, client_args_caps[CONNECTION_INFO]) or string_functions::same_string(message, client_args_lower[CONNECTION_INFO])) {
+                connection_info = client.connection_information();
+            }
+
+            else if (string_functions::same_string(message, client_args_caps[MESSAGE_SERVER]) or string_functions::same_string(message, client_args_lower[MESSAGE_SERVER])) {
+                std::cout << UNDER_CONSTRUCTION << std::endl;
+            }
+
+            else {
+                std::cout << "Unrecognized client argument \"" << message << "\"" << std::endl;
+                std::cout << "Recognized clients arguments:" << std::endl;
+                for (const auto& arg : client_args_caps) {
+                    std::cout << "\t\"" << arg.first << "\"" << std::endl;
+                }
+            }
+        }
+
+    }
+
 }
 
 void windows_tests() {

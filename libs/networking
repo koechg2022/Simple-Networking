@@ -841,6 +841,12 @@
                     std::string get_subject_name(const std::string on_failure = "N/A") const;
 
                     std::string get_issuer_name(const std::string on_failure = "N/A") const;
+
+                    bool message(struct timeval timeout = {0, 200});
+
+                    bool message(char* msg, int& bytes, int flags = 0);
+
+                    networking::network_structures::connected_host::server connection_information() const;
             };
 
         }
