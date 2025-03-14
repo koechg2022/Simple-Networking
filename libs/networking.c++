@@ -2441,7 +2441,7 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
         //     return *this;
         // }
 
-        std::cout << "Socket is blocking for completing of connection set up" << std::endl;
+        // std::cout << "Socket is blocking for completing of connection set up" << std::endl;
 
         // Socket is now set to blocking or non-blocking depending on what parameter blocking was set to
 
