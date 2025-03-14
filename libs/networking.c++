@@ -2358,7 +2358,7 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
         }
 
         // Network is initialized.
-        std::cout << "Network initailized" << std::endl;
+        // std::cout << "Network initailized" << std::endl;
 
         // For dealing with potenial errors with creating a secure connection
         if (this->secure_) {
@@ -2380,7 +2380,7 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
             this->secure_was_init_ = false;
         }
 
-        (this->secure_) ? std::cout << "Secure network initialized" << std::endl : std::cout << "";
+        // (this->secure_) ? std::cout << "Secure network initialized" << std::endl : std::cout << "";
 
         // Secure network initialized to reach here.
 
@@ -2399,7 +2399,7 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
             }
         }
 
-        (this->secure_) ? std::cout << "Context created" << std::endl : std::cout << "";
+        // (this->secure_) ? std::cout << "Context created" << std::endl : std::cout << "";
 
         // The context was successfully created
         
@@ -2415,7 +2415,7 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
             return *this;
         }
 
-        std::cout << "Created connection address" << std::endl;
+        // std::cout << "Created connection address" << std::endl;
 
         // There is an address info struct to use for the creation of a connection socket
         if (not this->create_connection_socket()) {
@@ -2427,10 +2427,6 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
             std::cerr << message << std::endl;
             return *this;
         }
-
-        std::cout << "Created connection socket" << std::endl;
-
-        // Socket is now set to blocking or non-blocking depending on what parameter blocking was set to
 
         // Connect the socket
         if (connect(this->connect_socket_, this->active_address_->ai_addr, this->active_address_->ai_addrlen)) {
@@ -2444,7 +2440,7 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
         }
 
         this->connect_time_ = misc_functions::get_current_time();
-        std::cout << "Socket is now connected" << std::endl;
+        // std::cout << "Socket is now connected" << std::endl;
         // Connection socket is now connected!.
         // The rest of the connection establishment deals with secure
         // connection creation
@@ -2585,6 +2581,8 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
                 return *this;
             }
         }
+
+        std::cout << "Currently the connection is " << (networking::socket_is_blocking(this->connect_socket_, false) ? "blocking" : "not blocking") << "as " << ((blocking) ? "expected" : "not expected");
 
     }
 

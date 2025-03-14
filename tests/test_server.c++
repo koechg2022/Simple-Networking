@@ -21,6 +21,7 @@ const std::string
                   TEST_CLIENT = "test_client", TEST_CLIENT_ = "tc",
                   TEST_SECURE_CLIENT = "test_secure_client", TEST_SECURE_CLIENT_ = "tsc",
                   TEST_WINDOWS = "test_windows", TEST_WINDOWS_ = "tw",
+                  TEST_WEB_CLIENT = "test_web_client", TEST_WEB_CLIENT_ = "twc",
                   
                   // For server/clients
                   EXIT = "exit()", EXIT_ = "exit",
@@ -30,7 +31,11 @@ const std::string
                   DISCONNECT_CLIENT = "disconnect client", DISCONNECT_CLIENT_ = "dc",
                   MESSAGE_SERVER = "message server", MESSAGE_SERVER_ = "ms",
                   CONNECTION_INFO = "connection information", CONNECTION_INFO_ = "ci",
-                  CLOSE_CLIENT = "close client", CLOSE_CLIENT_ = "cc";
+                  
+                  
+                  // For URL parts
+                  PROTOCOL = "PROTOCOL", HOSTNAME = "HOSTNAME",
+                  PORT = "PORT", PATH = "PATH", HASH = "HASH";
                   
 
 
@@ -45,7 +50,8 @@ std::unordered_map<std::string, std::string> test_args_caps = {
     {TEST_CLIENT, TEST_CLIENT},
     {TEST_SECURE_SERVER, TEST_SECURE_SERVER},
     {TEST_SECURE_CLIENT, TEST_SECURE_CLIENT},
-    {TEST_WINDOWS, TEST_WINDOWS}
+    {TEST_WINDOWS, TEST_WINDOWS},
+    {TEST_WEB_CLIENT, TEST_WEB_CLIENT}
 };
 
 
@@ -58,7 +64,8 @@ std::unordered_map<std::string, std::string> test_args_lower = {
     {TEST_CLIENT, TEST_CLIENT_},
     {TEST_SECURE_SERVER, TEST_SECURE_SERVER_},
     {TEST_SECURE_CLIENT, TEST_SECURE_CLIENT_},
-    {TEST_WINDOWS, TEST_WINDOWS_}
+    {TEST_WINDOWS, TEST_WINDOWS_},
+    {TEST_WEB_CLIENT, TEST_WEB_CLIENT_}
 };
 
 
@@ -102,7 +109,17 @@ std::unordered_map<std::string, std::string> client_args_lower = {
 
 const std::string UNDER_CONSTRUCTION = "UNDER CONSTRUCTION";
 const std::string connection_port = "5500";
+const std::string default_url = "example.com";
 
+
+std::unordered_map<std::string, std::string> parse_url(const std::string url = default_url, 
+            const std::unordered_map<std::string, std::string> default_values = {
+                {PROTOCOL, "HTTP"},
+                {HOSTNAME, default_url},
+                {PORT, "443"},
+                {PATH, "/"},
+                {HASH, ""}
+            });
 
 void list_machine_adapters();
 
@@ -121,6 +138,8 @@ void test_client();
 void test_secure_client();
 
 void windows_tests();
+
+void test_web_client();
 
 int main(int len, char** args) {
 
@@ -176,6 +195,11 @@ int main(int len, char** args) {
             windows_tests();
         }
 
+        else if (string_functions::same_string(args[index], test_args_caps[TEST_WEB_CLIENT]) or string_functions::same_string(args[index], test_args_lower[TEST_WEB_CLIENT])) {
+            std::cout << "Running test_web_client" << std::endl;
+            test_web_client();
+        }
+
         else {
             std::cout << "Unrecognized test \"" << args[index] << "\". Acceptable arguments are:" << std::endl;
             for (const auto& arg : test_args_caps) {
@@ -187,6 +211,82 @@ int main(int len, char** args) {
     return 0;
 }
 
+
+std::unordered_map<std::string, std::string> parse_url(const std::string url, const std::unordered_map<std::string, std::string> default_values) {
+    std::unordered_map<std::string, std::string> the_answer;
+    
+    unsigned long start, end;
+    
+    // First find the protocol
+    start = 0;
+    end = string_functions::first_index_of(url, "://");
+    if (end != std::string::npos) {
+        the_answer.insert({PROTOCOL, url.substr(start, end)});
+        start = end + 3;
+    }
+    else {
+        the_answer.insert({PROTOCOL, default_values.at(PROTOCOL)});
+    }
+
+    
+    
+    // PORT
+    end = start;
+    while (end < url.length() and 
+            not string_functions::same_char(url[end], ':') and 
+                not string_functions::same_char(url[end], '/') and 
+                    not string_functions::same_char(url[end], '#')) end++;
+
+    
+    the_answer[PORT] = default_values.at(PORT);
+    if (end < url.length() and string_functions::same_char(url[end], ':')) {
+        end++;
+        start = end;
+        while (end < url.length() and 
+                not string_functions::same_char(url[end], '/') and 
+                    string_functions::same_char(url[end], '#')) end++;
+        if (end < url.length()) {
+            the_answer[PORT] = url.substr(start, end);
+            start = end;
+        }
+    }
+
+    // HOSTNAME
+    the_answer[HOSTNAME] = default_values.at(HOSTNAME);
+    while (end < url.length() and 
+            not string_functions::same_char(url[end], '/') and 
+                not string_functions::same_char(url[end], '#')) end++;
+    
+    if (end < url.length()) {
+        end++;
+        start = end;
+        while (end < url.length() and 
+                not string_functions::same_char(url[end], '#')) end++;
+        
+        if (end > start) {
+            the_answer[HOSTNAME] = url.substr(start, end);
+            end++;
+        }
+    }
+
+
+    the_answer[PATH] = default_values.at(PATH);
+    while (end < url.length() and not string_functions::same_char(url[end], '#')) end++;
+
+    if ((end == url.length() and end > start) or (end < url.length() and string_functions::same_char(url[end], '#'))) {
+        the_answer[PATH] = url.substr(start, end);
+        end++;
+        start = end;
+    }
+
+    while (end < url.length() and not string_functions::same_char(url[end], '#')) end++;
+
+    if (end < url.length() and string_functions::same_char(url[end], '#')) {
+        the_answer[HASH] = url.substr(end + 1);
+    }
+
+    return the_answer;
+}
 
 
 void list_machine_adapters() {
@@ -885,4 +985,22 @@ void windows_tests() {
     else {
         std::printf("Failed to uninitialize network.\n");
     }
+}
+
+void test_web_client() {
+
+    std::string url = string_functions::get_input("URL : ");
+
+    if (url.empty()) {
+        url = "example.com";
+    }
+
+    // Parse the url
+    std::unordered_map<std::string, std::string> url_parsed = parse_url(url);
+
+    for (const auto& attr : url_parsed) {
+        std::cout << "\t" << attr.first << " : " << attr.second << std::endl;
+    }
+    
+    
 }
