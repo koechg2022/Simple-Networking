@@ -495,10 +495,15 @@ void test_secure_server() {
 
     try {
 
-        networking::network_structures::tcp_server server; //("", connection_port, secure, "../files/key.pem", "../files/cert.pem");
-        // server.retrieve_hostname().port(connection_port).print_on_exceptions(false);
-        server.retrieve_hostname().port(connection_port).print_on_exceptions(false);
-        server.key("../files/key.pem").cert("../files/cert.pem");
+        networking::network_structures::tcp_server server;
+        
+        
+        server.key("../files/key.pem").
+            cert("../files/cert.pem").
+            retrieve_hostname().port(connection_port).
+            print_on_exceptions(false);
+        
+        server.secure(true);
 
         networking::network_structures::connected_host::client new_client;
         std::vector<networking::network_structures::connected_host::client> clients;
@@ -731,6 +736,7 @@ void test_client() {
     std::cout << "Successfully creates client object" << std::endl;
 
     if (not client.start()) {
+        std::cerr << "Failed to start client" << std::endl;
         return;
     }
 
@@ -740,10 +746,17 @@ void test_client() {
 
 void test_secure_client() {
     networking::network_structures::tcp_client client(string_functions::get_input("Host to connect to : "));
+    std::cout << "Successfully created client object" << std::endl;
     client.port(connection_port);
     client.secure(true);
+
+    if (not client.start()) {
+        std::cerr << "Failed to start client" << std::endl;
+        return;
+    }
+
+    std::cout << "Successfully created connection" << std::endl;
     
-    std::cout << "Successfully created client object" << std::endl;
 }
 
 void windows_tests() {
