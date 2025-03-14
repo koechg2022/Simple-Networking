@@ -1,5 +1,6 @@
 
 #include "headers"
+#include "networking"
 #include "string_functions"
 
 
@@ -788,63 +789,71 @@ void test_secure_client() {
     std::cout << "Connection issuer name : " << client.get_issuer_name() << std::endl;
     std::cout << "Connection was established at : " << client.connection_time() << std::endl;
 
-    while (client) {
+    try {
 
-        if (client.message()) {
-            // Client has a message
-            bytes = count;
-            if (not client.message_client(msg, bytes, flags, timeout)) {
-                std::cerr << "Connection closed" << std::endl;
-                client.close_client();
-                continue;
-            }
+        while (client) {
 
-            std::cout << " Message from server:" << std::endl;
-            std::cout << "\"" << std::string(msg, bytes) << "\"" << std::endl;
-        }
-
-        if (string_functions::has_keyboard_input()) {
-            message = string_functions::get_input();
-
-            if (string_functions::same_string(message, client_args_caps[EXIT]) or string_functions::same_string(message, client_args_lower[EXIT])) {
-                client.close_client();
-            }
-
-            else if (string_functions::same_string(message, client_args_caps[CONNECTION_INFO]) or string_functions::same_string(message, client_args_lower[CONNECTION_INFO])) {
-                connection_info = client.connection_information();
-                std::cout << "Server connetion Information:" << std::endl;
-                std::cout << "\tHostname : " << connection_info.hostname << std::endl;
-                std::cout << "\tPortvalue : " << connection_info.portvalue << std::endl;
-                std::cout << "\tConnection socket : " << connection_info.connect_socket << std::endl;
-                std::cout << "\tSecure connection socket : " << connection_info.secure_socket << std::endl;
-            }
-
-            else if (string_functions::same_string(message, client_args_caps[MESSAGE_SERVER]) or string_functions::same_string(message, client_args_lower[MESSAGE_SERVER])) {
-                
-                std::cout << UNDER_CONSTRUCTION << std::endl;
-                continue;
-
-                message = string_functions::get_input("Message to send : ");
-                bytes = (int) message.length();
-
-                if (not client.message_server((char*) message.c_str(), bytes, 0)) {
-                    std::cout << "Disconnecting..." << std::endl;
+            if (client.message()) {
+                // Client has a message
+                bytes = count;
+                if (not client.message_client(msg, bytes, flags, timeout)) {
+                    std::cerr << "Connection closed" << std::endl;
                     client.close_client();
                     continue;
                 }
 
-                std::cout << "Successfully sent " << message.length() << " bytes" << std::endl;
+                std::cout << " Message from server:" << std::endl;
+                std::cout << "\"" << std::string(msg, bytes) << "\"" << std::endl;
             }
 
-            else {
-                std::cout << "Unrecognized client argument \"" << message << "\"" << std::endl;
-                std::cout << "Recognized clients arguments:" << std::endl;
-                for (const auto& arg : client_args_caps) {
-                    std::cout << "\t\"" << arg.first << "\"" << std::endl;
+            if (string_functions::has_keyboard_input()) {
+                message = string_functions::get_input();
+
+                if (string_functions::same_string(message, client_args_caps[EXIT]) or string_functions::same_string(message, client_args_lower[EXIT])) {
+                    client.close_client();
+                }
+
+                else if (string_functions::same_string(message, client_args_caps[CONNECTION_INFO]) or string_functions::same_string(message, client_args_lower[CONNECTION_INFO])) {
+                    connection_info = client.connection_information();
+                    std::cout << "Server connetion Information:" << std::endl;
+                    std::cout << "\tHostname : " << connection_info.hostname << std::endl;
+                    std::cout << "\tPortvalue : " << connection_info.portvalue << std::endl;
+                    std::cout << "\tConnection socket : " << connection_info.connect_socket << std::endl;
+                    std::cout << "\tSecure connection socket : " << connection_info.secure_socket << std::endl;
+                }
+
+                else if (string_functions::same_string(message, client_args_caps[MESSAGE_SERVER]) or string_functions::same_string(message, client_args_lower[MESSAGE_SERVER])) {
+                    
+                    std::cout << UNDER_CONSTRUCTION << std::endl;
+                    continue;
+
+                    message = string_functions::get_input("Message to send : ");
+                    bytes = (int) message.length();
+
+                    if (not client.message_server((char*) message.c_str(), bytes, 0)) {
+                        std::cout << "Disconnecting..." << std::endl;
+                        client.close_client();
+                        continue;
+                    }
+
+                    std::cout << "Successfully sent " << message.length() << " bytes" << std::endl;
+                }
+
+                else {
+                    std::cout << "Unrecognized client argument \"" << message << "\"" << std::endl;
+                    std::cout << "Recognized clients arguments:" << std::endl;
+                    for (const auto& arg : client_args_caps) {
+                        std::cout << "\t\"" << arg.first << "\"" << std::endl;
+                    }
                 }
             }
-        }
 
+        }
+    }
+
+    catch (networking::exceptions::base_exception& except) {
+        std::cerr << "Exception caught:\n" << std::endl;
+        std::cerr << except.msg() << std::endl;
     }
 
 }

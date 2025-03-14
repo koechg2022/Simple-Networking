@@ -2357,6 +2357,7 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
         }
 
         // Network is initialized.
+        std::cout << "Network initailized" << std::endl;
 
         // For dealing with potenial errors with creating a secure connection
         if (this->secure_) {
@@ -2378,6 +2379,8 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
             this->secure_was_init_ = false;
         }
 
+        (this->secure_) ? std::cout << "Secure network initialized" << std::endl : std::cout << "";
+
         // Secure network initialized to reach here.
 
         // Create the context_
@@ -2395,6 +2398,7 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
             }
         }
 
+        (this->secure_) ? std::cout << "Context created" << std::endl : std::cout << "";
 
         // The context was successfully created
         
@@ -2409,7 +2413,8 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
             std::cerr << message << std::endl;
             return *this;
         }
-        
+
+        std::cout << "Created connection address" << std::endl;
 
         // There is an address info struct to use for the creation of a connection socket
         if (not this->create_connection_socket()) {
@@ -2422,6 +2427,7 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
             return *this;
         }
 
+        std::cout << "Created connection socket" << std::endl;
 
         // Socket is created, but not connected!
         // First set the socket to blocking for the rest of this set up
@@ -2435,6 +2441,7 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
             return *this;
         }
 
+        std::cout << "Socket is blocking for completing of connection set up" << std::endl;
 
         // Socket is now set to blocking or non-blocking depending on what parameter blocking was set to
 
@@ -2449,6 +2456,7 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
             return *this;
         }
 
+        std::cout << "Socket is now connected" << std::endl;
         // Connection socket is now connected!.
         // The rest of the connection establishment deals with secure
         // connection creation
