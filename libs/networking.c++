@@ -2666,59 +2666,91 @@ bool networking::network_structures::tcp_client::message(struct timeval timeout)
     return FD_ISSET(this->connect_socket_, &the_answer);
 }
 
-bool networking::network_structures::tcp_client::message_client(const char* msg, int& bytes, int flags, struct timeval timeout, bool check_ready) {
+bool networking::network_structures::tcp_client::message_client(void* msg, int& bytes, int flags, struct timeval timeout) {
     if (not *this) {
         return false;
     }
 
     // Client is connected
     int bytes_ = bytes, line_;
-    bool the_answer = true, ready_state = true;
+    bool check_ready = (timeout.tv_sec < 0 or timeout.tv_usec < 0) ? false : true;
     std::string message;
-    if (check_ready) {
-        timeout.tv_sec = (timeout.tv_sec < 0) ? 0 : timeout.tv_sec;
-        timeout.tv_usec = (timeout.tv_usec < 0) ? 200 : timeout.tv_usec;
-        fd_set ready;
-        FD_ZERO(&ready);
-        FD_SET(this->connect_socket_, &ready);
-        if (select(this->connect_socket_ + 1, &ready, 0, 0, &timeout) < 0) {
-            line_ = __LINE__ - 1;
-            message = "Failed to select for active client socket. Error " + std::to_string(socket_error) + " \"" + std::string(get_socket_error_string(socket_error)) + "\"";
+
+    if (check_ready and not this->message(timeout)) {
+        // Client doesn't have data. But no errors occured. Leave bytes as it is.
+        // False and bytes as is indicates that no error occured and the there was no data to be read.
+        return false;
+    }
+    
+    // Ready to be read from in accordance with 
+    // the method's API (timeout has a negative time value, for either unit, indicating to check for socket in a ready state)
+    bytes = (this->secure_) ? SSL_read(this->secure_socket_, msg, bytes_) : 
+                recv(this->connect_socket_, msg, bytes_, flags);
+    
+    // Depending on if the connection is secure, or if the socket is blocking, there could be an error or a false error
+    if (this->secure_ and bytes <= 0) {
+
+
+        try {
+            line_ = __LINE__ + 1;
+            if (not networking::socket_is_blocking(this->connect_socket_, true)) { 
+                // This is the only place an exception can be thrown, 
+                // so using variable line_ after the call to socket_is_blocking works.
+                line_ = SSL_get_error(this->secure_socket_, bytes);
+                if (line_ == SSL_ERROR_WANT_READ or line_ == SSL_ERROR_WANT_WRITE) {
+                    bytes = bytes_;
+                    return false;
+                }
+            }
+
+            else if (bytes == 0) {
+                return true;
+            }
+        }
+
+        catch (networking::exceptions::socket_information_failure& except) {
+            message = except.msg() + "\nFailed to determine if socket is blocking or not.";
             if (this->throw_except_) {
-                throw networking::exceptions::select_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
+                throw networking::exceptions::socket_information_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
             }
             std::cerr << message << std::endl;
             return false;
         }
-        ready_state = FD_ISSET(this->connect_socket_, &ready);
+    }
+
+    else if (not this->secure_ and bytes == -1) {
+
+        try {
+            line_ = __LINE__ + 1;
+            if (not networking::socket_is_blocking(this->connect_socket_, true)) {
+                // Socket is non-blocking, or an error occured while trying to determine if the socket is blocking
+                
+                if (socket_error == EAGAIN or socket_error == EWOULDBLOCK) {
+                    // socket is non-blocking and an error did not occur while trying to determine if the socket is blocking.
+                    bytes = bytes_;
+                    return false;
+                }
+
+            }
+        }
+
+        catch (networking::exceptions::socket_information_failure& except) {
+            message = except.msg() + "\nFailed to determine if socket is blocking or not. Error " + 
+                        std::to_string(socket_error) + " : " + std::string(get_socket_error_string(socket_error));
+            throw networking::exceptions::socket_information_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
+        }
+    }
+
+    else if (not this->secure_ and bytes == 0) {
+        return true;
     }
     
-    if (networking::socket_is_blocking(this->connect_socket_, this->throw_except_)){
 
-        // Socket is blocking
-        if (not ready_state) {
-            return false;
-        }
-
-        // TODO IMPLEMENT recv/SSL_read in blocking
-
-    }
-
-    else {
-        // Socket is not blocking
-        if (not ready_state) {
-            return false;
-        }
-
-        // TODO IMPLEMENT recv/SSL_read in non-blocking
-
-    }
-
-    return the_answer;
+    return bytes > 0;
 }
 
 
-bool networking::network_structures::tcp_client::message_server(const char* msg, int& bytes, int flags) {
+bool networking::network_structures::tcp_client::message_server(void* msg, int& bytes, int flags) {
     if (not *this) {
         return false;
     }

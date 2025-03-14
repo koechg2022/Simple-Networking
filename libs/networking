@@ -841,9 +841,9 @@
 
                     bool message(struct timeval timeout = {0, 200});
 
-                    bool message_client(const char* msg, int& bytes, int flags = 0, struct timeval timeout = {0, 200}, bool check_ready = false);
+                    bool message_client(void* msg, int& bytes, int flags = 0, struct timeval timeout = {0, 0});
 
-                    bool message_server(const char* msg, int& bytes, int flags = 0);
+                    bool message_server(void* msg, int& bytes, int flags = 0);
 
                     networking::network_structures::connected_host::server connection_information() const;
             };
