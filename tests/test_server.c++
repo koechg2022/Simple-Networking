@@ -262,6 +262,7 @@ void test_server() {
     
     try {
         networking::network_structures::tcp_server server;
+        server.port(connection_port);
         
         networking::network_structures::connected_host::client new_client;
         std::vector<networking::network_structures::connected_host::client> clients;
@@ -494,8 +495,10 @@ void test_secure_server() {
 
     try {
 
-        networking::network_structures::tcp_server server("", DEFAULT_PORT, secure, "../files/key.pem", "../files/cert.pem");
-        server.print_exceptions(false);
+        networking::network_structures::tcp_server server; //("", connection_port, secure, "../files/key.pem", "../files/cert.pem");
+        // server.retrieve_hostname().port(connection_port).print_on_exceptions(false);
+        server.retrieve_hostname().port(connection_port).print_on_exceptions(false);
+        server.key("../files/key.pem").cert("../files/cert.pem");
 
         networking::network_structures::connected_host::client new_client;
         std::vector<networking::network_structures::connected_host::client> clients;
@@ -718,7 +721,9 @@ void test_secure_server() {
 }
 
 void test_client() {
-    std::cout << UNDER_CONSTRUCTION << std::endl;
+    networking::network_structures::tcp_client client(string_functions::get_input(), connection_port);
+
+    std::cout << "Successfully creates client object" << std::endl;
 }
 
 void test_secure_client() {
