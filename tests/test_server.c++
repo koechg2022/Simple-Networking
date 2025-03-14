@@ -794,7 +794,7 @@ void test_secure_client() {
 
         while (client) {
 
-            std::cout << "Checking if client has message" << std::endl;
+            // std::cout << "Checking if client has message" << std::endl;
             if (client.message()) {
                 // Client has a message
                 bytes = count;
