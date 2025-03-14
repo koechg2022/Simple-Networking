@@ -415,7 +415,7 @@
                     secure_socket_type secure_socket = invalid_secure_socket;
                     socket_type connect_socket = invalid_socket;
                     
-                    struct addrinfo* address_info = null;
+                    struct addrinfo address_info;
 
                     bool operator<(const server& other) const;
 

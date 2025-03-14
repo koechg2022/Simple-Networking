@@ -2750,5 +2750,9 @@ bool networking::network_structures::tcp_client::message_server(const char* msg,
     return the_answer;
 }
 
+networking::network_structures::connected_host::server networking::network_structures::tcp_client::connection_information() const {
+    return {this->host_, this->port_, this->context_, this->secure_socket_, this->connect_socket_, *this->active_address_};
+}
+
 /************************************** TCP Client END *****************************************/
 /***********************************************************************************************/
