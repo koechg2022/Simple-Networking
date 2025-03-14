@@ -435,7 +435,8 @@
                     bool tcp_ = true, 
                         serving_ = true, 
                         was_init_ = networking::is_init, 
-                        print_except_ = true, throw_except_ = true;
+                        print_except_ = true, 
+                        throw_except_ = true;
 
 
                     /**
@@ -670,6 +671,11 @@
                         Update this server to be a secure server or not.
                         
                         !NOTE! Server cannot be updated while it's running.
+                        
+                        
+                        TODO : Update this so that it can be called and used to change
+                        the connection type from secure to unsecure and vise versa
+                        while the server is running and/or while there are clients already connected.
                      */
                     tcp_server& secure(const bool set_secure);
 
@@ -751,7 +757,7 @@
                             will have the server set the listening socket to 
                             reuse.
                      */
-                    tcp_server& run(const int listen_limit = 10, const bool reuse = true, const bool block = true);
+                    tcp_server& run(const int listen_limit = 100, const bool reuse = true, const bool block = true);
 
                     /**
                         Shut down the server.
@@ -793,15 +799,48 @@
             class tcp_client : public host {
 
                 private:
-                    bool secure_;
-                    std::string connection_time;
+                    bool secure_ = false,
+                    secure_was_init_ = is_init_secure;
+                    context_type context_ = invalid_context;
+                    secure_socket_type secure_socket_ = invalid_secure_socket;
+                    certificate_type certificate_ = invalid_certificate;
+
+                    std::string connect_time_ = "",
+                                cipher_ = "";
+                    const std::string SUCCESS = "success";
+
+                    bool secure_handshake(const std::chrono::duration<int> timeout);
 
                 public:
 
 
-                    tcp_client();
+                    tcp_client(const std::string host_address, const std::string port = DEFAULT_PORT, const bool secure = false);
 
-                    tcp_client(const std::string host_address, const std::string = DEFAULT_PORT, const bool secure = false);
+                    tcp_client(const tcp_client& other);
+
+                    tcp_client(tcp_client&& other) noexcept;
+
+                    ~tcp_client();
+
+                    tcp_client& operator=(const tcp_client& other);
+
+                    tcp_client& operator=(tcp_client&& other) noexcept;
+
+                    operator bool() const;
+
+                    std::string connection_time() const;
+
+                    bool secure() const;
+
+                    tcp_client& secure(const bool set_secure = false);
+
+                    tcp_client& start(const bool blocking = true, const bool sni = true, const std::chrono::duration<int> timeout = std::chrono::seconds(10));
+
+                    tcp_client& close_client();
+
+                    std::string get_subject_name(const std::string on_failure = "N/A") const;
+
+                    std::string get_issuer_name(const std::string on_failure = "N/A") const;
             };
 
         }

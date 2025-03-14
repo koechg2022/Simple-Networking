@@ -319,10 +319,13 @@
     #define prev -1
     #define NOT !=
     #define null NULL
+    
     #define secure_socket_type SSL*
     #define context_type SSL_CTX*
+    #define certificate_type X509*
     #define invalid_secure_socket null
     #define invalid_context null
+    #define invalid_certificate 0
     
     #define valid_secure_socket(the_socket) (the_socket != invalid_secure_socket)
     #define valid_context(the_context) (the_context != invalid_context)
