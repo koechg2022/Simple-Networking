@@ -775,7 +775,7 @@ void test_secure_client() {
 
 
     try {
-        
+
         if (not client.start()) {
             std::cerr << "Failed to start client" << std::endl;
             return;
@@ -794,6 +794,7 @@ void test_secure_client() {
 
         while (client) {
 
+            std::cout << "Checking if client has message" << std::endl;
             if (client.message()) {
                 // Client has a message
                 bytes = count;
