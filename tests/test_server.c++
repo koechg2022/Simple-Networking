@@ -268,6 +268,7 @@ std::unordered_map<std::string, std::string> parse_url(const std::string url, co
             end++;
         }
     }
+    start = end;
 
 
     the_answer[PATH] = default_values.at(PATH);
