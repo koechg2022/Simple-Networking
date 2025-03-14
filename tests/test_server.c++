@@ -772,7 +772,7 @@ void test_secure_client() {
     
     client.port(connection_port);
     client.secure(true);
-
+    client.blocking(false);
 
     try {
 
@@ -801,7 +801,7 @@ void test_secure_client() {
                 bytes = count;
 
                 // no timeout passed in will default to {0, 0} - No waiting
-                if (client.message_client(msg, bytes, 0)) {
+                if (client.message_client(msg, bytes, flags, timeout)) {
                     if (bytes == 0) {
                         std::cout << "Connection closed" << std::endl;
                         client.close_client();
