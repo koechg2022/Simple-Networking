@@ -2430,20 +2430,6 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
 
         std::cout << "Created connection socket" << std::endl;
 
-        // Socket is created, but not connected!
-        // First set the socket to blocking for the rest of this set up
-        // if (not networking::set_blocking(this->connect_socket_, false)) {
-        //     line_ = __LINE__ - 1;
-        //     message = "Failed to set socket to blocking";
-        //     if (this->throw_except_) {
-        //         throw networking::exceptions::socket_information_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
-        //     }
-        //     std::cerr << message << std::endl;
-        //     return *this;
-        // }
-
-        // std::cout << "Socket is blocking for completing of connection set up" << std::endl;
-
         // Socket is now set to blocking or non-blocking depending on what parameter blocking was set to
 
         // Connect the socket
@@ -2574,25 +2560,32 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
         // That's everything to create a connection
 
         // Now apply blocking settings
-        if (blocking and not networking::set_blocking(this->connect_socket_, false)) {
-            line_ = __LINE__ - 1;
-            message = "Failed to set connection socket to blocking. Error " + std::to_string(socket_error) + " : " + std::string(get_socket_error_string(socket_error));
-            if (this->throw_except_) {
-                throw networking::exceptions::socket_information_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
+        if (blocking) {
+            if (not networking::set_blocking(this->connect_socket_, false)) {
+                line_ = __LINE__ - 1;
+                message = "Failed to set connection socket to blocking. Error " + std::to_string(socket_error) + " : " + std::string(get_socket_error_string(socket_error));
+                if (this->throw_except_) {
+                    throw networking::exceptions::socket_information_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
+                }
+                std::cerr << message << std::endl;
+                return *this;
             }
-            std::cerr << message << std::endl;
-            return *this;
+
         }
 
-        else if (not blocking and not networking::set_non_blocking(this->connect_socket_, false)) {
-            line_ = __LINE__ - 1;
-            message = "Failed to set connection socket to non-blocking. Error " + std::to_string(socket_error) + " : " + std::string(get_socket_error_string(socket_error));
-            if (this->throw_except_) {
-                throw networking::exceptions::socket_information_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
+        else {
+
+            if (not networking::set_non_blocking(this->connect_socket_, false)) {
+                line_ = __LINE__ - 1;
+                message = "Failed to set connection socket to non-blocking. Error " + std::to_string(socket_error) + " : " + std::string(get_socket_error_string(socket_error));
+                if (this->throw_except_) {
+                    throw networking::exceptions::socket_information_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
+                }
+                std::cerr << message << std::endl;
+                return *this;
             }
-            std::cerr << message << std::endl;
-            return *this;
         }
+
     }
 
     return *this;
