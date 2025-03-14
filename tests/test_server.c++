@@ -797,6 +797,7 @@ void test_secure_client() {
             // std::cout << "Checking if client has message" << std::endl;
             if (client.message()) {
                 // Client has a message
+                std::cout << "Client received a message." << std::endl;
                 bytes = count;
                 if (not client.message_client(msg, bytes, flags, timeout)) {
                     std::cerr << "Connection closed" << std::endl;
