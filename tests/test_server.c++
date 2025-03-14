@@ -773,23 +773,24 @@ void test_secure_client() {
     client.port(connection_port);
     client.secure(true);
 
-    if (not client.start()) {
-        std::cerr << "Failed to start client" << std::endl;
-        return;
-    }
-
-    std::string message;
-    networking::network_structures::connected_host::server connection_info;
-    const int count = 3 * kilo_byte;
-    int bytes, flags = 0;
-    char msg[count];
-    struct timeval timeout = {0, 200};
-
-    std::cout << "Connection subject name : " << client.get_subject_name() << std::endl;
-    std::cout << "Connection issuer name : " << client.get_issuer_name() << std::endl;
-    std::cout << "Connection was established at : " << client.connection_time() << std::endl;
 
     try {
+        
+        if (not client.start()) {
+            std::cerr << "Failed to start client" << std::endl;
+            return;
+        }
+
+        std::string message;
+        networking::network_structures::connected_host::server connection_info;
+        const int count = 3 * kilo_byte;
+        int bytes, flags = 0;
+        char msg[count];
+        struct timeval timeout = {0, 200};
+
+        std::cout << "Connection subject name : " << client.get_subject_name() << std::endl;
+        std::cout << "Connection issuer name : " << client.get_issuer_name() << std::endl;
+        std::cout << "Connection was established at : " << client.connection_time() << std::endl;
 
         while (client) {
 
