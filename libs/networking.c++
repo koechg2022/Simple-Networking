@@ -2431,15 +2431,15 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
 
         // Socket is created, but not connected!
         // First set the socket to blocking for the rest of this set up
-        if (not networking::set_blocking(this->connect_socket_, false)) {
-            line_ = __LINE__ - 1;
-            message = "Failed to set socket to blocking";
-            if (this->throw_except_) {
-                throw networking::exceptions::socket_information_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
-            }
-            std::cerr << message << std::endl;
-            return *this;
-        }
+        // if (not networking::set_blocking(this->connect_socket_, false)) {
+        //     line_ = __LINE__ - 1;
+        //     message = "Failed to set socket to blocking";
+        //     if (this->throw_except_) {
+        //         throw networking::exceptions::socket_information_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
+        //     }
+        //     std::cerr << message << std::endl;
+        //     return *this;
+        // }
 
         std::cout << "Socket is blocking for completing of connection set up" << std::endl;
 
