@@ -798,7 +798,7 @@ void test_secure_client() {
             if (client.message()) {
                 // Client has a message
                 std::cout << "Client received a message." << std::endl;
-                std::cout << "But receiving data method for client is still under construction" << std::endl;
+                // std::cout << "But receiving data method for client is still under construction" << std::endl;
                 // bytes = count;
                 // if (not client.message_client(msg, bytes, flags, timeout)) {
                 //     std::cerr << "Connection closed" << std::endl;
@@ -808,6 +808,7 @@ void test_secure_client() {
 
                 // std::cout << " Message from server:" << std::endl;
                 // std::cout << "\"" << std::string(msg, bytes) << "\"" << std::endl;
+                continue;
             }
 
             if (string_functions::has_keyboard_input()) {
