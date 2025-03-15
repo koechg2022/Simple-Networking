@@ -262,7 +262,6 @@ std::unordered_map<std::string, std::string> parse_url(const std::string url, co
     return the_answer;
 }
 
-
 void list_machine_adapters() {
     std::map<std::string, std::map<std::string, std::vector<std::string> > > 
     adapters = networking::this_machine_adapters();
