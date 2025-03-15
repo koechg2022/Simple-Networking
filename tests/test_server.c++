@@ -853,6 +853,14 @@ void test_secure_client() {
     
     std::cout << "Successfully created the connection" << std::endl;
 
+    auto start = std::chrono::steady_clock::now();
+    while (client and (std::chrono::steady_clock::now() - start < std::chrono::duration<int>(3))) {
+
+        if (client.message()) {
+            std::cout << "There is a message for the client..." << std::endl;
+        }
+    }
+
     std::cout << "Done. Now closing client..." << std::endl;
 
 }
