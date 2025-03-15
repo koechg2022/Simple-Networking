@@ -6,8 +6,6 @@
 #include "../headers/included"
 #include "misc_functions"
 #include "string_functions"
-// #include <chrono>
-// #include <openssl/ssl.h>
 #include "networking"
 
 
@@ -2799,6 +2797,8 @@ bool networking::network_structures::tcp_client::message(struct timeval timeout)
         return false;
     }
 
+    timeout.tv_sec = (timeout.tv_sec < 0) ? 0 : timeout.tv_sec;
+    timeout.tv_usec = (timeout.tv_usec < 0) ? 0 : timeout.tv_usec;
     fd_set the_answer;
     FD_ZERO(&the_answer);
     FD_SET(this->connect_socket_, &the_answer);
@@ -2824,7 +2824,7 @@ bool networking::network_structures::tcp_client::message_client(void* msg, int& 
     }
 
     // Client is connected
-    int bytes_ = bytes, line_;
+    int bytes_ = bytes, error_;
     bool check_ready = (timeout.tv_sec < 0 or timeout.tv_usec < 0) ? false : true;
     std::string message;
 
@@ -2835,70 +2835,59 @@ bool networking::network_structures::tcp_client::message_client(void* msg, int& 
             return false;
         }
     }
+
+    timeout.tv_sec = (timeout.tv_sec < 0) ? 0 : timeout.tv_sec;
+    timeout.tv_usec = (timeout.tv_usec < 0) ? 0 : timeout.tv_usec;
     
     // Ready to be read from in accordance with 
-    // the method's API (timeout has a negative time value, for either unit, indicating to check for socket in a ready state)
+    // the method's API (timeout has a negative time value, 
+    // for either unit, indicating to check for socket in a ready state)
+    auto start_time = std::chrono::steady_clock::now();
+    false_negative:
     bytes = (this->secure_) ? SSL_read(this->secure_socket_, msg, bytes_) : 
                 recv(this->connect_socket_, msg, bytes_, flags);
     
-    // Depending on if the connection is secure, or if the socket is blocking, there could be an error or a false error
-    if (this->secure_ and bytes <= 0) {
-
-
-        try {
-            line_ = __LINE__ + 1;
-            if (not networking::socket_is_blocking(this->connect_socket_, true)) { 
-                // This is the only place an exception can be thrown, 
-                // so using variable line_ after the call to socket_is_blocking works.
-                line_ = SSL_get_error(this->secure_socket_, bytes);
-                if (line_ == SSL_ERROR_WANT_READ or line_ == SSL_ERROR_WANT_WRITE) {
-                    bytes = bytes_;
-                    return false;
-                }
-            }
-
-            else if (bytes == 0) {
-                return true;
-            }
-        }
-
-        catch (networking::exceptions::socket_information_failure& except) {
-            message = except.msg() + "\nFailed to determine if socket is blocking or not.";
-            if (this->throw_except_) {
-                throw networking::exceptions::socket_information_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
-            }
-            std::cerr << message << std::endl;
-            return false;
-        }
-    }
-
-    else if (not this->secure_ and bytes == -1) {
-
-        try {
-            line_ = __LINE__ + 1;
-            if (not networking::socket_is_blocking(this->connect_socket_, true)) {
-                // Socket is non-blocking, or an error occured while trying to determine if the socket is blocking
-                
-                if (socket_error == EAGAIN or socket_error == EWOULDBLOCK) {
-                    // socket is non-blocking and an error did not occur while trying to determine if the socket is blocking.
-                    bytes = bytes_;
-                    return false;
-                }
-
-            }
-        }
-
-        catch (networking::exceptions::socket_information_failure& except) {
-            message = except.msg() + "\nFailed to determine if socket is blocking or not. Error " + 
-                        std::to_string(socket_error) + " : " + std::string(get_socket_error_string(socket_error));
-            throw networking::exceptions::socket_information_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
-        }
-    }
-
-    else if (not this->secure_ and bytes == 0) {
+    // The connection was closed for secure and non-secure
+    if (bytes == 0) {
         return true;
     }
-    
+
+    // Potential error for both secure and non-secure.
+    if (bytes < 0) {
+        
+        // Potentially false negative
+        if (bytes == -1) {
+
+            // Potentially false negative for secure
+            if (this->secure_) {
+                error_ = SSL_get_error(this->secure_socket_, bytes);
+                
+                // False negative confirmed
+                if ((error_ == SSL_ERROR_WANT_READ) or (error_ == SSL_ERROR_WANT_WRITE)) {
+                    if (std::chrono::steady_clock::now() - start_time < (std::chrono::seconds(timeout.tv_sec) + std::chrono::microseconds(timeout.tv_usec))) {
+                        goto false_negative;
+                    }
+                }
+
+                // Otherwise it's a positive negative and bytes > 0 will return false and the return value of -1
+            }
+
+            // Potentially false negative for non-secure
+            else {
+
+                // False negative confirmed
+                if ((socket_error == EAGAIN) or (socket_error == EWOULDBLOCK)) {
+                    if (std::chrono::steady_clock::now() - start_time < (std::chrono::seconds(timeout.tv_sec) + std::chrono::microseconds(timeout.tv_usec))) {
+                        goto false_negative;
+                    }
+                }
+
+                // Otherwise it's a positive negative and bytes > 0 will return false and the return value of -1
+            }
+        }
+
+        // Positive negative. bytes > 0 will evaluate to false and bytes will carry the actual error value.
+    }
 
     return bytes > 0;
 }

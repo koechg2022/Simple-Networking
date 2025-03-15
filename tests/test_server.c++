@@ -1,5 +1,6 @@
 
 #include "headers"
+#include "misc_functions"
 #include "networking"
 #include "string_functions"
 
@@ -54,7 +55,7 @@ std::unordered_map<std::string, std::string> test_args_caps = {
     {TEST_WEB_CLIENT, TEST_WEB_CLIENT}
 };
 
-
+// For running file lower
 std::unordered_map<std::string, std::string> test_args_lower = {
     {LIST_ADAPTERS, LIST_ADAPTERS_},
     {RESOLVE_HOST, RESOLVE_HOST_},
@@ -110,6 +111,12 @@ std::unordered_map<std::string, std::string> client_args_lower = {
 const std::string UNDER_CONSTRUCTION = "UNDER CONSTRUCTION";
 const std::string connection_port = "5500";
 const std::string default_url = "example.com";
+
+// std::map<std::unordered_map<std::string, std::string>, std::unordered_map<std::string, std::string> > caps_to_lower = {
+//     {test_args_caps, test_args_lower},
+//     {server_args_caps, server_args_lower},
+//     {client_args_caps, client_args_lower}
+// };
 
 
 std::unordered_map<std::string, std::string> parse_url(const std::string url = default_url, 
@@ -838,27 +845,62 @@ void test_secure_client() {
     
     
     networking::network_structures::tcp_client client(string_functions::get_input("Host to connect to : "));
-    
-    
-    std::cout << "Successfully created client object" << std::endl;
+    const int msg_size = 32 *kilo_byte;
+    int bytes;
+    char msg[msg_size];
+    std::string message;
+    std::memset(msg, 0, msg_size);
     
     client.port(connection_port);
     client.secure(true);
-    client.blocking(false);
 
     if (not client.start(false)) {
         std::cerr << "Failed to start client connection" << std::endl;
         return;
     }
     
-    std::cout << "Successfully created the connection" << std::endl;
+    
+    std::cout << "Connection established with server at " << client.connection_time() << std::endl;
 
     auto start = std::chrono::steady_clock::now();
     while (client and (std::chrono::steady_clock::now() - start < std::chrono::duration<int>(3))) {
 
         if (client.message()) {
-            std::cout << "There is a message for the client..." << std::endl;
+            
+            bytes = msg_size;
+            if (client.message_client(msg, bytes)) {
+                message = misc_functions::get_current_time();
+                if (bytes == 0) {
+                    // Connection closed by server
+                    std::cout << "Connection closed by server" << std::endl;
+                    client.close_client();
+                    continue;
+                }
+                if (bytes < 0) {
+                    std::cerr << "An error occured. Closing down now" << std::endl;
+                    client.close_client();
+                    continue;
+                }
+
+                // There was data returned
+                std::cout << "Message received at " << message << ":" << std::endl;
+                std::cout << "\t\"" << std::string(msg, bytes) << "\"" << std::endl;
+            }
         }
+
+        if (string_functions::has_keyboard_input()) {
+            message = string_functions::get_input();
+
+            if (string_functions::same_string(message, client_args_caps[EXIT]) or string_functions::same_string(message, client_args_lower[EXIT])) {
+                client.close_client();
+            }
+
+            else if (string_functions::same_string(message, client_args_caps[MESSAGE_SERVER]) or string_functions::same_string(message, client_args_lower[MESSAGE_SERVER])) {
+                std::cout << UNDER_CONSTRUCTION;
+            }
+            
+        }
+
     }
 
     std::cout << "Done. Now closing client..." << std::endl;
