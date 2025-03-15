@@ -783,7 +783,7 @@ bool networking::network_structures::host::create_connection_address() {
         std::memset(&hints, 0, sizeof(hints));
         hints.ai_family = AF_UNSPEC; //(is_ipstring(this->host_)) ? AF_INET : (is_ipstring(this->host_, false)) ? AF_INET6 : AF_UNSPEC;
         hints.ai_socktype = (this->tcp_) ? SOCK_STREAM : SOCK_DGRAM;
-        hints.ai_flags = AI_PASSIVE;//(this->serving_) ? AI_PASSIVE : 0;
+        hints.ai_flags = (this->serving_) ? AI_PASSIVE : 0;
 
         // Ready to call getaddrinfo
         
@@ -800,7 +800,7 @@ bool networking::network_structures::host::create_connection_address() {
         }
         this->reset_address();
     }
-    return this->connect_address_;
+    return this->active_address_;
 }
 
 bool networking::network_structures::host::create_connection_socket() {
