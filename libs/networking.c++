@@ -2516,6 +2516,9 @@ networking::network_structures::tcp_client::tcp_client(const tcp_client& other) 
     this->secure_socket_ = other.secure_socket_;
     this->certificate_ = other.certificate_;
     this->connected_ = other.connected_;
+    this->secure_fd_set_ = other.secure_fd_set_;
+    this->secure_handshook_ = other.secure_handshook_;
+    this->server_name_indication_ = other.server_name_indication_;
 }
 
 // Move constructor
@@ -2529,6 +2532,9 @@ networking::network_structures::tcp_client::tcp_client(tcp_client&& other) noexc
         this->secure_socket_ = other.secure_socket_;
         this->certificate_ = other.certificate_;
         this->connected_ = other.connected_;
+        this->secure_fd_set_ = other.secure_fd_set_;
+        this->secure_handshook_ = other.secure_handshook_;
+        this->server_name_indication_ = other.server_name_indication_;
 
         other.secure_ = false;
         other.connect_time_ = "";
@@ -2538,6 +2544,9 @@ networking::network_structures::tcp_client::tcp_client(tcp_client&& other) noexc
         other.certificate_ = invalid_certificate;
         other.connected_ = false;
         other.cipher_ = "";
+        other.secure_fd_set_ = false;
+        other.secure_handshook_ = false;
+        other.server_name_indication_ = false;
 }
 
 // Destructor
@@ -2557,6 +2566,9 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
         this->secure_socket_ = other.secure_socket_;
         this->cipher_ = other.cipher_;
         this->connected_ = other.connected_;
+        this->secure_fd_set_ = other.secure_fd_set_;
+        this->secure_handshook_ = other.secure_handshook_;
+        this->server_name_indication_ = other.server_name_indication_;
     }
     return *this;
 }
@@ -2573,6 +2585,9 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
         this->secure_socket_ = other.secure_socket_;
         this->cipher_ = std::move(other.cipher_);
         this->connected_ = other.connected_;
+        this->secure_fd_set_ = other.secure_fd_set_;
+        this->secure_handshook_ = other.secure_handshook_;
+        this->server_name_indication_ = other.server_name_indication_;
 
         other.secure_was_init_ = true;
         other.secure_ = false;
@@ -2581,6 +2596,9 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
         other.secure_socket_ = invalid_secure_socket;
         other.cipher_ = "";
         other.connected_ = false;
+        other.secure_fd_set_ = false;
+        other.secure_handshook_ = false;
+        other.server_name_indication_ = false;
     }
     return *this;
 }
@@ -2608,9 +2626,13 @@ bool networking::network_structures::tcp_client::secure() const {
 }
 
 networking::network_structures::tcp_client& networking::network_structures::tcp_client::secure(const bool set_secure) {
+    
     if (not *this) {
         this->secure_ = set_secure;
     }
+
+    // TODO - Consider a way to change 
+    // between secure and non-secure while server is connected
     return *this;
 }
 
@@ -2627,6 +2649,10 @@ bool networking::network_structures::tcp_client::start(const bool block_socket, 
     std::memset(msg, 0, count);
     ERR_clear_error();
 
+    // TODO - Consider adding a
+    // close_client() call to in each branch
+    // in case of failure too.
+    
     if (not this->init_network()) {
         line_ = __LINE__ - 1;
         message = "Failed to initialize network. Error " + 
@@ -2778,6 +2804,10 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
         (this->secure_ and valid_secure_socket(this->secure_socket_)) ? SSL_free(this->secure_socket_) : (void) 0;
         (this->secure_ and valid_context(this->context_)) ? SSL_CTX_free(this->context_) : (void) 0;
         (this->secure_ and secure_was_init_) ? uninitialize_secure_network() : true;
+        this->connected_ = false;
+        this->secure_fd_set_ = false;
+        this->secure_handshook_ = false;
+        this->server_name_indication_ = false;
     }
 
     return *this;
