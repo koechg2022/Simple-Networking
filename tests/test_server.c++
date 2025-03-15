@@ -819,7 +819,8 @@ void test_secure_server() {
 void test_client() {
     networking::network_structures::tcp_client client(string_functions::get_input("Host to connect to : "));
     client.port(connection_port);
-    client.secure();
+    client.secure(false);
+    client.blocking(false);
     std::cout << "Successfully creates client object" << std::endl;
 
     if (not client.start()) {
@@ -828,11 +829,17 @@ void test_client() {
     }
 
     std::cout << "Successfully created connection" << std::endl;
+    
+    std::cout << "Done. now closing client..." << std::endl;
 
 }
 
 void test_secure_client() {
+    
+    
     networking::network_structures::tcp_client client(string_functions::get_input("Host to connect to : "));
+    
+    
     std::cout << "Successfully created client object" << std::endl;
     
     client.port(connection_port);
@@ -843,8 +850,10 @@ void test_secure_client() {
         std::cerr << "Failed to start client connection" << std::endl;
         return;
     }
+    
+    std::cout << "Successfully created the connection" << std::endl;
 
-    std::cout << "Client started. Client is connected now..." << std::endl;
+    std::cout << "Done. Now closing client..." << std::endl;
 
 }
 
