@@ -20,7 +20,6 @@
 
         #if not defined(_WINSOCK2API_)
             #include <WinSock2.h>
-            #include <winsock2.h>
         #endif
 
         #if not defined(_WS2TCPIP_H_)
@@ -50,12 +49,11 @@
         #endif
 
         #pragma comment(lib, "ws2_32.lib")
-        #pragma comment(lib, "Ws2_32.lib")
         #pragma comment(lib, "iphlpapi.lib")
 
-        // #if not defined(WSACONNRESET)
-        //     #define WSACONNRESET 10054
-        // #endif
+        #if not defined(WSACONNRESET)
+            #define WSACONNRESET 10054
+        #endif
 
 
         #define get_string(crap_string)\
