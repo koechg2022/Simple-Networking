@@ -20,6 +20,7 @@
 
         #if not defined(_WINSOCK2API_)
             #include <WinSock2.h>
+            #include <winsock2.h>
         #endif
 
         #if not defined(_WS2TCPIP_H_)
