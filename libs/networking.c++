@@ -2656,8 +2656,7 @@ bool networking::network_structures::tcp_client::message(struct timeval timeout)
         std::cerr << message << std::endl;
         return false;
     }
-    std::cout.flush();
-    std::cerr.flush();
+    
     return FD_ISSET(this->connect_socket_, &the_answer);
 }
 
