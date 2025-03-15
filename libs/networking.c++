@@ -9,6 +9,9 @@
 #include "networking"
 
 
+namespace networking {
+    bool clean_on_except = true;
+}
 
 
 /***********************************************************************************************/
