@@ -2311,12 +2311,17 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
 }
 
 networking::network_structures::tcp_client::operator bool() const {
+
     return (this->secure_) ? valid_context(this->context_) and 
-            valid_secure_socket(this->secure_socket_) and 
-                this->main_socket_connected() 
+        valid_secure_socket(this->secure_socket_) and valid_socket(this->connect_socket_)
                                 :
-                    valid_socket(this->connect_socket_) and 
-                        this->main_socket_connected();
+                valid_socket(this->connect_socket_);
+    // return (this->secure_) ? valid_context(this->context_) and 
+    //         valid_secure_socket(this->secure_socket_) and 
+    //             this->main_socket_connected() 
+    //                             :
+    //                 valid_socket(this->connect_socket_) and 
+    //                     this->main_socket_connected();
 }
 
 std::string networking::network_structures::tcp_client::connection_time() const {
