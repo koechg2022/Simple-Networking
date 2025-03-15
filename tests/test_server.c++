@@ -5,8 +5,6 @@
 
 
 
-bool secure;
-
 
 
 const std::string 
@@ -362,7 +360,7 @@ void test_server() {
         int bytes;
         char msg[count];
 
-        server.secure(secure).retrieve_hostname().print_on_exceptions(false);
+        server.secure(false).retrieve_hostname().print_on_exceptions(false);
         
         if (not server.run()) {
             std::cerr << "Failed to start server" << std::endl;
