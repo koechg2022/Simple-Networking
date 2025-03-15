@@ -961,9 +961,55 @@ void test_web_client() {
     // Parse the url
     std::unordered_map<std::string, std::string> url_parsed = parse_url(url);
 
+    // variables for use
+    int bytes;
+    const int count = 4 * kilo_byte;
+    char msg[count];
+    const std::string ending = "\r\n";
+
     for (const auto& attr : url_parsed) {
         std::cout << "\t" << attr.first << " : " << attr.second << std::endl;
     }
     
+    if (not url_parsed.contains(HOSTNAME)) {
+        std::cerr << "No hostname specified in url" << std::endl;
+        return;
+    }
+
+    networking::network_structures::tcp_client client(url_parsed[HOSTNAME], url_parsed[PORT]);
+    std::cout << "Created client with: " << std::endl;
+    std::cout << "Hostname : " << client.hostname() << std::endl;
+    std::cout << "Port : " << client.port() << std::endl;
+    client.secure(false);
+
+    if (not client.start(false)) {
+        std::cerr << "Failed to start client" << std::endl;
+        return;
+    }
+
+    std::string message = 
+            "GET " + url_parsed[PATH] + " HTTP/1.1" + ending +
+            "Host: " + url_parsed[HOSTNAME] + ":" +url_parsed[PORT] + ending +
+            "Connection: close" + ending +
+            "User-Agent honpwc https_get 1.0" + ending +
+            ending;
+
+    
+    while (client) {
+
+        if (client.message()) {
+            bytes = count;
+            if (client.message_client(msg, bytes, 0, {-1, -1})) {
+                if (not bytes) {
+                    std::cout << "Connection closed" << std::endl;
+                    client.close_client();
+                    continue;
+                }
+
+                std::cout << std::string(msg, bytes);
+            }
+        }
+
+    }
     
 }

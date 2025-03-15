@@ -2667,10 +2667,12 @@ bool networking::network_structures::tcp_client::message_client(void* msg, int& 
     bool check_ready = (timeout.tv_sec < 0 or timeout.tv_usec < 0) ? false : true;
     std::string message;
 
-    if (check_ready and not this->message(timeout)) {
+    if (check_ready) {
         // Client doesn't have data. But no errors occured. Leave bytes as it is.
         // False and bytes as is indicates that no error occured and the there was no data to be read.
-        return false;
+        if (not this->message(timeout)) {
+            return false;
+        }
     }
     
     // Ready to be read from in accordance with 
