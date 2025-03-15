@@ -927,7 +927,7 @@ void test_web_client() {
             "User-Agent honpwc https_get 1.0" + ending +
             ending;
 
-    
+    (client) ? std::cout << "Client is connected..." << std::endl : std::cerr << "Client is not connected..." << std::endl;
     while (client) {
 
         if (client.message()) {
