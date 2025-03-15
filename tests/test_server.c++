@@ -899,6 +899,15 @@ void test_secure_client() {
             else if (string_functions::same_string(message, client_args_caps[MESSAGE_SERVER]) or string_functions::same_string(message, client_args_lower[MESSAGE_SERVER])) {
                 std::cout << UNDER_CONSTRUCTION;
             }
+
+            else {
+                std::cerr << "Unrecognized client argument \"" << message << "\"" << std::endl;
+                std::cerr << "Send server messages using one of the following instead:" << std::endl;
+                
+                for (const auto& pair : client_args_caps) {
+                    std::cout << "\t" << pair.first << std::endl;
+                }
+            }
             
         }
 
