@@ -2894,48 +2894,67 @@ bool networking::network_structures::tcp_client::message_client(void* msg, int& 
 }
 
 
-bool networking::network_structures::tcp_client::message_server(void* msg, int& bytes, int flags) {
+bool networking::network_structures::tcp_client::message_server(void* msg, int& bytes, int flags, struct timeval timeout) {
     if (not *this) {
         return false;
     }
 
     // Client is connected
-    int bytes_ = bytes, line_, total_;
-    bool the_answer = true;
+    int bytes_ = bytes, error_, total_ = 0;
     std::string message;
 
-    
-    if (networking::socket_is_blocking(this->connect_socket_)) {
-
-        // Socket is blocking. Simple send while total_ < bytes
-        total_ = 0;
-        line_ = __LINE__ + 2;
-        while (total_ < bytes) {
-            bytes_ = (this->secure_) ? SSL_write(this->secure_socket_, msg, bytes) : send(this->connect_socket_, msg, bytes, flags);
-            if (bytes_ < 1) {
-                bytes = bytes_;
-                message = "Failed to send bytes. Only sent " + 
-                    std::to_string(bytes - total_) + " to server. Error " + std::to_string(socket_error) + 
-                        std::string(get_socket_error_string(socket_error));
-                if (this->throw_except_) {
-                    throw networking::exceptions::socket_information_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
-                }
-                std::cerr << message << std::endl;
-            }
-            total_ = total_ + bytes_;
-        }
+    auto start_time = std::chrono::steady_clock::now();
+    // false_negative: // startpoint for false negatives. Not needed because inside while loop
+    while (total_ < bytes_) {
+        bytes = (this->secure_) ? SSL_write(this->secure_socket_, static_cast<char*>(msg) + total_, bytes_ - total_) :
+                    send(this->connect_socket_, static_cast<char*>(msg) + total_, bytes_ - total_, flags);
         
-        the_answer = total_ == bytes;
-        bytes = total_;
+        // Interpret and send useful information back.
+        
+        // A potential error for both secure and non-secure
+        if (bytes <= 0) {
+
+            // Was the connection closed?
+            if (this->secure_ and bytes == 0) {
+                return true;
+            }
+            error_ = (this->secure_) ? SSL_get_error(this->secure_socket_, bytes) : socket_error;
+            
+            // The connection was closed
+            #if defined(crap_os)
+                if (error_ == WSACONNRESET) {
+                    bytes = 0;
+                    return true;
+                }
+            #else
+                if (error_ == EPIPE) {
+                    bytes = 0;
+                    return true;
+                }
+            #endif
+
+            // False negative?
+            if (this->secure_ and (error_ == SSL_ERROR_WANT_READ or error_ == SSL_ERROR_WANT_WRITE)) {
+                if (std::chrono::steady_clock::now() - start_time < std::chrono::seconds(timeout.tv_sec) + std::chrono::microseconds(timeout.tv_usec)) {
+                    // goto false_negative;
+                    continue;
+                }
+            }
+
+            else if (not this->secure_ and (error_ == EAGAIN or error_ == EWOULDBLOCK)) {
+                if (std::chrono::steady_clock::now() - start_time < std::chrono::seconds(timeout.tv_sec) + std::chrono::microseconds(timeout.tv_usec)) {
+                    // goto false_negative;
+                    continue;
+                }
+            }
+
+            // Otherwise an actual error occured
+            break;
+        }
+        total_ = total_ + bytes;
     }
-
-    else {
-
-        // Socket is not blocking. Could get false negative errors. Check for them
-        // TODO : IMPLEMENT ME
-    }
-
-    return the_answer;
+    bytes = total_;
+    return total_ > 0 and total_ == bytes_;
 }
 
 networking::network_structures::connected_host::server networking::network_structures::tcp_client::connection_information() const {

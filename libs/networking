@@ -865,7 +865,7 @@
 
                     bool message_client(void* msg, int& bytes, int flags = 0, struct timeval timeout = {0, 0});
 
-                    bool message_server(void* msg, int& bytes, int flags = 0);
+                    bool message_server(void* msg, int& bytes, int flags = 0, struct timeval timeout = {0, 0});
 
                     networking::network_structures::connected_host::server connection_information() const;
             };

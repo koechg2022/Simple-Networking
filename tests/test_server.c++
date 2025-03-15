@@ -868,8 +868,9 @@ void test_secure_client() {
 
         if (client.message()) {
             bytes = msg_size;
-            std::cout << "Checking what message is from server..." << std::endl;
+            // std::cout << "Checking what message is from server..." << std::endl;
             if (client.message_client(msg, bytes, 0, {-1, -1})) {
+                
                 message = misc_functions::get_current_time();
                 if (bytes == 0) {
                     // Connection closed by server
@@ -897,7 +898,20 @@ void test_secure_client() {
             }
 
             else if (string_functions::same_string(message, client_args_caps[MESSAGE_SERVER]) or string_functions::same_string(message, client_args_lower[MESSAGE_SERVER])) {
-                std::cout << UNDER_CONSTRUCTION << std::endl;
+                // std::cout << UNDER_CONSTRUCTION << std::endl;
+                message = string_functions::get_input("Message: ");
+                bytes = (int) message.length();
+                if (client.message_server((void*) message.c_str(), bytes)) {
+                    if (bytes == 0) {
+                        std::cout << "Connection closed" << std::endl;
+                        client.close_client();
+                    }
+                    else if (bytes < 0) {
+                        std::cerr << "An error occured" << std::endl;
+                        client.close_client();
+                    }
+                    std::cout << "Message sent (" << bytes << " out of " << message.length() << ")." << std::endl;
+                }
             }
 
             else {
@@ -908,7 +922,6 @@ void test_secure_client() {
                     std::cout << "\t" << pair.first << std::endl;
                 }
             }
-            
         }
 
     }
