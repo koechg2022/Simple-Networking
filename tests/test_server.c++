@@ -150,6 +150,8 @@ void test_web_client();
 
 void print_socket_configs(socket_type the_socket);
 
+void print_horizontal(char to_print = '*', bool nl = true);
+
 int main(int len, char** args) {
 
     
@@ -887,6 +889,7 @@ void test_secure_client() {
                 // There was data returned
                 std::cout << "Message received at " << message << ":" << std::endl;
                 std::cout << "\t\"" << std::string(msg, bytes) << "\"" << std::endl;
+                print_horizontal();
             }
         }
 
@@ -922,6 +925,7 @@ void test_secure_client() {
                     std::cout << "\t" << pair.first << std::endl;
                 }
             }
+            print_horizontal();
         }
 
     }
@@ -1069,4 +1073,12 @@ void print_socket_configs(socket_type the_socket) {
     // Additional settings can be added here as needed
 
 
+}
+
+void print_horizontal(char to_print, bool nl) {
+    int index, length = misc_functions::get_terminal_width();
+    for (index = 0; index < length; index++) {
+        std::printf("%c", to_print);
+    }
+    (nl) ? std::printf("\n") : 0;
 }
