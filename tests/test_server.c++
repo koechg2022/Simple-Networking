@@ -141,6 +141,8 @@ void windows_tests();
 
 void test_web_client();
 
+void print_socket_configs(socket_type the_socket);
+
 int main(int len, char** args) {
 
     
@@ -837,106 +839,12 @@ void test_secure_client() {
     client.secure(true);
     client.blocking(false);
 
-    try {
-
-        if (not client.start()) {
-            std::cerr << "Failed to start client" << std::endl;
-            return;
-        }
-
-        std::string message;
-        networking::network_structures::connected_host::server connection_info;
-        const int count = 3 * kilo_byte;
-        int bytes, flags = 0;
-        char msg[count];
-        struct timeval timeout = {0, 200};
-
-        std::cout << "Connection subject name : " << client.get_subject_name() << std::endl;
-        std::cout << "Connection issuer name : " << client.get_issuer_name() << std::endl;
-        std::cout << "Connection was established at : " << client.connection_time() << std::endl;
-
-        while (client) {
-
-            // std::cout << "Checking if client has message" << std::endl;
-            fd_set ready;
-            FD_ZERO(&ready);
-            FD_SET(client.connection_information().connect_socket, &ready);
-            if (select(client.get_socket() + 1, &ready, 0, 0, &timeout) < 0) {
-                std::cerr << "select failure." << std::endl;
-                client.close_client();
-                continue;
-            }
-            if (FD_ISSET(client.get_socket(), &ready)) {
-                // Client has a message
-
-                bytes = count;
-
-                // no timeout passed in will default to {0, 0} - No waiting
-                if (client.message_client(msg, bytes, flags, timeout)) {
-                    if (bytes == 0) {
-                        std::cout << "Connection closed" << std::endl;
-                        client.close_client();
-                        continue;
-                    }
-
-                    // Otherwise there was a message received
-                    std::cout << "Client received a message (" << misc_functions::get_current_time() << "):" << std::endl;
-                    std::cout << "\"" << std::string(msg, bytes) << "\"" << std::endl;
-                    continue;
-
-                }
-
-            }
-
-            if (string_functions::has_keyboard_input()) {
-                message = string_functions::get_input();
-
-                if (string_functions::same_string(message, client_args_caps[EXIT]) or string_functions::same_string(message, client_args_lower[EXIT])) {
-                    client.close_client();
-                }
-
-                else if (string_functions::same_string(message, client_args_caps[CONNECTION_INFO]) or string_functions::same_string(message, client_args_lower[CONNECTION_INFO])) {
-                    connection_info = client.connection_information();
-                    std::cout << "Server connetion Information:" << std::endl;
-                    std::cout << "\tHostname : " << connection_info.hostname << std::endl;
-                    std::cout << "\tPortvalue : " << connection_info.portvalue << std::endl;
-                    std::cout << "\tConnection socket : " << connection_info.connect_socket << std::endl;
-                    std::cout << "\tSecure connection socket : " << connection_info.secure_socket << std::endl;
-                }
-
-                else if (string_functions::same_string(message, client_args_caps[MESSAGE_SERVER]) or string_functions::same_string(message, client_args_lower[MESSAGE_SERVER])) {
-                    
-                    std::cout << UNDER_CONSTRUCTION << std::endl;
-                    continue;
-
-                    message = string_functions::get_input("Message to send : ");
-                    bytes = (int) message.length();
-
-                    if (not client.message_server((char*) message.c_str(), bytes, 0)) {
-                        std::cout << "Disconnecting..." << std::endl;
-                        client.close_client();
-                        continue;
-                    }
-
-                    std::cout << "Successfully sent " << message.length() << " bytes" << std::endl;
-                }
-
-                else {
-                    std::cout << "Unrecognized client argument \"" << message << "\"" << std::endl;
-                    std::cout << "Recognized clients arguments:" << std::endl;
-                    for (const auto& arg : client_args_caps) {
-                        std::cout << "\t\"" << arg.first << "\"" << std::endl;
-                    }
-                }
-            }
-
-        }
+    if (not client.start(false)) {
+        std::cerr << "Failed to start client connection" << std::endl;
+        return;
     }
 
-    catch (networking::exceptions::base_exception& except) {
-        std::cerr << "Exception caught:\n" << std::endl;
-        std::cerr << except.msg() << std::endl;
-    }
+    std::cout << "Client started. Client is connected now..." << std::endl;
 
 }
 
@@ -1020,4 +928,63 @@ void test_web_client() {
 
     }
     
+}
+
+void print_socket_configs(socket_type the_socket) {
+    if (not valid_socket(the_socket)) {
+        std::cerr << "The socket is not a valid socket" << std::endl;
+        return;
+    }
+
+
+
+    int option_value;
+    socklen_t option_len = sizeof(option_value);
+
+    std::cout << "Socket Configuration Settings:" << std::endl;
+
+    // Check if socket is blocking or non-blocking
+    int flags = fcntl(the_socket, F_GETFL, 0);
+    std::cout << "Blocking mode: " << ((flags & O_NONBLOCK) ? "Non-blocking" : "Blocking") << std::endl;
+
+    // Get socket type
+    if (getsockopt(the_socket, SOL_SOCKET, SO_TYPE, &option_value, &option_len) == 0) {
+        std::cout << "Socket type: " << (option_value == SOCK_STREAM ? "SOCK_STREAM (TCP)" : 
+                                         option_value == SOCK_DGRAM ? "SOCK_DGRAM (UDP)" : "Unknown") << std::endl;
+    }
+
+    // Get receive buffer size
+    if (getsockopt(the_socket, SOL_SOCKET, SO_RCVBUF, &option_value, &option_len) == 0) {
+        std::cout << "Receive buffer size: " << option_value << " bytes" << std::endl;
+    }
+
+    // Get send buffer size
+    if (getsockopt(the_socket, SOL_SOCKET, SO_SNDBUF, &option_value, &option_len) == 0) {
+        std::cout << "Send buffer size: " << option_value << " bytes" << std::endl;
+    }
+
+    // Check if keep-alive is enabled
+    if (getsockopt(the_socket, SOL_SOCKET, SO_KEEPALIVE, &option_value, &option_len) == 0) {
+        std::cout << "Keep-alive: " << (option_value ? "Enabled" : "Disabled") << std::endl;
+    }
+
+    // Get reuse address setting
+    if (getsockopt(the_socket, SOL_SOCKET, SO_REUSEADDR, &option_value, &option_len) == 0) {
+        std::cout << "Reuse address: " << (option_value ? "Enabled" : "Disabled") << std::endl;
+    }
+
+    // Get linger setting
+    struct linger linger_opt;
+    option_len = sizeof(linger_opt);
+    if (getsockopt(the_socket, SOL_SOCKET, SO_LINGER, &linger_opt, &option_len) == 0) {
+        std::cout << "Linger: " << (linger_opt.l_onoff ? "On" : "Off");
+        if (linger_opt.l_onoff) {
+            std::cout << ", timeout: " << linger_opt.l_linger << " seconds";
+        }
+        std::cout << std::endl;
+    }
+
+    // Additional settings can be added here as needed
+
+
 }
