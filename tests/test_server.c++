@@ -962,6 +962,9 @@ void test_web_client() {
 
     // Parse the url
     std::unordered_map<std::string, std::string> url_parsed = parse_url(url);
+    for (auto part : url_parsed) {
+        std::cout << "\t" << part.first << std::endl;
+    }
 
     // variables for use
     int bytes;
