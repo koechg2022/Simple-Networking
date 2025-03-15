@@ -2744,6 +2744,7 @@ bool networking::network_structures::tcp_client::start(const bool block_socket, 
     }
 
     this->connected_ = true;
+    this->connect_time_ = misc_functions::get_current_time();
 
     return *this;
 }

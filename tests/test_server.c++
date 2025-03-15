@@ -866,8 +866,8 @@ void test_secure_client() {
     while (client and (std::chrono::steady_clock::now() - start < std::chrono::duration<int>(3))) {
 
         if (client.message()) {
-            
             bytes = msg_size;
+            std::cout << "Checking what message is from server..." << std::endl;
             if (client.message_client(msg, bytes)) {
                 message = misc_functions::get_current_time();
                 if (bytes == 0) {
