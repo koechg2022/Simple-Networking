@@ -797,7 +797,11 @@
 
                 private:
                     bool secure_ = false,
-                    secure_was_init_ = is_init_secure;
+                    secure_was_init_ = is_init_secure,
+                    connected_ = false, 
+                    secure_fd_set_ = false,
+                    secure_handshook_ = false,
+                    server_name_indication_ = false;
                     context_type context_ = invalid_context;
                     secure_socket_type secure_socket_ = invalid_secure_socket;
                     certificate_type certificate_ = invalid_certificate;
@@ -806,7 +810,25 @@
                                 cipher_ = "";
                     const std::string SUCCESS = "success";
 
-                    bool secure_handshake(const std::chrono::duration<int> timeout);
+                    bool init_network();
+
+                    bool init_secure_network();
+
+                    bool create_secure_context();
+                    
+                    bool connect_socket();
+
+                    bool create_secure_socket();
+
+                    bool server_name_indication();
+
+                    bool set_descriptor_for_secure_socket();
+
+                    bool secure_handshake(const std::chrono::duration<int> timeout = std::chrono::seconds(10));
+
+                    bool get_cipher(bool on_fail = true);
+
+                    bool get_peer_certificate(bool on_fail = true);
 
                 public:
 
@@ -831,7 +853,7 @@
 
                     tcp_client& secure(const bool set_secure = false);
 
-                    tcp_client& start(const bool blocking = true, const bool sni = true, const std::chrono::duration<int> timeout = std::chrono::seconds(10));
+                    bool start(const bool block_socket = false, const bool sni = true, const std::chrono::duration<int> timeout = std::chrono::seconds(10));
 
                     tcp_client& close_client();
 

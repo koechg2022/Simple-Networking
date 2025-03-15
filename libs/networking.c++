@@ -2143,92 +2143,343 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
 /***********************************************************************************************/
 /****************************************** TCP Client *****************************************/
 
-// Default constructor
-// N/A
+bool networking::network_structures::tcp_client::init_network() {
+    if (not networking::is_init) {
+        this->serving_ = false;
+        initialize_network();
+        this->was_init_ = false;
+    }
+    return networking::is_init;
+}
 
+bool networking::network_structures::tcp_client::init_secure_network() {
 
-bool networking::network_structures::tcp_client::secure_handshake(const std::chrono::duration<int> timeout) {
-        // Now initiate TLS/SSL handshake with TLS/SSL server. -- TODO : Make sure that errors in the TLS/Handshake are handled well.
     
-    std::string message;
-    int line_;
-    const int count = 3 * buffer_size;
-    char msg[count];
-    int error_value = SSL_connect(this->secure_socket_);
-    // struct timeval timeout = {}
-    if (error_value != 1) {
-        line_ = __LINE__ - 1;
-        error_value = SSL_get_error(this->secure_socket_, error_value);
-        message = "Failed to perform TLS/SSL handshake.";
-        
-        if (error_value == SSL_ERROR_WANT_READ or error_value == SSL_ERROR_WANT_WRITE) {
-            fd_set ready;
-            struct timeval this_wait;
-            auto start_time = std::chrono::steady_clock::now();
-            while (std::chrono::steady_clock::now() - start_time < timeout) {
-
-                FD_ZERO(&ready);
-                FD_SET(this->connect_socket_, &ready);
-                this_wait = {0, 100};
-                error_value = select(this->connect_socket_ + 1, 
-                                        (error_value == SSL_ERROR_WANT_READ) ? &ready : 0, 
-                                            (error_value == SSL_ERROR_WANT_WRITE) ? &ready : 0, 0, 
-                                                &this_wait);
-                
-                
-                if (error_value < 0) {
-                    line_ = __LINE__ - 1;
-                    message = "An error occured while waiting for network I/O with SSL/TLS handshake. Error " +
-                        std::to_string(socket_error) + " : \"" + std::string(get_socket_error_string(socket_error)) + "\"";
-                    throw networking::exceptions::select_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
-                    // std::cerr << message << std::endl;
-                    // return message;
-                }
-
-                if (FD_ISSET(this->connect_socket_, &ready)) {
-                    error_value = SSL_connect(this->secure_socket_);
-                    // Was there success
-                    if (error_value == 1) {
-                        break;
-                    }
-                    error_value = SSL_get_error(this->secure_socket_, error_value);
-                    if (error_value == SSL_ERROR_WANT_READ or error_value == SSL_ERROR_WANT_WRITE) {
-                        continue;
-                    }
-                    break;
-                }
-
-                if (std::chrono::steady_clock::now() - start_time >= timeout) {
-                    message = message + " Handshake needed more time, but TLS/SSL handshake timeout occured. ";
-                }
-            }
+    if (this->secure_ and not networking::is_init_secure) {
+        if (not this->init_network()) {
+            return false;
         }
 
-        if (error_value != 1) {
-
-            if (error_value < 0) {
-                // Shutdown was not clean
-                message = message + " Shutdown was not clean. A fatal error has occured : ";
-                error_value = SSL_get_error(this->secure_socket_, error_value);
-            }
-            else if (error_value == 0) {
-                message = " Shutdown was clean. Error : ";
-            }
-            ERR_error_string_n(ERR_get_error(), msg, count);
-
-            
-            throw networking::exceptions::secure_sockets_layer_error(message, this->print_except_, __FILE__, line_, __FUNCTION__);
-            // std::cerr << message << std::endl;
-            // return message;
+        if (this->secure_ and not networking::is_init_secure) {
+            networking::initialize_secure_network();
+            this->secure_was_init_ = false;
         }
     }
 
-    return true;
-
+    return (this->secure_) and networking::is_init_secure;
 }
 
+bool networking::network_structures::tcp_client::create_secure_context() {
 
+    if (this->secure_ and not valid_context(this->context_)) {
+        if (not this->init_network()) {
+            return false;
+        }
 
+        if (this->secure_ and not this->init_secure_network()) {
+            return false;
+        }
+
+        if (not valid_context(this->context_)) {
+            this->context_ = SSL_CTX_new(TLS_client_method());
+        }
+    }
+
+    return this->secure_ and valid_context(this->context_);
+}
+
+bool networking::network_structures::tcp_client::connect_socket() {
+    
+    if (not this->connected_) {
+        if (not this->init_network()) {
+            return false;
+        }
+
+        if (this->secure_ and not this->init_secure_network()) {
+            return false;
+        }
+        if (this->secure_ and not this->create_secure_context()) {
+            return false;
+        }
+
+        if (not this->create_connection_address()) {
+            return false;
+        }
+        
+        if (not this->create_connection_socket()) {
+            return false;
+        }
+        
+        if (connect(this->connect_socket_, this->active_address_->ai_addr, this->active_address_->ai_addrlen)) {
+            return false;
+        }
+        this->connected_ = true;
+    }
+
+    return this->connected_;
+}
+
+bool networking::network_structures::tcp_client::create_secure_socket() {
+    
+    if (this->secure_ and not valid_secure_socket(this->secure_socket_)) {
+        if (not this->init_network()) {
+            return false;
+        }
+
+        if (this->secure_ and not this->init_secure_network()) {
+            return false;
+        }
+        if (this->secure_ and not this->create_secure_context()) {
+            return false;
+        }
+
+        if (not this->create_connection_address()) {
+            return false;
+        }
+        
+        if (not this->create_connection_socket()) {
+            return false;
+        }
+
+        if (this->secure_) {
+            this->secure_socket_ = SSL_new(this->context_);
+        }
+    }
+    return this->secure_ and valid_secure_socket(this->secure_socket_);
+}
+
+bool networking::network_structures::tcp_client::server_name_indication() {
+    if (this->secure_ and not this->server_name_indication_) {
+        if (not this->init_network()) {
+            return false;
+        }
+
+        if (this->secure_ and not this->init_secure_network()) {
+            return false;
+        }
+        if (this->secure_ and not this->create_secure_context()) {
+            return false;
+        }
+
+        if (not this->create_connection_address()) {
+            return false;
+        }
+        
+        if (not this->create_connection_socket()) {
+            return false;
+        }
+        
+        if (not this->create_secure_socket()) {
+            return false;
+        }
+
+        if (not SSL_set_tlsext_host_name(this->secure_socket_, this->host_.c_str())) {
+            return false;
+        }
+        this->server_name_indication_ = true;
+    }
+
+    return this->secure_ and this->server_name_indication_;
+}
+
+bool networking::network_structures::tcp_client::set_descriptor_for_secure_socket() {
+
+    if (this->secure_ and not this->secure_fd_set_) {
+        if (not this->init_network()) {
+            return false;
+        }
+
+        if (this->secure_ and not this->init_secure_network()) {
+            return false;
+        }
+        if (this->secure_ and not this->create_secure_context()) {
+            return false;
+        }
+
+        if (not this->create_connection_address()) {
+            return false;
+        }
+        
+        if (not this->create_connection_socket()) {
+            return false;
+        }
+
+        if (this->secure_ and not this->create_secure_socket()) {
+            return false;
+        }
+
+        if (this->secure_) {
+            if (not SSL_set_fd(this->secure_socket_, this->connect_socket_)) {
+                return false;
+            }
+        }
+        this->secure_fd_set_ = true;
+    }
+
+    return this->secure_ and this->secure_fd_set_;
+}
+
+bool networking::network_structures::tcp_client::secure_handshake(const std::chrono::duration<int> timeout) {
+    // Now initiate TLS/SSL handshake with TLS/SSL server.
+
+    if (this->secure_ and not this->secure_handshook_) {
+        if (not this->init_network()) {
+            return false;
+        }
+
+        if (this->secure_ and not this->init_secure_network()) {
+            return false;
+        }
+        if (this->secure_ and not this->create_secure_context()) {
+            return false;
+        }
+
+        if (not this->create_connection_address()) {
+            return false;
+        }
+        
+        if (not this->create_connection_socket()) {
+            return false;
+        }
+
+        if (this->secure_ and not this->create_secure_socket()) {
+            return false;
+        }
+
+        if (this->secure_ and not this->set_descriptor_for_secure_socket()) {
+            return false;
+        }
+
+        int status = SSL_connect(this->secure_socket_);
+        
+        if (status != 1) {
+            int err_no = ERR_get_error();
+            if (not status) {
+                // Handshake failed, but secure shutdown occured
+                return false;
+            }
+
+            else {
+                // Handshake failed, not secure shutdown
+                // Potentially erroed on wanting to read/wanting to write
+                auto start_time = std::chrono::steady_clock::now();
+
+                while (
+                    (std::chrono::steady_clock::now() - start_time < timeout) and 
+                    (status == -1) and 
+                    (err_no == SSL_ERROR_WANT_READ or err_no == SSL_ERROR_WANT_WRITE)) {
+
+                    fd_set ready;
+                    FD_ZERO(&ready);
+                    FD_SET(this->connect_socket_, &ready);
+                    struct timeval timeout_ = {0, 0};
+                    if (select(this->connect_socket_ + 1, &ready, 0, 0, &timeout_) < 0) {
+                        // Failed to select
+                        return false;
+                    }
+
+                    if (FD_ISSET(this->connect_socket_, &ready)) {
+                        status = SSL_connect(this->secure_socket_);
+                        if (status == -1) {
+                            err_no = ERR_get_error();
+                        }
+                    }
+
+                    if ((std::chrono::steady_clock::now() - start_time) >= timeout) {
+                        return false;
+                    }
+                    
+                }
+
+                if (status != 1) {
+                    return false;
+                }
+            }
+        }
+
+        this->secure_handshook_ = true;        
+    }
+    return this->secure_ and this->secure_handshook_;
+}
+
+bool networking::network_structures::tcp_client::get_cipher(bool on_fail) {
+    if (this->secure_ and this->cipher_.empty()) {
+        if (not this->init_network()) {
+            return false;
+        }
+
+        if (this->secure_ and not this->init_secure_network()) {
+            return false;
+        }
+        if (this->secure_ and not this->create_secure_context()) {
+            return false;
+        }
+
+        if (not this->create_connection_address()) {
+            return false;
+        }
+        
+        if (not this->create_connection_socket()) {
+            return false;
+        }
+
+        if (this->secure_ and not this->create_secure_socket()) {
+            return false;
+        }
+
+        if (this->secure_ and not this->set_descriptor_for_secure_socket()) {
+            return false;
+        }
+
+        if (this->secure_ and not this->secure_handshake()) {
+            return false;
+        }
+
+        this->cipher_ = std::string(SSL_get_cipher(this->secure_socket_));
+    }
+    return (this->cipher_.empty()) ? on_fail : not this->cipher_.empty();
+}
+
+bool networking::network_structures::tcp_client::get_peer_certificate(bool on_fail) {
+    if (this->secure_ and not valid_certificate(this->certificate_)) {
+        if (not this->init_network()) {
+            return false;
+        }
+
+        if (this->secure_ and not this->init_secure_network()) {
+            return false;
+        }
+        if (this->secure_ and not this->create_secure_context()) {
+            return false;
+        }
+
+        if (not this->create_connection_address()) {
+            return false;
+        }
+        
+        if (not this->create_connection_socket()) {
+            return false;
+        }
+
+        if (this->secure_ and not this->create_secure_socket()) {
+            return false;
+        }
+
+        if (this->secure_ and not this->set_descriptor_for_secure_socket()) {
+            return false;
+        }
+
+        if (this->secure_ and not this->secure_handshake()) {
+            return false;
+        }
+
+        this->certificate_ = SSL_get_peer_certificate(this->secure_socket_);
+    }
+
+    return (this->secure_ and not valid_certificate(this->certificate_)) ? 
+                on_fail :
+                    this->secure_ and valid_certificate(this->certificate_);
+}
 
 // Parameter constructor
 networking::network_structures::tcp_client::tcp_client(const std::string host_address, const std::string port, const bool secure) :
@@ -2248,6 +2499,7 @@ networking::network_structures::tcp_client::tcp_client(const tcp_client& other) 
     this->context_ = other.context_;
     this->secure_socket_ = other.secure_socket_;
     this->certificate_ = other.certificate_;
+    this->connected_ = other.connected_;
 }
 
 // Move constructor
@@ -2255,10 +2507,12 @@ networking::network_structures::tcp_client::tcp_client(tcp_client&& other) noexc
     networking::network_structures::host::host(other) {
         this->secure_ = other.secure_;
         this->connect_time_ = std::move(other.connect_time_);
+        this->cipher_ = std::move(other.connected_);
         this->secure_was_init_ = other.secure_was_init_;
         this->context_ = other.context_;
         this->secure_socket_ = other.secure_socket_;
         this->certificate_ = other.certificate_;
+        this->connected_ = other.connected_;
 
         other.secure_ = false;
         other.connect_time_ = "";
@@ -2266,6 +2520,8 @@ networking::network_structures::tcp_client::tcp_client(tcp_client&& other) noexc
         other.context_ = invalid_context;
         other.secure_socket_ = invalid_secure_socket;
         other.certificate_ = invalid_certificate;
+        other.connected_ = false;
+        other.cipher_ = "";
 }
 
 // Destructor
@@ -2284,6 +2540,7 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
         this->certificate_ = other.certificate_;
         this->secure_socket_ = other.secure_socket_;
         this->cipher_ = other.cipher_;
+        this->connected_ = other.connected_;
     }
     return *this;
 }
@@ -2299,6 +2556,7 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
         this->certificate_ = other.certificate_;
         this->secure_socket_ = other.secure_socket_;
         this->cipher_ = std::move(other.cipher_);
+        this->connected_ = other.connected_;
 
         other.secure_was_init_ = true;
         other.secure_ = false;
@@ -2306,6 +2564,7 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
         other.certificate_ = invalid_certificate;
         other.secure_socket_ = invalid_secure_socket;
         other.cipher_ = "";
+        other.connected_ = false;
     }
     return *this;
 }
@@ -2313,9 +2572,9 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
 networking::network_structures::tcp_client::operator bool() const {
 
     return (this->secure_) ? valid_context(this->context_) and 
-        valid_secure_socket(this->secure_socket_) and valid_socket(this->connect_socket_)
+        valid_secure_socket(this->secure_socket_) and valid_socket(this->connect_socket_) and this->connected_
                                 :
-                valid_socket(this->connect_socket_);
+                valid_socket(this->connect_socket_) and this->connected_;
     // return (this->secure_) ? valid_context(this->context_) and 
     //         valid_secure_socket(this->secure_socket_) and 
     //             this->main_socket_connected() 
@@ -2333,263 +2592,160 @@ bool networking::network_structures::tcp_client::secure() const {
 }
 
 networking::network_structures::tcp_client& networking::network_structures::tcp_client::secure(const bool set_secure) {
-    if (not this->main_socket_connected()) {
+    if (not *this) {
         this->secure_ = set_secure;
     }
     return *this;
 }
 
-networking::network_structures::tcp_client& networking::network_structures::tcp_client::start(const bool blocking, const bool sni, const std::chrono::duration<int> timeout) {
+bool networking::network_structures::tcp_client::start(const bool block_socket, const bool sni, const std::chrono::duration<int> timeout) {
     
-    if (not *this) {
-        std::string message;
-        int line_; //, error_value;
-        const int count = 3 * buffer_size;
-        char msg[count];
+    if (*this) {
+        return true;
+    }
 
-        if (not networking::is_init) {
-            if (not networking::initialize_network()) {
-                line_ = __LINE__ - 1;
-                message = "Failed to initialize network... Windows is screwing you over on this one. Error " +
-                    std::to_string(socket_error) + " : " +
-                        std::string(get_socket_error_string(socket_error));
-                if (this->throw_except_) {
-                    throw networking::exceptions::initialize_network_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
-                }
-                std::cerr << message << std::endl;
-                return *this;
-            }
-            this->was_init_ = false;
+    int line_;
+    const int count = 4 * buffer_size;
+    std::string message;
+    char msg[count];
+    std::memset(msg, 0, count);
+    ERR_clear_error();
+
+    if (not this->init_network()) {
+        line_ = __LINE__ - 1;
+        message = "Failed to initialize network. Error " + 
+            std::to_string(socket_error) + " : " +
+            std::string(get_socket_error_string(socket_error));
+        if (this->throw_except_) {
+            throw networking::exceptions::initialize_network_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
+        }
+        std::cerr << message << std::endl;
+        return false;
+    }
+
+    if (this->secure_ and not this->init_secure_network()) {
+        line_ = __LINE__ - 1;
+        ERR_error_string_n(ERR_get_error(), msg, count);
+        message = "Failed to initialize secure network : \"" + std::string(msg) + "\"";
+        if (this->throw_except_) {
+            throw networking::exceptions::initialize_network_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
+        }
+        std::cerr << message << std::endl;
+        return false;
+    }
+
+    if (this->secure_ and not this->create_secure_context()) {
+        line_ = __LINE__ - 1;
+        ERR_error_string_n(ERR_get_error(), msg, count);
+        message = "Failed to create secure context. Error \"" + std::string(msg) + "\"";
+        if (this->throw_except_) {
+            throw networking::exceptions::create_context_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
+        }
+        std::cerr << message << std::endl;
+        return false;
+    }
+
+    if (not this->create_connection_address()) {
+        line_ = __LINE__ - 1;
+        message = "Failed to create addrinfo object. Error " + std::to_string(socket_error) + " : " +
+                std::string(get_socket_error_string(socket_error));
+        if (this->throw_except_) {
+            throw networking::exceptions::getaddrinfo_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
+        }
+        std::cerr << message << std::endl;
+        return false;
+    }
+
+    if (not this->create_connection_socket()) {
+        line_ = __LINE__ - 1;
+        message = "Failed to create connection socket. Error " + std::to_string(socket_error) + " : " +
+                std::string(get_socket_error_string(socket_error));
+        if (this->throw_except_) {
+            throw networking::exceptions::create_socket_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
         }
 
-        // Network is initialized.
-        // std::cout << "Network initailized" << std::endl;
+        std::cerr << message << std::endl;
+        return false;
+    }
 
-        // For dealing with potenial errors with creating a secure connection
-        if (this->secure_) {
-            ERR_clear_error();
+    if (not this->connect_socket()) {
+        line_ = __LINE__ - 1;
+        message = "Failed to connect socket. Error " + std::to_string(socket_error) + " : " + 
+            std::string(get_socket_error_string(socket_error));
+        if (this->throw_except_) {
+            throw networking::exceptions::connect_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
         }
+        std::cerr << message << std::endl;
+        return false;
+    }
 
-        // Initialize sercure network
-        if (this->secure_ and not networking::is_init_secure) {
-            if (not networking::initialize_secure_network()) {
-                line_ = __LINE__ - 1;
-                ERR_error_string_n(ERR_get_error(), msg, count);
-                message = "Failed to initailize secure network. Error \"" + std::string(msg) + "\"";
-                if (this->throw_except_) {
-                    throw networking::exceptions::initialize_network_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
-                }
-                std::cerr << message << std::endl;
-                return *this;
-            }
-            this->secure_was_init_ = false;
-        }
-
-        // (this->secure_) ? std::cout << "Secure network initialized" << std::endl : std::cout << "";
-
-        // Secure network initialized to reach here.
-
-        // Create the context_
-        if (this->secure_ and not valid_context(this->context_)) {
-            this->context_ = SSL_CTX_new(TLS_client_method());
-            if (not valid_context(this->context_)) {
-                line_ = __LINE__ - 1;
-                ERR_error_string_n(ERR_get_error(), msg, count);
-                message = "Failed to create secure connection context. Error \"" + std::string(msg) + "\"";
-                if (this->throw_except_) {
-                    throw networking::exceptions::connect_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
-                }
-                std::cerr << message << std::endl;
-                return *this;
-            }
-        }
-
-        // (this->secure_) ? std::cout << "Context created" << std::endl : std::cout << "";
-
-        // The context was successfully created
-        
-        // Now create the address information struct, and the socket
-        if (not this->create_connection_address()) {
-            std::cerr << "Failing to create connection address..." << std::endl;
+    // Connection successfully established. Now secure stuff (if it's a secure connection)
+    if (this->secure_) {
+        if (not this->create_secure_socket()) {
             line_ = __LINE__ - 1;
-            message = "Failed to create connection socket. Error " + std::to_string(socket_error) + " : " + std::string(get_socket_error_string(socket_error));
-            if (this->throw_except_) {
-                throw networking::exceptions::getaddrinfo_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
-            }
-            std::cerr << message << std::endl;
-            return *this;
-        }
+            ERR_error_string_n(ERR_get_error(), msg, count);
+            message = "Failed to create secure socket. Error : " + std::string(msg);
 
-        // std::cout << "Created connection address" << std::endl;
-
-        // There is an address info struct to use for the creation of a connection socket
-        if (not this->create_connection_socket()) {
-            line_ = __LINE__ - 1;
-            message = "Failed to create connection socket for client. Error " + std::to_string(socket_error) + std::string(get_socket_error_string(socket_error));
             if (this->throw_except_) {
                 throw networking::exceptions::create_socket_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
             }
             std::cerr << message << std::endl;
-            return *this;
+            return false;
         }
 
-        // Connect the socket
-        if (connect(this->connect_socket_, this->active_address_->ai_addr, this->active_address_->ai_addrlen)) {
+        if (sni) {
+            if (not this->server_name_indication()) {
+                line_ = __LINE__ - 1;
+                ERR_error_string_n(ERR_get_error(), msg, count);
+                message = "Failed to retrieve Server Name Indication. Error : " + std::string(msg);
+                if (this->throw_except_) {
+                    throw networking::exceptions::secure_sockets_layer_error(message, this->print_except_, __FILE__, line_, __FUNCTION__);
+                }
+                std::cerr << message << std::endl;
+                return false;
+            }
+        }
+
+        if (not this->set_descriptor_for_secure_socket()) {
             line_ = __LINE__ - 1;
-            message = "Failed to connect the client connection socket. Error " + std::to_string(socket_error) + std::string(get_socket_error_string(socket_error));
+            ERR_error_string_n(ERR_get_error(), msg, count);
+            message = "Failed to set secure socket's file descriptor for connection encryption. Error " + std::string(msg);
             if (this->throw_except_) {
-                throw networking::exceptions::connect_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
+                throw networking::exceptions::secure_sockets_layer_error(message, this->print_except_, __FILE__, line_, __FUNCTION__);
             }
             std::cerr << message << std::endl;
-            return *this;
+            return false;
         }
 
-        this->connect_time_ = misc_functions::get_current_time();
-        // std::cout << "Socket is now connected" << std::endl;
-        // Connection socket is now connected!.
-        // The rest of the connection establishment deals with secure
-        // connection creation
-
-        
-        // Create the secure_socket
-        if (this->secure_ and not valid_secure_socket(this->secure_socket_)) {
-            
-            if (not (valid_secure_socket((this->secure_socket_ = SSL_new(this->context_))))) {
-                line_ = __LINE__ - 1;
-                ERR_error_string_n(ERR_get_error(), msg, count);
-                message = "Failed to create secure connection socket. Error \"" + std::string(msg) + "\"";
-                if (this->throw_except_) {
-                    throw networking::exceptions::secure_sockets_layer_error(message, this->print_except_, __FILE__, line_, __FUNCTION__);
-                }
-                std::cerr << message << std::endl;
-                return *this;
+        if (not this->secure_handshake(timeout)) {
+            line_ = __LINE__ - 1;
+            ERR_error_string_n(ERR_get_error(), msg, count);
+            message = "Failed to establish TLS/SSL encryption connection handshake. Error " + std::string(msg);
+            if (this->throw_except_) {
+                throw networking::exceptions::secure_sockets_layer_error(message, this->print_except_, __FILE__, line_, __FUNCTION__);
             }
+            std::cerr << message << std::endl;
+            return false;
         }
 
-        // Secure socket created based off context
-        
-
-        // Now set the SNI (based off sni parameter setting)
-        if (this->secure_ and sni) {
-            if (not SSL_set_tlsext_host_name(this->secure_socket_, this->host_.c_str())) {
-                line_ = __LINE__ - 1;
-                ERR_error_string_n(ERR_get_error(), msg, count);
-                message = "Failed to set Server Name Indication (SNI). Error \"" + std::string(msg) + "\"";
-                if (this->throw_except_) {
-                    throw networking::exceptions::secure_sockets_layer_error(message, this->print_except_, __FILE__, line_, __FUNCTION__);
-                }
-                std::cerr << message << std::endl;
-                return *this;
-            }
-        }
-
-        // SNI is set based off parameter sni. Now that's done.
-
-        // Now set the secure socket's non-secure socket
-        if (this->secure_) {
-            if (not SSL_set_fd(this->secure_socket_, this->connect_socket_)) {
-                line_ = __LINE__ - 1;
-                ERR_error_string_n(ERR_get_error(), msg, count);
-                message = "Failed to set the socket for the secure socket. Error \"" + std::string(msg) + "\"";
-                if (this->throw_except_) {
-                    throw networking::exceptions::socket_information_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
-                }
-                std::cerr << message << std::endl;
-                return *this;
-
-            }
-        }
-
-        // Secure socket now communicates with the connect_socket_
-
-        // Now initiate TLS/SSL handshake with TLS/SSL server. -- TODO : Make sure that errors in the TLS/Handshake are handled well.
-        
-        if (this->secure_) {
-            bool secure_handshake_;
-
-            try {
-                secure_handshake_ = this->secure_handshake(timeout);
-                line_ = __LINE__ - 1;
-            }
-
-            catch (networking::exceptions::select_failure except) {
-                throw;
-            }
-
-            catch (networking::exceptions::secure_sockets_layer_error except) {
-                throw;
-            }
-
-            // Redundant
-            catch(networking::exceptions::base_exception& except) {
-                throw;
-            }
-
-            if (not secure_handshake_) {
-                message = "Failed to create secure handshake";
-                if (this->throw_except_) {
-                    throw networking::exceptions::secure_sockets_layer_error(message, this->print_except_, __FILE__, line_, __FUNCTION__);
-                }
-                std::cerr << message << std::endl;
-                return *this;
-            }
-        }
-
-        
-
-        // Get the cipher
-        if (this->cipher_.empty()) {
-            this->cipher_ = std::string(SSL_get_cipher(this->secure_socket_));
-        }
-
-        // Get the certificate
-        if (not this->certificate_) {
-            
-            if (not (this->certificate_ = SSL_get_peer_certificate(this->secure_socket_))) {
-                line_ = __LINE__ - 1;
-                ERR_error_string_n(ERR_get_error(), msg, count);
-                message = "Failed to retrieve server's certificate. Error \"" + std::string(msg) + "\"";
-                if (this->throw_except_) {
-                    throw networking::exceptions::certificate_error(message, this->print_except_, __FILE__, line_, __FUNCTION__);
-                }
-                std::cerr << message << std::endl;
-                return *this;
-            }
-        }
-
-        // To get here, the certificate had been gotten.
-        // That's everything to create a connection
-
-        // Now apply blocking settings
-        if (blocking) {
-            if (not networking::set_blocking(this->connect_socket_, false)) {
-                line_ = __LINE__ - 1;
-                message = "Failed to set connection socket to blocking. Error " + std::to_string(socket_error) + " : " + std::string(get_socket_error_string(socket_error));
-                if (this->throw_except_) {
-                    throw networking::exceptions::socket_information_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
-                }
-                std::cerr << message << std::endl;
-                return *this;
-            }
-
-        }
-
-        else {
-
-            if (not networking::set_non_blocking(this->connect_socket_, false)) {
-                line_ = __LINE__ - 1;
-                message = "Failed to set connection socket to non-blocking. Error " + std::to_string(socket_error) + " : " + std::string(get_socket_error_string(socket_error));
-                if (this->throw_except_) {
-                    throw networking::exceptions::socket_information_failure(message, this->print_except_, __FILE__, line_, __FUNCTION__);
-                }
-                std::cerr << message << std::endl;
-                return *this;
-            }
-        }
-
-        std::cout << "Currently the connection is " << (networking::socket_is_blocking(this->connect_socket_, false) ? "blocking" : "not blocking") << "as " << ((blocking) ? "expected" : "not expected");
-
+        // Handshake established. Now for the cipher and certificate.
+        // Not really necessary for comunication, but could throw exceptions... task for another day
+        this->get_cipher(); 
+        this->get_peer_certificate();
     }
+
+    if (not block_socket) {
+        #if defined(crap_os)
+            unsigned long non_block = 1;
+            ioctlsocket(this->connect_socket_, FIONBIO, &non_block);
+        #else
+            int flags;
+            flags = fcntl(this->connect_socket_, F_GETFD, 0);
+            fcntl(this->connect_socket_, F_SETFL, flags | O_NONBLOCK);
+        #endif
+    }
+
+    this->connected_ = true;
 
     return *this;
 }
@@ -2600,9 +2756,11 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
         (this->secure_ and this->certificate_) ? X509_free(this->certificate_) : (void) 0;
         (this->secure_ and valid_secure_socket(this->secure_socket_)) ? SSL_shutdown(this->secure_socket_) : 0;
         // (valid_socket(this->connect_socket_)) ? close_socket(this->connect_socket_) : 0;
-        this->close_host();
+        (valid_socket(this->connect_socket_)) ? close_socket(this->connect_socket_) : 0;
+        this->connect_socket_ = invalid_socket;
         (this->secure_ and valid_secure_socket(this->secure_socket_)) ? SSL_free(this->secure_socket_) : (void) 0;
         (this->secure_ and valid_context(this->context_)) ? SSL_CTX_free(this->context_) : (void) 0;
+        (this->secure_ and secure_was_init_) ? uninitialize_secure_network() : true;
     }
 
     return *this;
