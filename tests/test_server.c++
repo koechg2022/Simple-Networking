@@ -949,6 +949,8 @@ void windows_tests() {
 
 void test_web_client() {
 
+    std::cout << (networking::cleans_on_excepts() ? "TRUEEEEE" : "FALSEEEEE");
+
     std::string url = string_functions::get_input("URL : ");
 
     if (url.empty()) {

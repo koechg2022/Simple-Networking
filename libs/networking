@@ -12,7 +12,7 @@
 
     namespace networking {
 
-        // bool clean_on_except = true;
+        static bool clean_on_except = true;
 
         namespace {
 
@@ -259,6 +259,15 @@
             @returns `true` if the secure connection is uninitialized.
          */
         bool uninitialize_secure_network();
+
+        
+        bool will_clean_on_except();
+
+        
+        bool will_not_clean_on_except();
+
+
+        bool cleans_on_excepts();
 
 
         /**

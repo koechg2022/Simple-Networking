@@ -9,9 +9,9 @@
 #include "networking"
 
 
-namespace networking {
-    bool clean_on_except = true;
-}
+// namespace networking {
+//     bool clean_on_except = true;
+// }
 
 
 /***********************************************************************************************/
@@ -257,6 +257,22 @@ bool networking::uninitialize_secure_network() {
         networking::is_init_secure = false;
     }
     return not networking::is_init_secure;
+}
+
+bool networking::will_clean_on_except() {
+    networking::clean_on_except = true;
+    return networking::clean_on_except;
+}
+
+
+bool networking::will_not_clean_on_except() {
+    networking::clean_on_except = false;
+    return networking::clean_on_except;
+}
+
+
+bool networking::cleans_on_excepts() {
+    return networking::clean_on_except;
 }
 
 std::vector<std::string> networking::resolve_hostname(const std::string hostname, const std::string port, const bool name) {
