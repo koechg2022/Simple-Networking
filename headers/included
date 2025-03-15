@@ -52,9 +52,9 @@
         #pragma comment(lib, "Ws2_32.lib")
         #pragma comment(lib, "iphlpapi.lib")
 
-        #if not defined(WSACONNRESET)
-            #define WSACONNRESET 10054
-        #endif
+        // #if not defined(WSACONNRESET)
+        //     #define WSACONNRESET 10054
+        // #endif
 
 
         #define get_string(crap_string)\
