@@ -1,5 +1,6 @@
 
 #include "headers"
+#include "misc_functions"
 
 
 
@@ -148,6 +149,8 @@ void test_web_client();
 void print_socket_configs(socket_type the_socket);
 
 void print_horizontal(char to_print = '*', bool nl = true);
+
+void print_horizontal_count(char to_print = '*', int count = misc_functions::get_terminal_width(), bool nl = true);
 
 int main(int len, char** args) {
 
@@ -881,7 +884,10 @@ void test_secure_client() {
                 // There was data returned
                 std::cout << "Message received at " << message << ":" << std::endl;
                 std::cout << "\t\"" << std::string(msg, bytes) << "\"" << std::endl;
-                print_horizontal();
+                // print_horizontal();
+                print_horizontal_count(' ', misc_functions::get_terminal_width() / 3, false);
+                print_horizontal_count('*', misc_functions::get_terminal_width() / 3, false);
+                print_horizontal_count(' ', misc_functions::get_terminal_width() / 3, true);
             }
         }
 
@@ -917,7 +923,10 @@ void test_secure_client() {
                     std::cout << "\t" << pair.first << std::endl;
                 }
             }
-            print_horizontal();
+            // print_horizontal();
+            print_horizontal_count(' ', misc_functions::get_terminal_width() / 3, false);
+            print_horizontal_count('*', misc_functions::get_terminal_width() / 3, false);
+            print_horizontal_count(' ', misc_functions::get_terminal_width() / 3, true);
         }
 
     }
@@ -1030,6 +1039,16 @@ void print_socket_configs(socket_type the_socket) {
 void print_horizontal(char to_print, bool nl) {
     int index, length = misc_functions::get_terminal_width();
     for (index = 0; index < length; index++) {
+        std::printf("%c", to_print);
+    }
+    (nl) ? std::printf("\n") : 0;
+}
+
+void print_horizontal_count(char to_print, int count, bool nl) {
+    // const int max_width = misc_functions::get_terminal_width();
+    count = (count > misc_functions::get_terminal_width()) ? misc_functions::get_terminal_width() : count;
+    int index;
+    for (index = 0; index < count; index++) {
         std::printf("%c", to_print);
     }
     (nl) ? std::printf("\n") : 0;
