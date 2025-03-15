@@ -817,7 +817,6 @@
 
                     std::string connect_time_ = "",
                                 cipher_ = "";
-                    const std::string SUCCESS = "success";
 
                     bool init_network();
 
