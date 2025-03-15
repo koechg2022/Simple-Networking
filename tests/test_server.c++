@@ -869,7 +869,7 @@ void test_secure_client() {
         if (client.message()) {
             bytes = msg_size;
             std::cout << "Checking what message is from server..." << std::endl;
-            if (client.message_client(msg, bytes)) {
+            if (client.message_client(msg, bytes, 0, {-1, -1})) {
                 message = misc_functions::get_current_time();
                 if (bytes == 0) {
                     // Connection closed by server
