@@ -968,10 +968,6 @@ void test_web_client() {
     const int count = 4 * kilo_byte;
     char msg[count];
     const std::string ending = "\r\n";
-
-    for (const auto& attr : url_parsed) {
-        std::cout << "\t" << attr.first << " : " << attr.second << std::endl;
-    }
     
     if (not url_parsed.contains(HOSTNAME)) {
         std::cerr << "No hostname specified in url" << std::endl;
@@ -979,10 +975,8 @@ void test_web_client() {
     }
 
     networking::network_structures::tcp_client client(url_parsed[HOSTNAME], url_parsed[PORT]);
-    std::cout << "Created client with: " << std::endl;
-    std::cout << "Hostname : " << client.hostname() << std::endl;
-    std::cout << "Port : " << client.port() << std::endl;
-    client.secure(false);
+    
+    client.secure(true);
 
     if (not client.start(false)) {
         std::cerr << "Failed to start client" << std::endl;
@@ -996,24 +990,37 @@ void test_web_client() {
             "User-Agent honpwc https_get 1.0" + ending +
             ending;
 
-    (client) ? std::cout << "Client is connected..." << std::endl : std::cerr << "Client is not connected..." << std::endl;
-    while (client) {
+    bytes = (int) message.length();
 
+    if (not client.message_server((char*) message.c_str(), bytes)) {
+        std::cerr << "Failed to send resource request to server" << std::endl;
+        client.close_client();
+        return;
+    }
+
+    std::cout << "Successfully requested resources" << std::endl;
+    auto start_time = std::chrono::steady_clock::now();
+    while (client and (std::chrono::steady_clock::now() - start_time < std::chrono::seconds(5))) {
         if (client.message()) {
             bytes = count;
-            if (client.message_client(msg, bytes, 0, {-1, -1})) {
+            if (client.message_client((char*) msg, bytes)) {
                 if (not bytes) {
-                    std::cout << "Connection closed" << std::endl;
+                    std::cout << "Connection closed by client" << std::endl;
                     client.close_client();
                     continue;
                 }
 
-                std::cout << std::string(msg, bytes);
+                if (bytes < 0) {
+                    std::cerr << "An unexpected error occured" << std::endl;
+                    client.close_client();
+                    continue;
+                }
+                std::cout << std::string(msg, bytes) << std::endl;
             }
         }
-
     }
-    
+    client.close_client();
+    std::cout << UNDER_CONSTRUCTION << std::endl;
 }
 
 void print_socket_configs(socket_type the_socket) {
