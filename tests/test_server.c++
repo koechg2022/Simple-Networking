@@ -862,8 +862,9 @@ void test_secure_client() {
     
     std::cout << "Connection established with server at " << client.connection_time() << std::endl;
 
-    auto start = std::chrono::steady_clock::now();
-    while (client and (std::chrono::steady_clock::now() - start < std::chrono::duration<int>(3))) {
+    // auto start = std::chrono::steady_clock::now();
+    // and (std::chrono::steady_clock::now() - start < std::chrono::duration<int>(3))
+    while (client) {
 
         if (client.message()) {
             bytes = msg_size;
