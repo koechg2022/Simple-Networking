@@ -1023,61 +1023,9 @@ void test_web_client() {
 
 void print_socket_configs(socket_type the_socket) {
     if (not valid_socket(the_socket)) {
-        std::cerr << "The socket is not a valid socket" << std::endl;
         return;
     }
-
-
-
-    int option_value;
-    socklen_t option_len = sizeof(option_value);
-
-    std::cout << "Socket Configuration Settings:" << std::endl;
-
-    // Check if socket is blocking or non-blocking
-    int flags = fcntl(the_socket, F_GETFL, 0);
-    std::cout << "Blocking mode: " << ((flags & O_NONBLOCK) ? "Non-blocking" : "Blocking") << std::endl;
-
-    // Get socket type
-    if (getsockopt(the_socket, SOL_SOCKET, SO_TYPE, &option_value, &option_len) == 0) {
-        std::cout << "Socket type: " << (option_value == SOCK_STREAM ? "SOCK_STREAM (TCP)" : 
-                                         option_value == SOCK_DGRAM ? "SOCK_DGRAM (UDP)" : "Unknown") << std::endl;
-    }
-
-    // Get receive buffer size
-    if (getsockopt(the_socket, SOL_SOCKET, SO_RCVBUF, &option_value, &option_len) == 0) {
-        std::cout << "Receive buffer size: " << option_value << " bytes" << std::endl;
-    }
-
-    // Get send buffer size
-    if (getsockopt(the_socket, SOL_SOCKET, SO_SNDBUF, &option_value, &option_len) == 0) {
-        std::cout << "Send buffer size: " << option_value << " bytes" << std::endl;
-    }
-
-    // Check if keep-alive is enabled
-    if (getsockopt(the_socket, SOL_SOCKET, SO_KEEPALIVE, &option_value, &option_len) == 0) {
-        std::cout << "Keep-alive: " << (option_value ? "Enabled" : "Disabled") << std::endl;
-    }
-
-    // Get reuse address setting
-    if (getsockopt(the_socket, SOL_SOCKET, SO_REUSEADDR, &option_value, &option_len) == 0) {
-        std::cout << "Reuse address: " << (option_value ? "Enabled" : "Disabled") << std::endl;
-    }
-
-    // Get linger setting
-    struct linger linger_opt;
-    option_len = sizeof(linger_opt);
-    if (getsockopt(the_socket, SOL_SOCKET, SO_LINGER, &linger_opt, &option_len) == 0) {
-        std::cout << "Linger: " << (linger_opt.l_onoff ? "On" : "Off");
-        if (linger_opt.l_onoff) {
-            std::cout << ", timeout: " << linger_opt.l_linger << " seconds";
-        }
-        std::cout << std::endl;
-    }
-
-    // Additional settings can be added here as needed
-
-
+    std::cout << UNDER_CONSTRUCTION << std::endl;
 }
 
 void print_horizontal(char to_print, bool nl) {
