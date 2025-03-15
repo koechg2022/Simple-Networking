@@ -2636,9 +2636,6 @@ bool networking::network_structures::tcp_client::message(struct timeval timeout)
         return false;
     }
 
-    timeout.tv_sec = (timeout.tv_sec < 0) ? 0 : timeout.tv_sec;
-    timeout.tv_usec = (timeout.tv_usec < 0) ? 200 : timeout.tv_usec;
-
     fd_set the_answer;
     FD_ZERO(&the_answer);
     FD_SET(this->connect_socket_, &the_answer);

@@ -839,7 +839,7 @@
 
                     std::string get_issuer_name(const std::string on_failure = "N/A") const;
 
-                    bool message(struct timeval timeout = {0, 200});
+                    bool message(struct timeval timeout = {0, 0});
 
                     bool message_client(void* msg, int& bytes, int flags = 0, struct timeval timeout = {0, 0});
 
