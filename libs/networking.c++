@@ -2845,8 +2845,8 @@ bool networking::network_structures::tcp_client::message_client(void* msg, int& 
     // for either unit, indicating to check for socket in a ready state)
     auto start_time = std::chrono::steady_clock::now();
     false_negative:
-    bytes = (this->secure_) ? SSL_read(this->secure_socket_, msg, bytes_) : 
-                recv(this->connect_socket_, msg, bytes_, flags);
+    bytes = (this->secure_) ? SSL_read(this->secure_socket_, static_cast<char*>(msg), bytes_) : 
+                recv(this->connect_socket_, static_cast<char*>(msg), bytes_, flags);
     
     // The connection was closed for secure and non-secure
     if (bytes == 0) {
