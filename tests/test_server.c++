@@ -858,7 +858,15 @@ void test_secure_client() {
         while (client) {
 
             // std::cout << "Checking if client has message" << std::endl;
-            if (client.message()) {
+            fd_set ready;
+            FD_ZERO(&ready);
+            FD_SET(client.connection_information().connect_socket, &ready);
+            if (select(client.get_socket() + 1, &ready, 0, 0, &timeout) < 0) {
+                std::cerr << "select failure." << std::endl;
+                client.close_client();
+                continue;
+            }
+            if (FD_ISSET(client.get_socket(), &ready)) {
                 // Client has a message
 
                 bytes = count;
