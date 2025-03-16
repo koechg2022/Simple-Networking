@@ -79,7 +79,7 @@ std::map<std::string, std::string> misc_functions::get_file_data_map(const std::
     size_t delim;
     while (std::getline(open_file, line)) {
         delim = line.find_first_of(delimiter);
-        if (delim >= line.length()) {
+        if (delim < line.length()) {
             key = line.substr(0, delim);
             value = line.substr(delim + 1);
 
