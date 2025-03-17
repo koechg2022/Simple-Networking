@@ -182,3 +182,21 @@ bool misc_functions::has_keyboard_input() {
         return FD_ISSET(STDIN_FILENO, &ready);
     #endif
 }
+
+
+std::string misc_functions::get_input(const std::string prompt) {
+    std::string the_answer;
+
+    if (not prompt.empty()) {
+        std::printf("%s", prompt.c_str());
+    }
+    
+    char buffer[1024];
+    std::memset(buffer, 0, 1024);
+    if (not fgets(buffer, 1024, stdin)) {
+        return the_answer;
+    }
+    the_answer = std::string(buffer);
+    the_answer = (the_answer[the_answer.length() - 1] is '\n') ? the_answer.substr(0, the_answer.length() - 1) : the_answer;
+    return the_answer;
+}

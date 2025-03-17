@@ -79,23 +79,6 @@ unsigned long string_functions::string_length(const char* the_string, const char
     return same_char(the_string[index], term);
 }
 
-std::string string_functions::get_input(const std::string prompt) {
-    std::string the_answer;
-
-    if (not prompt.empty()) {
-        std::printf("%s", prompt.c_str());
-    }
-    
-    char buffer[1024];
-    std::memset(buffer, 0, 1024);
-    if (not fgets(buffer, 1024, stdin)) {
-        return the_answer;
-    }
-    the_answer = std::string(buffer);
-    the_answer = (the_answer[the_answer.length() - 1] is '\n') ? the_answer.substr(0, the_answer.length() - 1) : the_answer;
-    return the_answer;
-}
-
 std::string string_functions::get_uppercase(const std::string the_string) {
     std::string the_answer;
     unsigned long index;

@@ -126,14 +126,6 @@
         */
         unsigned long string_length(const char* the_string, const char term = '\0');
         
-
-        /**
-            * @brief get keyboard input.
-            * @param prompt (const std::string) Read keyboard input.
-            * @returns the keyboard input.
-        */
-        std::string get_input(const std::string prompt = "");
-
         
         /**
         *   @brief Get the uppercase of the `std::string` passed in.

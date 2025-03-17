@@ -275,7 +275,7 @@ void list_machine_adapters() {
 }
 
 void resolve_hostname() {
-    std::string host = string_functions::get_input("Hostname : ");
+    std::string host = misc_functions::get_input("Hostname : ");
     std::vector<std::string> addresses = networking::resolve_hostname(host);
     std::cout << host << ":" << std::endl;
     unsigned long index;
@@ -285,7 +285,7 @@ void resolve_hostname() {
 }
 
 void resolve_hostname_name() {
-    std::string host = string_functions::get_input("Hostname : ");
+    std::string host = misc_functions::get_input("Hostname : ");
     std::vector<std::string> addresses = networking::resolve_hostname(host, DEFAULT_PORT, true);
     std::cout << host << ":" << std::endl;
     unsigned long index;
@@ -395,7 +395,7 @@ void test_server() {
 
 
             if (misc_functions::has_keyboard_input()) {
-                message = string_functions::get_input();
+                message = misc_functions::get_input();
 
                 if (string_functions::same_string(message, server_args_caps[EXIT]) or string_functions::same_string(message, server_args_lower[EXIT])) {
                     server.close_server();
@@ -424,7 +424,7 @@ void test_server() {
                         continue;
                     }
 
-                    message = string_functions::get_input("Message to broadcast : ");
+                    message = misc_functions::get_input("Message to broadcast : ");
                     if (message.empty()) {
                         continue;
                     }
@@ -455,7 +455,7 @@ void test_server() {
                     message = "";
                     new_client = networking::network_structures::connected_host::client();
                     while (message.empty() or not string_functions::same_string(message, "N/A"))  {
-                        message = string_functions::get_input("Client to message : ");
+                        message = misc_functions::get_input("Client to message : ");
                         if (string_functions::all_numbers(message.c_str())) {
                             if (std::stoul(message) == 0) {
                                 std::cout << "Cannot select \"0\" client..." << std::endl;
@@ -484,7 +484,7 @@ void test_server() {
                     }
 
                     if (not new_client.hostname.empty()) {
-                        message = string_functions::get_input("Message to send : ");
+                        message = misc_functions::get_input("Message to send : ");
                         bytes = SSL_write(new_client.secure_socket, message.c_str(), message.length());
                         if (bytes < 1) {
                             std::cerr << "Failed to send message to \"" << new_client.hostname << "\"" << std::endl;
@@ -512,7 +512,7 @@ void test_server() {
                     message = "";
                     new_client = networking::network_structures::connected_host::client();
                     while (message.empty() or not string_functions::same_string(message, "N/A"))  {
-                        message = string_functions::get_input("Client to disconnect : ");
+                        message = misc_functions::get_input("Client to disconnect : ");
                         if (string_functions::all_numbers(message.c_str())) {
                             if (std::stoul(message) == 0) {
                                 std::cout << "Cannot select \"0\" client..." << std::endl;
@@ -635,7 +635,7 @@ void test_secure_server() {
 
 
             if (misc_functions::has_keyboard_input()) {
-                message = string_functions::get_input();
+                message = misc_functions::get_input();
 
                 if (string_functions::same_string(message, server_args_caps[EXIT]) or string_functions::same_string(message, server_args_lower[EXIT])) {
                     server.close_server();
@@ -664,7 +664,7 @@ void test_secure_server() {
                         continue;
                     }
 
-                    message = string_functions::get_input("Message to broadcast : ");
+                    message = misc_functions::get_input("Message to broadcast : ");
                     if (message.empty()) {
                         continue;
                     }
@@ -695,7 +695,7 @@ void test_secure_server() {
                     message = "";
                     new_client = networking::network_structures::connected_host::client();
                     while (message.empty() or not string_functions::same_string(message, "N/A"))  {
-                        message = string_functions::get_input("Client to message : ");
+                        message = misc_functions::get_input("Client to message : ");
                         if (string_functions::all_numbers(message.c_str())) {
                             if (std::stoul(message) == 0) {
                                 std::cout << "Cannot select \"0\" client..." << std::endl;
@@ -724,7 +724,7 @@ void test_secure_server() {
                     }
 
                     if (not new_client.hostname.empty()) {
-                        message = string_functions::get_input("Message to send : ");
+                        message = misc_functions::get_input("Message to send : ");
                         bytes = SSL_write(new_client.secure_socket, message.c_str(), message.length());
                         if (bytes < 1) {
                             std::cerr << "Failed to send message to \"" << new_client.hostname << "\"" << std::endl;
@@ -752,7 +752,7 @@ void test_secure_server() {
                     message = "";
                     new_client = networking::network_structures::connected_host::client();
                     while (message.empty() or not string_functions::same_string(message, "N/A"))  {
-                        message = string_functions::get_input("Client to disconnect : ");
+                        message = misc_functions::get_input("Client to disconnect : ");
                         if (string_functions::all_numbers(message.c_str())) {
                             if (std::stoul(message) == 0) {
                                 std::cout << "Cannot select \"0\" client..." << std::endl;
@@ -819,7 +819,7 @@ void test_secure_server() {
 }
 
 void test_client() {
-    networking::network_structures::tcp_client client(string_functions::get_input("Host to connect to : "));
+    networking::network_structures::tcp_client client(misc_functions::get_input("Host to connect to : "));
     client.port(connection_port);
     client.secure(false);
     client.blocking(false);
@@ -839,7 +839,7 @@ void test_client() {
 void test_secure_client() {
     
     
-    networking::network_structures::tcp_client client(string_functions::get_input("Host to connect to : "));
+    networking::network_structures::tcp_client client(misc_functions::get_input("Host to connect to : "));
     const int msg_size = 32 *kilo_byte;
     int bytes;
     char msg[msg_size];
@@ -890,7 +890,7 @@ void test_secure_client() {
         }
 
         if (misc_functions::has_keyboard_input()) {
-            message = string_functions::get_input();
+            message = misc_functions::get_input();
 
             if (string_functions::same_string(message, client_args_caps[EXIT]) or string_functions::same_string(message, client_args_lower[EXIT])) {
                 client.close_client();
@@ -898,7 +898,7 @@ void test_secure_client() {
 
             else if (string_functions::same_string(message, client_args_caps[MESSAGE_SERVER]) or string_functions::same_string(message, client_args_lower[MESSAGE_SERVER])) {
                 // std::cout << UNDER_CONSTRUCTION << std::endl;
-                message = string_functions::get_input("Message: ");
+                message = misc_functions::get_input("Message: ");
                 bytes = (int) message.length();
                 if (client.message_server((void*) message.c_str(), bytes)) {
                     if (bytes == 0) {
@@ -955,7 +955,7 @@ void test_web_client() {
 
     // std::cout << (networking::cleans_on_excepts() ? "TRUEEEEE" : "FALSEEEEE");
 
-    std::string url = string_functions::get_input("URL : ");
+    std::string url = misc_functions::get_input("URL : ");
 
     if (url.empty()) {
         url = "example.com";
