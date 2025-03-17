@@ -143,12 +143,32 @@ bool string_functions::has_keyboard_input() {
     #endif
 }
 
-void string_functions::strip(std::string& the_string, const std::string to_remove) {
+void string_functions::strip(std::string& the_string, const std::string to_remove, const bool ignore_case) {
     // Remove leading characters
-    the_string.erase(0, the_string.find_first_not_of(to_remove));
+    // the_string.erase(0, the_string.find_first_not_of(to_remove));
     
-    // Remove trailing characters
-    the_string.erase(the_string.find_last_not_of(to_remove) + 1);
+    // // Remove trailing characters
+    // the_string.erase(the_string.find_last_not_of(to_remove) + 1);
+    if (the_string.empty() or to_remove.empty()) {
+        return;
+    }
+
+    size_t index = 0;
+    while (index < to_remove.length() and index < the_string.length() and same_char(the_string[index], to_remove[index], ignore_case)) index++;
+
+    if (index == to_remove.length()) {
+        the_string = the_string.substr(index);
+    }
+
+    index = 0;
+    
+    while (index < the_string.length() and 
+            index < to_remove.length() and 
+                same_char(the_string[the_string.length() - index - 1], to_remove[to_remove.length() - index - 1], ignore_case)) index++;
+    
+    if (index == to_remove.length()) {
+        the_string = the_string.substr(0, the_string.length() - index);
+    }
 }
 
 void string_functions::replace_all(std::string& the_string, const std::string to_replace, const std::string replace_with) {

@@ -193,7 +193,7 @@
             @param the_string (std::string&) : The string to be stripped.
             @param to_remove (const std::string) : The string to be stripped.
          */
-        void strip(std::string& the_string, const std::string to_remove);
+        void strip(std::string& the_string, const std::string to_remove, const bool ignore_case = true);
 
 
         /**
