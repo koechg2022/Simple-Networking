@@ -74,6 +74,17 @@ namespace misc_functions {
     std::string get_base_directory(const std::string dir_name, bool ignore_case = true);
 
 
+
+    /**
+    *
+    *   @brief Check if the keyboard has input available or not.
+    *
+    *
+    *   @returns `true` if there is keyboard input, `false` otherwise.
+    *
+    */
+    bool has_keyboard_input();
+
 }
 
 #endif

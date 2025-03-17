@@ -394,7 +394,7 @@ void test_server() {
             }
 
 
-            if (string_functions::has_keyboard_input()) {
+            if (misc_functions::has_keyboard_input()) {
                 message = string_functions::get_input();
 
                 if (string_functions::same_string(message, server_args_caps[EXIT]) or string_functions::same_string(message, server_args_lower[EXIT])) {
@@ -634,7 +634,7 @@ void test_secure_server() {
             }
 
 
-            if (string_functions::has_keyboard_input()) {
+            if (misc_functions::has_keyboard_input()) {
                 message = string_functions::get_input();
 
                 if (string_functions::same_string(message, server_args_caps[EXIT]) or string_functions::same_string(message, server_args_lower[EXIT])) {
@@ -889,7 +889,7 @@ void test_secure_client() {
             }
         }
 
-        if (string_functions::has_keyboard_input()) {
+        if (misc_functions::has_keyboard_input()) {
             message = string_functions::get_input();
 
             if (string_functions::same_string(message, client_args_caps[EXIT]) or string_functions::same_string(message, client_args_lower[EXIT])) {

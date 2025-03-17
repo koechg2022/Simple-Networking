@@ -128,21 +128,6 @@ void string_functions::get_lowercase(std::string& the_string) {
     }
 }
 
-bool string_functions::has_keyboard_input() {
-    #if defined(crap_os)
-        return _kbhit();
-    #else
-        fd_set ready;
-        FD_ZERO(&ready);
-        FD_SET(STDIN_FILENO, &ready);
-        struct timeval default_timeout = {0, 100000};
-        if (select(STDIN_FILENO + 1, &ready, 0, 0, &default_timeout) less 0) {
-            return false;
-        }
-        return FD_ISSET(STDIN_FILENO, &ready);
-    #endif
-}
-
 void string_functions::strip(std::string& the_string, const std::string to_remove, const bool ignore_case) {
     // Remove leading characters
     // the_string.erase(0, the_string.find_first_not_of(to_remove));

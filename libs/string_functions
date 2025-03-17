@@ -174,17 +174,6 @@
         */
         void get_lowercase(std::string& the_string);
 
-        
-        /**
-        *
-        *   @brief Check if the keyboard has input available or not.
-        *
-        *
-        *   @returns `true` if there is keyboard input, `false` otherwise.
-        *
-        */
-        bool has_keyboard_input();
-
 
         /**
             @brief Remove excess strings at the beginning and end of
