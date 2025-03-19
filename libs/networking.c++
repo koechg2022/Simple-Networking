@@ -875,6 +875,9 @@ bool networking::network_structures::host::close_host() {
     }
     this->tcp_ = this->serving_ = this->print_except_ = this->throw_except_ = true;
 
+    (not this->was_init_) ? uninitialize_network() : 0;
+    this->was_init_ = networking::is_init;
+
     return not this->connect_address_ && !valid_socket(this->connect_socket_);
 }
 
@@ -2808,6 +2811,8 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
         this->secure_fd_set_ = false;
         this->secure_handshook_ = false;
         this->server_name_indication_ = false;
+        (not this->secure_was_init_) ? networking::uninitialize_secure_network() : true;
+        this->secure_was_init_ = networking::is_init_secure;
     }
 
     return *this;
