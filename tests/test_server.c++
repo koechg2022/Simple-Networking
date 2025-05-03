@@ -607,17 +607,17 @@ void test_secure_server() {
         }
 
         std::cout << "Connect to host with https \"" << server.hostname() << " : " << server.port() << "\"" << std::endl;
-
+        // std::cout << "Reached" << std::endl;
         while (server) {
-
+            std::cout << "Reached" << std::endl;
             new_client = server.new_client({0, 200000});
-
+            std::cout << "Reached 2" << std::endl;
             if (valid_socket(new_client.connected_socket)) {
                 std::cout << "New connection from \"" << new_client.hostname << "\" at " << new_client.connection_time << std::endl;
             }
 
 
-            
+            std::cout << "Reached 3" << std::endl;
             if (not (clients = server.clients_with_data()).empty()) {
                 for (const auto& client : clients) {
                     bytes = SSL_read(client.secure_socket, msg, count);
