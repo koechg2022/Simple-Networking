@@ -163,44 +163,54 @@ int main(int len, char** args) {
     int index;
     for (index = 1; index < len; index++) {
         
-        if (string_functions::same_string(std::string(args[index]), test_args_caps[LIST_ADAPTERS]) or string_functions::same_string(std::string(args[index]), test_args_lower[LIST_ADAPTERS])) {
+        if (string_functions::same_string(std::string(args[index]), test_args_caps[LIST_ADAPTERS]) or 
+            string_functions::same_string(std::string(args[index]), test_args_lower[LIST_ADAPTERS])) {
             list_machine_adapters();
         }
 
-        else if (string_functions::same_string(std::string(args[index]), test_args_caps[RESOLVE_HOST]) or string_functions::same_string(std::string(args[index]), test_args_lower[RESOLVE_HOST])) {
+        else if (string_functions::same_string(std::string(args[index]), test_args_caps[RESOLVE_HOST]) or 
+            string_functions::same_string(std::string(args[index]), test_args_lower[RESOLVE_HOST])) {
             resolve_hostname();
         }
 
-        else if (string_functions::same_string(std::string(args[index]), test_args_caps[RESOLVE_HOST_NAME]) or string_functions::same_string(std::string(args[index]), test_args_lower[RESOLVE_HOST_NAME])) {
+        else if (string_functions::same_string(std::string(args[index]), test_args_caps[RESOLVE_HOST_NAME]) or 
+            string_functions::same_string(std::string(args[index]), test_args_lower[RESOLVE_HOST_NAME])) {
             resolve_hostname_name();
         }
 
-        else if (string_functions::same_string(args[index], test_args_caps[TEST_HOST]) or string_functions::same_string(args[index], test_args_lower[TEST_HOST])) {
+        else if (string_functions::same_string(args[index], test_args_caps[TEST_HOST]) or 
+            string_functions::same_string(args[index], test_args_lower[TEST_HOST])) {
             test_host();
         }
         
-        else if (string_functions::same_string(args[index], test_args_caps[TEST_SERVER]) or string_functions::same_string(args[index], test_args_lower[TEST_SERVER])) {
+        else if (string_functions::same_string(args[index], test_args_caps[TEST_SERVER]) or 
+            string_functions::same_string(args[index], test_args_lower[TEST_SERVER])) {
             test_server();
         }
 
-        else if (string_functions::same_string(args[index], test_args_caps[TEST_SECURE_SERVER]) or string_functions::same_string(args[index], test_args_lower[TEST_SECURE_SERVER])) {
+        else if (string_functions::same_string(args[index], test_args_caps[TEST_SECURE_SERVER]) or 
+            string_functions::same_string(args[index], test_args_lower[TEST_SECURE_SERVER])) {
             test_secure_server();
         }
 
-        else if (string_functions::same_string(args[index], test_args_caps[TEST_CLIENT]) or string_functions::same_string(args[index], test_args_lower[TEST_CLIENT])) {
+        else if (string_functions::same_string(args[index], test_args_caps[TEST_CLIENT]) or 
+            string_functions::same_string(args[index], test_args_lower[TEST_CLIENT])) {
             test_client();
         }
 
-        else if (string_functions::same_string(args[index], test_args_caps[TEST_SECURE_CLIENT]) or string_functions::same_string(args[index], test_args_lower[TEST_SECURE_CLIENT])) {
+        else if (string_functions::same_string(args[index], test_args_caps[TEST_SECURE_CLIENT]) or 
+            string_functions::same_string(args[index], test_args_lower[TEST_SECURE_CLIENT])) {
             test_secure_client();
         }
 
-        else if (string_functions::same_string(args[index], test_args_caps[TEST_WINDOWS]) or string_functions::same_string(args[index], test_args_lower[TEST_WINDOWS])) {
+        else if (string_functions::same_string(args[index], test_args_caps[TEST_WINDOWS]) or 
+            string_functions::same_string(args[index], test_args_lower[TEST_WINDOWS])) {
             std::printf("Running windows tests:\n");
             windows_tests();
         }
 
-        else if (string_functions::same_string(args[index], test_args_caps[TEST_WEB_CLIENT]) or string_functions::same_string(args[index], test_args_lower[TEST_WEB_CLIENT])) {
+        else if (string_functions::same_string(args[index], test_args_caps[TEST_WEB_CLIENT]) or 
+            string_functions::same_string(args[index], test_args_lower[TEST_WEB_CLIENT])) {
             std::cout << "Running test_web_client" << std::endl;
             test_web_client();
         }
@@ -397,11 +407,13 @@ void test_server() {
             if (misc_functions::has_keyboard_input()) {
                 message = misc_functions::get_input();
 
-                if (string_functions::same_string(message, server_args_caps[EXIT]) or string_functions::same_string(message, server_args_lower[EXIT])) {
+                if (string_functions::same_string(message, server_args_caps[EXIT]) or 
+                    string_functions::same_string(message, server_args_lower[EXIT])) {
                     server.close_server();
                 }
 
-                else if (string_functions::same_string(message, server_args_caps[LIST_CLIENTS]) or string_functions::same_string(message, server_args_lower[LIST_CLIENTS])) {
+                else if (string_functions::same_string(message, server_args_caps[LIST_CLIENTS]) or 
+                    string_functions::same_string(message, server_args_lower[LIST_CLIENTS])) {
                     
                     clients = server.all_clients();
                     if (clients.empty()) {
@@ -417,7 +429,8 @@ void test_server() {
                     }
                 }
 
-                else if (string_functions::same_string(message, server_args_caps[BROADCAST]) or string_functions::same_string(message, server_args_lower[BROADCAST])) {
+                else if (string_functions::same_string(message, server_args_caps[BROADCAST]) or 
+                    string_functions::same_string(message, server_args_lower[BROADCAST])) {
                     clients = server.all_clients();
                     if (clients.empty()) {
                         std::cout << "No clients to message..." << std::endl;
@@ -439,7 +452,8 @@ void test_server() {
                     }
                 }
 
-                else if (string_functions::same_string(message, server_args_caps[MESSAGE_CLIENT]) or string_functions::same_string(message, server_args_lower[MESSAGE_CLIENT])) {
+                else if (string_functions::same_string(message, server_args_caps[MESSAGE_CLIENT]) or 
+                    string_functions::same_string(message, server_args_lower[MESSAGE_CLIENT])) {
 
                     // Print the clients
                     clients = server.all_clients();
@@ -496,7 +510,8 @@ void test_server() {
 
                 }
 
-                else if (string_functions::same_string(message, server_args_caps[DISCONNECT_CLIENT]) or string_functions::same_string(message, server_args_lower[DISCONNECT_CLIENT])) {
+                else if (string_functions::same_string(message, server_args_caps[DISCONNECT_CLIENT]) or 
+                    string_functions::same_string(message, server_args_lower[DISCONNECT_CLIENT])) {
 
                     // Print the clients
                     clients = server.all_clients();
@@ -637,11 +652,13 @@ void test_secure_server() {
             if (misc_functions::has_keyboard_input()) {
                 message = misc_functions::get_input();
 
-                if (string_functions::same_string(message, server_args_caps[EXIT]) or string_functions::same_string(message, server_args_lower[EXIT])) {
+                if (string_functions::same_string(message, server_args_caps[EXIT]) or 
+                    string_functions::same_string(message, server_args_lower[EXIT])) {
                     server.close_server();
                 }
 
-                else if (string_functions::same_string(message, server_args_caps[LIST_CLIENTS]) or string_functions::same_string(message, server_args_lower[LIST_CLIENTS])) {
+                else if (string_functions::same_string(message, server_args_caps[LIST_CLIENTS]) or 
+                    string_functions::same_string(message, server_args_lower[LIST_CLIENTS])) {
                     
                     clients = server.all_clients();
                     if (clients.empty()) {
@@ -657,7 +674,8 @@ void test_secure_server() {
                     }
                 }
 
-                else if (string_functions::same_string(message, server_args_caps[BROADCAST]) or string_functions::same_string(message, server_args_lower[BROADCAST])) {
+                else if (string_functions::same_string(message, server_args_caps[BROADCAST]) or 
+                    string_functions::same_string(message, server_args_lower[BROADCAST])) {
                     clients = server.all_clients();
                     if (clients.empty()) {
                         std::cout << "No clients to message..." << std::endl;
@@ -679,7 +697,8 @@ void test_secure_server() {
                     }
                 }
 
-                else if (string_functions::same_string(message, server_args_caps[MESSAGE_CLIENT]) or string_functions::same_string(message, server_args_lower[MESSAGE_CLIENT])) {
+                else if (string_functions::same_string(message, server_args_caps[MESSAGE_CLIENT]) or 
+                    string_functions::same_string(message, server_args_lower[MESSAGE_CLIENT])) {
 
                     // Print the clients
                     clients = server.all_clients();
@@ -736,7 +755,8 @@ void test_secure_server() {
 
                 }
 
-                else if (string_functions::same_string(message, server_args_caps[DISCONNECT_CLIENT]) or string_functions::same_string(message, server_args_lower[DISCONNECT_CLIENT])) {
+                else if (string_functions::same_string(message, server_args_caps[DISCONNECT_CLIENT]) or 
+                    string_functions::same_string(message, server_args_lower[DISCONNECT_CLIENT])) {
 
                     // Print the clients
                     clients = server.all_clients();
@@ -892,11 +912,13 @@ void test_secure_client() {
         if (misc_functions::has_keyboard_input()) {
             message = misc_functions::get_input();
 
-            if (string_functions::same_string(message, client_args_caps[EXIT]) or string_functions::same_string(message, client_args_lower[EXIT])) {
+            if (string_functions::same_string(message, client_args_caps[EXIT]) or 
+                string_functions::same_string(message, client_args_lower[EXIT])) {
                 client.close_client();
             }
 
-            else if (string_functions::same_string(message, client_args_caps[MESSAGE_SERVER]) or string_functions::same_string(message, client_args_lower[MESSAGE_SERVER])) {
+            else if (string_functions::same_string(message, client_args_caps[MESSAGE_SERVER]) or 
+                string_functions::same_string(message, client_args_lower[MESSAGE_SERVER])) {
                 // std::cout << UNDER_CONSTRUCTION << std::endl;
                 message = misc_functions::get_input("Message: ");
                 bytes = (int) message.length();
