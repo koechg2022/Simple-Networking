@@ -1,0 +1,1872 @@
+
+
+#if not defined(_networking_)
+    
+    #define _networking_
+
+    #include <vector>
+    #include <chrono>
+    #include <atomic>
+    #include <mutex>
+    // #include <thread>
+    #include "include"
+    #include "string_functions"
+    
+
+    #if defined(crap_os)
+
+        #if not defined(_WIN32_WINNT)
+            #define _WIN32_WINNT 0x0600
+        #endif
+
+        #if not defined(_WINSOCK2API_)
+            #include <Winsock2.h>
+        #endif
+
+
+        #if not defined(_WS2TCPIP_H_)
+            #include <WS2tcpip.h>
+        #endif
+
+        #if not defined(__IPHLPAPI_H__)
+            #include <iphlpapi.h>
+        #endif
+
+        #include <windows.h>
+
+        #if not defined(WSAWOULDBLOCK)
+            #define WSAWOULDBLOCK 10035
+        #endif
+
+        #if not defined(WSACONNRESET)
+            #define WSACONNRESET 10054
+        #endif
+
+        #pragma comment(lib, "ws2_32.lib")
+        #pragma comment(lib, "iphlpapi.lib")
+
+        // For retrieving adapter information
+        #define adapter_type PIP_ADAPTER_ADDRESSES
+        #define get_adapter_name(the_adapter) wchar_to_string(the_adapter->FriendlyName)
+        #define get_next_adapter(this_adapter) this_adapter->Next
+        #define get_address_from_adapter(this_adapter) this_adapter->FirstUnicastAddress
+        #define free_adapters(the_adapters) std::free(the_adapters)
+        
+
+        // For dealing with addresses
+        #define address_type PIP_ADAPTER_UNICAST_ADDRESS
+        #define get_next_address(this_address) this_address->Next
+        #define get_address_sockaddr(this_address) this_address->Address.lpSockaddr
+        #define get_address_sockaddrlen(this_address) this_address->Address.iSockaddrLength
+        #define get_address_family(this_address) this_address->Address.lpSockaddr->sa_family
+
+
+        // For sockets
+        #define socket_error (WSAGetLastError())
+        #define socket_error_string(error_number) gai_strerrorA(error_number)
+        #define socket_type SOCKET
+        #define socket_family_type int
+        #define invalid_socket INVALID_SOCKET
+        #define valid_socket(this_socket) (this_socket != invalid_socket)
+        #define close_socket(the_socket) closesocket(the_socket)
+
+
+        inline std::string wchar_to_string(const wchar_t* wstr) {
+            if (not wstr){
+                return std::string();
+            }
+        
+            int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, NULL, 0, NULL, NULL);
+            std::string strTo(size_needed, 0);
+            WideCharToMultiByte(CP_UTF8, 0, wstr, -1, &strTo[0], size_needed, NULL, NULL);
+            strTo.pop_back(); // Remove the null terminator
+            return strTo;
+        }
+
+
+    #else
+
+        #include <cstring>
+        #include <chrono>
+        #include <ifaddrs.h>
+        #include <netdb.h>
+        #include <errno.h>
+        #include <sys/fcntl.h>
+        #include <sys/socket.h>
+        #include <unistd.h>
+        #include <poll.h>
+
+
+        // For retrieving adapter information
+        #define adapter_type struct ifaddrs*
+        #define get_adapter_name(the_adapter) std::string(the_adapter->ifa_name)
+        #define get_next_adapter(the_adapter) the_adapter->ifa_next
+        #define get_address_from_adapter(the_adapter) the_adapter
+        #define free_adapters(the_adapters) freeifaddrs(the_adapters)
+        
+
+        // For dealing with addresses
+        #define address_type struct ifaddrs*
+        #define get_next_address(this_address) NULL
+        #define get_address_sockaddr(this_address) this_address->ifa_addr
+        #define get_address_sockaddrlen(this_address) sizeof(*this_address->ifa_addr)
+        #define get_address_family(this_address) this_address->ifa_addr->sa_family
+
+
+        // For sockets
+        #define socket_error (errno)
+        #define socket_error_string(error_number) gai_strerror(error_number)
+        #define socket_type int
+        #if defined(mac_os)
+            #define socket_family_type unsigned char
+        #else
+            #define socket_family_type unsigned short
+        #endif
+        #define invalid_socket -1
+        #define valid_socket(this_socket) (this_socket >= 0)
+        #define close_socket(the_socket) close(the_socket)
+
+    #endif
+
+    #include <cstring>
+
+    #include <openssl/crypto.h>
+    #include <openssl/x509.h>
+    #include <openssl/pem.h>
+    #include <openssl/ssl.h>
+    #include <openssl/err.h>
+
+
+    #define secure_socket_type SSL*
+    #define context_type SSL_CTX*
+    #define certificate_type X509*
+    #define invalid_secure_socket nullptr
+    #define invalid_context nullptr
+    #define invalid_certificate nullptr
+    
+    #define valid_secure_socket(the_socket) (the_socket != invalid_secure_socket)
+    #define valid_context(the_context) (the_context != invalid_context)
+    #define valid_certificate(certificate) (certificate != invalid_certificate)
+
+    
+    #if not defined(unpack_exception_parameters)
+        #define unpack_exception_parameters(line_shift) true, __FILE__, __LINE__ - line_shift, socket_error, __FUNCTION__
+    #endif
+
+    #if not defined(unpack_secure_exception_parameters)
+        #define unpack_secure_exception_parameters(line_shift) true, __FILE__, __LINE__ - line_shift, ERR_get_error(), __FUNCTION__
+    #endif
+
+    #if not defined(unpack_exception_base_call)
+        #define unpack_exception_base_call(type_) :\
+            exceptions::base_exception::base_exception(type_, \
+                                                            msg, \
+                                                                file_name, \
+                                                                    print_msg, \
+                                                                        line, \
+                                                                            error_number, \
+                                                                                function) {}
+    #endif
+
+    #if not defined(bytes)
+        #define bytes ssize_t
+    #endif
+
+    #if not defined(AI_ALL)
+        #define AI_ALL 0x0100
+    #endif
+
+
+    #define default_hostname "localhost"
+    #define default_port "8080"
+
+    #define select_poll_threshold 512
+
+
+    namespace networking {
+
+
+        namespace exceptions {
+            const std::string base_exception_type = "Base Exception",
+                                memory_exception_failure_type = "Memory Exception",
+                                initialize_network_failure_type = "Initialize Network Failure",
+                                uninitialize_network_failure_type = "Uninitialize Network Failure",
+                                getaddrinfo_failure_type = "getaddrinfo Failure",
+                                getifaddrs_failure_type = "getifaddrsinfo Failure",
+                                unexpected_failure_type = "Unexpected Failure",
+                                create_connection_address_failure_type = "Create Connection Address Failure",
+                                create_connection_socket_failure_type = "Create Connection Socket Failure",
+                                listening_failure_type = "Listening Failure",
+                                create_context_failure_type = "Create Context Failure",
+                                use_key_and_cert_failure_type = "Use Key and Certificate Failure",
+                                select_failure_type = "Select Failure",
+                                getnameinfo_failure_type = "getnameinfo Failure",
+                                create_secure_socket_failure_type = "Create Secure Socket Failure",
+                                accept_secure_connection_failure_type = "Accept Secure Connection Failure",
+                                socket_information_failure_type = "Socket Information Failure",
+                                bind_socket_failure_type = "Bind Socket Failure",
+                                connection_failure_type = "Connection Failure",
+                                certificate_failure_type = "Certificate Failure",
+                                key_failure_type = "Key Failure",
+                                secure_handshake_failure_type = "Secure Handshake Failure";
+
+            
+            class base_exception  {
+                
+                protected:
+                    std::string exception_type_, message_, file_, func_;
+                    int error_line_, error_num_;
+
+
+                public:
+
+                    base_exception(const std::string exception_type = base_exception_type,
+                                    const std::string msg = "An exception has occured",
+                                        const std::string file_name = __FILE__,
+                                            const bool print_msg = true, 
+                                                const int line = __LINE__,
+                                                    const int error_number = 0,
+                                                        const std::string function = "Unknown Function");
+
+
+                    ~base_exception() throw() {}
+
+                    std::string type() const;
+
+                    std::string message() const;
+
+                    std::string file() const;
+
+                    std::string function() const;
+
+                    int error_line() const;
+
+                    int error_number() const;
+
+                    virtual void print() const;
+                
+            };
+
+            class memory_exception_failure : public base_exception {
+                public:
+                    memory_exception_failure(const std::string msg = "An exception has occured",
+                                                        const bool print_msg = true, 
+                                                            const std::string file_name = __FILE__,
+                                                                const int line = __LINE__,
+                                                                    const int error_number = 0,
+                                                                        const std::string function = "Unknown Function");
+            };
+
+            class initialize_network_failure : public base_exception {
+                public:
+                    initialize_network_failure(const std::string msg = "An exception has occured",
+                                                        const bool print_msg = true, 
+                                                            const std::string file_name = __FILE__,
+                                                                const int line = __LINE__,
+                                                                    const int error_number = 0,
+                                                                        const std::string function = "Unknown Function");
+            
+            };
+
+            class uninitialize_network_failure : public base_exception {
+                public:
+                    uninitialize_network_failure(const std::string msg = "An exception has occured",
+                                                        const bool print_msg = true, 
+                                                            const std::string file_name = __FILE__,
+                                                                const int line = __LINE__,
+                                                                    const int error_number = 0,
+                                                                        const std::string function = "Unknown Function");
+            };
+
+            class getaddrinfo_failure : public base_exception {
+                public:
+                    getaddrinfo_failure(const std::string msg = "An exception has occured",
+                                                        const bool print_msg = true, 
+                                                            const std::string file_name = __FILE__,
+                                                                const int line = __LINE__,
+                                                                    const int error_number = 0,
+                                                                        const std::string function = "Unknown Function");
+            };
+
+            class getifaddrs_failure : public base_exception {
+                public:
+                    getifaddrs_failure(const std::string msg = "An exception has occured",
+                                                        const bool print_msg = true, 
+                                                            const std::string file_name = __FILE__,
+                                                                const int line = __LINE__,
+                                                                    const int error_number = 0,
+                                                                        const std::string function = "Unknown Function");
+            };
+
+            class unexpected_failure : public base_exception {
+                public:
+                    unexpected_failure(const std::string msg = "An exception has occured",
+                        const bool print_msg = true, 
+                            const std::string file_name = __FILE__,
+                                const int line = __LINE__,
+                                    const int error_number = 0,
+                                        const std::string function = "Unknown Function");
+            };
+
+            class create_connection_address_failure : public base_exception {
+                public:
+                    create_connection_address_failure(const std::string msg = "An exception has occured",
+                                    const bool print_msg = true, 
+                                        const std::string file_name = __FILE__,
+                                            const int line = __LINE__,
+                                                const int error_number = 0,
+                                                    const std::string function = "Unknown Function");
+            };
+
+            class create_connection_socket_failure : public base_exception {
+                public:
+                    create_connection_socket_failure(const std::string msg = "An exception has occured",
+                                    const bool print_msg = true, 
+                                        const std::string file_name = __FILE__,
+                                            const int line = __LINE__,
+                                                const int error_number = 0,
+                                                    const std::string function = "Unknown Function");
+            };
+
+            class listening_failure : public base_exception {
+                public:
+                    listening_failure(const std::string msg = "An exception has occured",
+                                    const bool print_msg = true, 
+                                        const std::string file_name = __FILE__,
+                                            const int line = __LINE__,
+                                                const int error_number = 0,
+                                                    const std::string function = "Unknown Function");
+            };
+
+            class create_context_failure : public base_exception {
+                public:
+                    create_context_failure(const std::string msg = "An exception has occured",
+                                    const bool print_msg = true, 
+                                        const std::string file_name = __FILE__,
+                                            const int line = __LINE__,
+                                                const int error_number = 0,
+                                                    const std::string function = "Unknown Function");
+            };
+
+            class use_key_and_cert_failure : public base_exception {
+                public:
+                    use_key_and_cert_failure(const std::string msg = "An exception has occured",
+                                    const bool print_msg = true, 
+                                        const std::string file_name = __FILE__,
+                                            const int line = __LINE__,
+                                                const int error_number = 0,
+                                                    const std::string function = "Unknown Function");
+            };
+
+            class select_failure : public base_exception {
+                public:
+                    select_failure(const std::string msg = "An exception has occured",
+                                    const bool print_msg = true, 
+                                        const std::string file_name = __FILE__,
+                                            const int line = __LINE__,
+                                                const int error_number = 0,
+                                                    const std::string function = "Unknown Function");
+            };
+
+            class getnameinfo_failure : public base_exception {
+                public:
+                    getnameinfo_failure(const std::string msg = "An exception has occured",
+                                    const bool print_msg = true, 
+                                        const std::string file_name = __FILE__,
+                                            const int line = __LINE__,
+                                                const int error_number = 0,
+                                                    const std::string function = "Unknown Function");
+            };
+
+            class create_secure_socket_failure : public base_exception {
+                public:
+                    create_secure_socket_failure(const std::string msg = "An exception has occured",
+                                    const bool print_msg = true, 
+                                        const std::string file_name = __FILE__,
+                                            const int line = __LINE__,
+                                                const int error_number = 0,
+                                                    const std::string function = "Unknown Function");
+            };
+
+            class accept_secure_connection_failure : public base_exception {
+                public:
+                    accept_secure_connection_failure(const std::string msg = "An exception has occured",
+                                    const bool print_msg = true, 
+                                        const std::string file_name = __FILE__,
+                                            const int line = __LINE__,
+                                                const int error_number = 0,
+                                                    const std::string function = "Unknown Function");
+            };
+
+            class socket_information_failure : public base_exception {
+                public:
+                    socket_information_failure(const std::string msg = "An exception has occured",
+                                    const bool print_msg = true, 
+                                        const std::string file_name = __FILE__,
+                                            const int line = __LINE__,
+                                                const int error_number = 0,
+                                                    const std::string function = "Unknown Function");
+            };
+
+            class bind_socket_failure : public base_exception {
+                public:
+                    bind_socket_failure(const std::string msg = "An exception has occured",
+                                    const bool print_msg = true, 
+                                        const std::string file_name = __FILE__,
+                                            const int line = __LINE__,
+                                                const int error_number = 0,
+                                                    const std::string function = "Unknown Function");
+            };
+
+            class connection_failure : public base_exception {
+                public:
+                    connection_failure(const std::string msg = "An exception has occured",
+                                    const bool print_msg = true, 
+                                        const std::string file_name = __FILE__,
+                                            const int line = __LINE__,
+                                                const int error_number = 0,
+                                                    const std::string function = "Unknown Function");
+            };
+
+            class certificate_failure : public base_exception {
+                public:
+                    certificate_failure(const std::string msg = "An exception has occured",
+                                    const bool print_msg = true, 
+                                        const std::string file_name = __FILE__,
+                                            const int line = __LINE__,
+                                                const int error_number = 0,
+                                                    const std::string function = "Unknown Function");
+            };
+
+            class key_failure : public base_exception {
+                public:
+                    key_failure(const std::string msg = "An exception has occured",
+                                    const bool print_msg = true, 
+                                        const std::string file_name = __FILE__,
+                                            const int line = __LINE__,
+                                                const int error_number = 0,
+                                                    const std::string function = "Unknown Function");
+            };
+
+            class secure_handshake_failure : public base_exception {
+                public:
+                    secure_handshake_failure(const std::string msg = "An exception has occured",
+                                    const bool print_msg = true, 
+                                        const std::string file_name = __FILE__,
+                                            const int line = __LINE__,
+                                                const int error_number = 0,
+                                                    const std::string function = "Unknown Function");
+            };
+
+        }
+
+
+        namespace network_address_families {
+
+            #if defined(crap_os)
+                const std::string rel_adapter = "Wi-Fi 3";
+            #else
+                #if defined(mac_os)
+                    const std::string rel_adapter = "en0";
+                #else
+                    const std::string rel_adapter = "enp0s8";
+                #endif
+            #endif
+
+
+            const std::string unspec_address_family = "Unspecified Address Family",
+                                unrecognized_address_family = "Unrecognized Address Family",
+                                ip_version4_address_family = "IP Version 4 Family",
+                                ip_version6_address_family = "IP Version 6 Family",
+
+            #if defined(unix_os)
+                #if defined(mac_os)
+                    link_layer_address_family = "Link-Layer Interface Address Family";
+                #else
+                    netlink_address_family = "Netlink Address Family",
+                    packet_address_family = "Packet Address Family";
+                #endif
+            #else
+                netbios_address_family = "NetBIOS Address Family",
+                irda_address_family = "IrDa Address Family",
+                bluetooth_address_family = "Bluetooth Address Family";
+            #endif
+
+            std::set<std::string> get_address_families();
+
+            std::string resolve_address_family_to_string(const socket_family_type the_family);
+        }
+
+        /**
+            @brief Check the initialized status of this network machine.
+            @note This is only useful on windows (crap os) machines. It always returns true for a unix machine.
+         */
+        bool network_initialized();
+
+
+        /**
+            @brief Initialize the networking library.
+            @note This is only does something on windows machine. It does nothing for unix machines.
+         */
+        bool initialize_network();
+
+
+        /**
+            @brief Uninitialize the networking library.
+            @note This only does something on windows (crap os) machines. It does nothing for unix machines.
+         */
+        bool uninitialize_network();
+
+
+        /**
+            @brief Check the status of the secure network library(whether it's initialized or not).
+            @returns `true` if the secure network library is initialized, `false` if it's not.
+         */
+        bool secure_network_initialized();
+        
+
+        /**
+            @brief Initialize the secure network libraries.
+            @returns `true` if the secure network libraries are successfully initialized.
+         */
+        bool initialize_secure_network();
+
+
+        /**
+            @brief Uninitialize the secure network library.
+            @return `true` if the secure network library is 
+            not initialized, `false` otherwise.
+         */
+        bool uninitialize_secure_network();
+
+
+        /**
+            @brief Resolve a hostname into it's IP address(es) and return them as a set.
+            @param host_name (`const std::string`) : The host name to be resolved into an IP address.
+            @param port (`const std::string`) : The port to be used for the resolution of the IP address.
+            @param name (`const bool` - Defaults to `false`) : A flag that specifies whether or not to also use the `NAMEREQ` flag with the getnameinfo function.
+         */
+        std::unordered_set<std::string> resolve_hostname(const std::string hostname, const std::string port = default_port, const bool name = false);
+
+
+        /**
+            @brief Get the adapters of this machine.
+            @param names (`const bool names`) : A flag to specify whether or not to use the `NAMEREQ` flag with the getnameinfo function.
+            @returns A `std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string> > >` 
+            with all the adapters, their address families, and the families' IP addresses.
+         */
+        std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string> > > machine_adapters(const bool names = false);
+
+
+        /**
+            @brief Check if the socket is in a blocking state or not.
+            @param the_socket (const socket_type) : The socket to check.
+            @returns `true` if the socket is blocking, `false` if it is not, or
+            if there was an error.
+         */
+        bool socket_is_blocking(const socket_type& the_socket);
+
+
+        /**
+            @brief Set the socket to `blocking` or `non-blocking`, 
+            depending on the flag `set_blocking`
+            @param the_socket (`socket_type&`) : The socket to be set to blocking or non-blocking.
+            @param set_blocking (`const bool`) : The flag to specify whether or not to set the socket to blocking or not.
+            @returns `true` if the socket is successfully set, false otherwise.
+            @note This hasn't been tested to see if setting a socket to a state that it's already in will return `true` or `false`
+         */
+        bool set_blocking(socket_type& the_socket, const bool block);
+
+        
+        /**
+            @brief Check if a socket is conected or not.
+            @param the_socket (`socket_type&`) : The socket to check and see if it's connected or not.
+            @returns `true` if the socket is connected, `false` otherwise.
+         */
+        bool socket_connected(socket_type& the_socket);
+
+        
+        /**
+            @brief Get the name of this machine
+         */
+        std::string this_machine_name();
+
+        namespace network_structures {
+
+            typedef struct client_id {
+                
+                std::string hostname = "", port = "", connection_time = "";
+
+                bool operator<(const client_id& other) const;
+
+                bool operator==(const client_id& other) const;
+                
+                operator bool() const;
+
+            } client_id;
+
+            typedef struct host_connection {
+                client_id host_information;
+                socket_type connect_socket = invalid_socket;
+                secure_socket_type secure_connect_socket = invalid_secure_socket;
+
+                bool operator<(const host_connection& other) const;
+
+                virtual bool operator==(const host_connection& other) const;
+
+                operator bool() const;
+
+            } host_connection;
+
+            typedef struct host_report {
+                host_connection host;
+                bytes byte_count = 0;
+                bool success = 0;
+                
+                bool operator==(const host_report& other) const;
+
+                operator bool() const;
+
+                bool operator<(const host_report& other) const;
+
+            } host_report;
+
+            typedef struct complete_report {
+                std::vector<host_report> reports;
+                
+                bool operator==(const complete_report& other) const;
+
+                operator bool() const;
+
+                bool operator<(const complete_report& other) const;
+
+                void add_report(const host_report new_report);
+
+                unsigned long success() const;
+
+                unsigned long fails() const;
+                
+                private:
+                    unsigned long successes = 0, failures = 0;                
+
+            } complete_report;
+
+            typedef struct client_connection : public host_connection {
+                
+                struct sockaddr_storage address_information = [&]() -> struct sockaddr_storage {
+                    struct sockaddr_storage the_answer;
+                    std::memset(&the_answer, 0, sizeof(the_answer));
+                    return the_answer;
+                }();
+
+                socklen_t address_size = sizeof(address_information);
+
+                bool operator==(const client_connection& other) const;
+
+            } client_connection;
+
+            typedef struct server_connection : public host_connection {
+
+                struct addrinfo address_information;
+
+                bool operator==(const server_connection& other) const;
+            } server_connection;
+
+        }
+
+        /**
+            @brief A helper method used to send data to the host `host`.
+            @param host (`networking::network_structures::host_connection`) : The host to send data to.
+            @param the_message (`const data*`) : The data to send to `host`.
+            @param byte_count (`const bytes`) : The size of the data to be sent.
+            @param flags (`const int`) : Defaults to 0. The flags to use when sending a message 
+            to the remote machine in a non-secure manner.
+            @param timeout (`const std::chrono::duration<int>`) : Defaults to const std::chrono::seconds(10). 
+            The maximum time to wait during attemps 
+            to send data as they fail but are capable of trying again (false negative send failures).
+            @returns A `networking::network_structures::host_report` with the sending report.
+
+         */
+        template <typename data> networking::network_structures::host_report send_message(networking::network_structures::host_connection host, const data* the_message, const bytes byte_count, const int flags = 0, const std::chrono::duration<int> timeout = std::chrono::seconds(10)) {
+            if (not valid_socket(host.connect_socket)) {
+                throw networking::exceptions::connection_failure("Host passed in to " + std::string(__FUNCTION__) + " is not connected to a remote machine.", unpack_exception_parameters(1));
+            }
+
+
+
+            // Call SSL_get_error() for details or check errno (macro socket_error).
+                // Non-blocking SSL_get_error() will be < 1
+                // SSL_write:
+                //     Success	            bytes_ > 0                   :       Number of bytes written.
+                //     Error	            bytes_ ≤ 0                   :       Call SSL_get_error() for details.
+                //     Non-Blocking Issue	bytes_ == -1                 :       SSL_get_error() → SSL_ERROR_WANT_READ or SSL_ERROR_WANT_WRITE.
+                //     Partial Write        bytes_ > 0 and < byte_count  : 	If SSL_MODE_ENABLE_PARTIAL_WRITE is enabled.
+                
+                // send:
+                //     Success	            bytes_ ≥ 0               :   Number of bytes sent (may be partial).
+                //     Error	            bytes_ ==-1              :   Check errno (e.g., ECONNRESET, EMSGSIZE).
+                //     Non-Blocking Issue	bytes_ == -1             :   errno → EAGAIN or EWOULDBLOCK (buffer full).
+                //     Partial Send	        0 ≤ bytes_ < byte_count	:   Check return value immediately; retry with remaining data.
+
+
+
+            const bool _secure = valid_secure_socket(host.secure_connect_socket);
+            bytes bytes_, total_ = 0;
+            
+            int bytes_error;//, block_write, block_read;
+            #if defined(crap_os)
+                const int block_read = (_secure) ? SSL_ERROR_WANT_READ : WSAWOULDBLOCK;
+                const int block_write = (_secure) ? SSL_ERROR_WANT_WRITE : WSACONNRESET;
+            #else
+                const int block_write = (_secure) ? SSL_ERROR_WANT_WRITE : EWOULDBLOCK;
+                const int block_read = (_secure) ? SSL_ERROR_WANT_READ : EAGAIN;
+            #endif
+
+            networking::network_structures::host_report the_answer;
+            const auto start_time = std::chrono::steady_clock::now();
+            while (total_ < byte_count) {
+                bytes_ = (_secure) ? SSL_write(host.secure_connect_socket, reinterpret_cast<const char*>(the_message) + total_, byte_count - total_) :
+                            send(host.connect_socket, reinterpret_cast<const char*>(the_message) + total_, byte_count - total_, flags);
+                
+                    
+                if (bytes_ <= 0) {
+                    
+                    bytes_error = (_secure) ? SSL_get_error(host.secure_connect_socket, bytes_) : socket_error;
+
+                    if (bytes_error == block_read or bytes_error == block_write) {
+                        // blocking related
+                        if (std::chrono::steady_clock::now() - start_time < timeout) {
+                            continue;
+                        }
+                    }
+
+                    if (not bytes_) {
+                        // Connection was closed
+                        total_ = 0;
+                        break;
+                    }
+                    // An actual error occured
+                    total_ = -1;
+                    break;
+                }
+                // std::printf("\tAbout to update total_\n");
+                total_ = total_ + bytes_;
+            }
+            the_answer.host = host;
+            the_answer.byte_count = total_;
+            the_answer.success = (total_ == byte_count and total_ >= 1);
+
+            return the_answer;
+        }
+
+    }
+
+
+    namespace std {
+        
+        template <> struct hash<networking::network_structures::client_id> {
+            size_t operator()(const networking::network_structures::client_id& client) const {
+                size_t host = std::hash<std::string>{}(client.hostname);
+                size_t port = std::hash<std::string>{}(client.port);
+                size_t time = std::hash<std::string>{}(client.connection_time);
+                return host ^ (port << 1) ^ (time << 2);
+            }
+        };
+
+        template <> struct hash<networking::network_structures::host_connection> {
+            size_t operator()(const networking::network_structures::host_connection& host) const {
+                size_t host_ = std::hash<std::string>{}(host.host_information.hostname);
+                size_t port = std::hash<std::string>{}(host.host_information.port);
+                size_t time = std::hash<std::string>{}(host.host_information.connection_time);
+                return host ^ (port << 1) ^ (time << 2);
+            }
+        };
+
+        template <> struct hash<networking::network_structures::client_connection> {
+            size_t operator()(const networking::network_structures::client_connection& client) const {
+                size_t host = std::hash<std::string>{}(client.host_information.hostname);
+                size_t port = std::hash<std::string>{}(client.host_information.port);
+                size_t time = std::hash<std::string>{}(client.host_information.connection_time);
+                return host ^ (port << 1) ^ (time << 2);
+            }
+        };
+
+        template <> struct hash<networking::network_structures::server_connection> {
+            size_t operator()(const networking::network_structures::server_connection& server) const {
+                size_t host = std::hash<std::string>{}(server.host_information.hostname);
+                size_t port = std::hash<std::string>{}(server.host_information.port);
+                size_t time = std::hash<std::string>{}(server.host_information.connection_time);
+                return host ^ (port << 1) ^ (time << 2);
+            }
+        };
+
+    }
+
+
+    namespace networking {
+
+        namespace network_structures {
+
+            template <typename data> class host {
+
+                protected:
+
+                    // mutable std::mutex host_mutex_;
+
+                    std::mutex hostname_mutex_, port_mutex_;
+                    std::string hostname_ = "", 
+                        portvalue_ = default_port;
+                    
+
+                    std::mutex active_address_mutex_, connect_address_mutex_;
+                    struct addrinfo* connect_address_ = 0, *active_address_ = 0;
+                    
+                    std::mutex connect_socket_mutex_;
+                    socket_type connect_socket_ = invalid_socket;
+                    
+                    std::atomic<bool> tcp_ = true;
+                        std::atomic<bool> was_init_ = networking::network_initialized();
+                        std::atomic<bool> serving_ = true;
+                        std::atomic<bool> block_ = true;
+                    
+
+                    bool tcp() const {
+                        return this->tcp_.load();
+                    }
+
+                    data& tcp(const bool yes = true) {
+                        
+                        std::lock_guard lock(this->connect_socket_mutex_);
+                        const bool connected_ = networking::socket_connected(this->connect_socket_),
+                        valid = valid_socket(this->connect_socket_);
+                        if (not connected_ or not valid) {
+                            this->tcp_.store(yes);
+                        }
+                        return static_cast<data&>(*this);
+                    }
+
+                    bool server() const {
+                        return this->serving_.load();
+                    }
+
+                    data& server(const bool yes = true) {
+                        std::lock_guard<std::mutex> lock(this->connect_socket_mutex_);
+                        if (not valid_socket(this->connect_socket_)) {
+                            this->serving_.store(yes);
+                        }
+                        return static_cast<data&>(*this);
+                    }
+
+                    bool next_address() {
+                        
+                        std::lock_guard<std::mutex> lock(this->active_address_mutex_);
+                        if (this->active_address_) {
+                            const struct addrinfo* temp = this->active_address_;
+                            this->active_address_ = this->active_address_->ai_next;
+                            return this->active_address_ == temp->ai_next;
+                        }
+                        return this->active_address_;
+                    }
+
+                    void reset_address() {
+                        std::scoped_lock locks(this->connect_address_mutex_, this->active_address_mutex_);
+                        this->active_address_ = this->connect_address_;
+                    }
+
+                    bool create_connection_address() {
+                        
+                        std::unique_lock<std::mutex> lock_address(this->connect_address_mutex_);
+                        if (not this->connect_address_) {
+                            
+                            if (not networking::network_initialized()) {
+                                networking::initialize_network();
+                                this->was_init_ = false;
+                            }
+
+                            std::lock_guard<std::mutex> host_lock(this->hostname_mutex_);
+                            if (this->hostname_.empty() and not this->serving_) {
+                                throw networking::exceptions::getaddrinfo_failure("Cannot retrieve address information without a hostname specified", unpack_exception_parameters(1));
+                            }
+
+                            std::lock_guard<std::mutex> port_lock(this->port_mutex_);
+                            if (this->portvalue_.empty()) {
+                                throw networking::exceptions::getaddrinfo_failure("Cannot retrieve address information without a port.", unpack_exception_parameters(1));
+                            }
+
+                            struct addrinfo hints;
+                            std::memset(&hints, 0, sizeof(hints));
+                            hints.ai_family = (this->serving_) ? AF_UNSPEC : hints.ai_family;
+                            hints.ai_socktype = (this->tcp_) ? SOCK_STREAM : SOCK_DGRAM;
+                            hints.ai_flags = (this->serving_) ? AI_PASSIVE : 0;
+
+                            // Ready to call getaddrinfo
+                            if (getaddrinfo(this->hostname_.c_str(), this->portvalue_.c_str(), &hints, &this->connect_address_)) {
+                                throw networking::exceptions::getaddrinfo_failure("Failed to retrieve address information for host \"" + this->hostname_ + "\". Error : \"" + std::string(socket_error_string(socket_error)) + "\"", unpack_exception_parameters(1));
+                            }
+                            if (this->serving_ and this->hostname_.empty()) {
+                                this->hostname_ = default_hostname;
+                            }
+                            lock_address.unlock();
+                            this->reset_address();
+                        }
+                        return this->active_address_;
+                    }
+
+                    bool create_connection_socket() {
+                        std::lock_guard<std::mutex> connect_socket_lock(this->connect_socket_mutex_);
+                        if (not valid_socket(this->connect_socket_)) {
+
+                            this->create_connection_address();
+                            this->reset_address();
+                            // this->active_address_ points to the front of this->connect_address_
+                            
+                            while (true) {
+
+                                // Lock only when accessing this->active_address_
+                                {
+                                    std::lock_guard<std::mutex> active_lock(this->active_address_mutex_);
+
+                                    if (not this->active_address_) {
+                                        break;
+                                    }
+
+                                    this->connect_socket_ = socket(this->active_address_->ai_family, this->active_address_->ai_socktype, this->active_address_->ai_protocol);
+
+                                }
+
+                                if (valid_socket(this->connect_socket_)) {
+                                    break;
+                                }
+
+                                this->next_address();
+
+                            }
+
+                            if (not valid_socket(this->connect_socket_)) {
+                                throw networking::exceptions::create_connection_socket_failure("Failed to create the connection socket for this \"" + this->hostname_ + "\"", unpack_exception_parameters(8));
+                            }
+                        }
+                        return valid_socket(this->connect_socket_);
+                    }
+
+                    bool close_host() {
+
+                        std::lock_guard<std::mutex> connect_socket_lock(this->connect_socket_mutex_);
+                        if (valid_socket(this->connect_socket_)) {
+                            close_socket(this->connect_socket_); // close the socket
+                            this->connect_socket_ = invalid_socket;
+                        }
+
+                        std::scoped_lock address_locks(this->connect_address_mutex_, this->active_address_mutex_);
+                        if (this->connect_address_) {
+                            freeaddrinfo(this->connect_address_);
+                            this->connect_address_ = this->active_address_ = 0;
+                        }
+
+                        this->tcp_.store(true);
+                        this->serving_.store(true);
+                        this->block_.store(true);
+
+                        if (not this->was_init_) networking::uninitialize_network();
+                        this->was_init_.store(networking::network_initialized());
+
+                        return not this->connect_address_ and not valid_socket(this->connect_socket_);
+                    }
+                
+                    // Default constructor
+                    host() {}
+
+                    host(const std::string host_name, const std::string port_value = default_port, const bool use_tcp = true, const bool server_host = true) {
+                        std::scoped_lock locks(this->hostname_mutex_, this->port_mutex_, this->active_address_mutex_, this->connect_address_mutex_, this->connect_socket_mutex_);
+                        this->hostname_ = host_name;
+                        this->portvalue_ = port_value;
+                        this->tcp_.store(use_tcp);
+                        this->serving_.store(server_host);
+                        this->was_init_.store(networking::network_initialized());
+                        if (not this->was_init_) {
+                            networking::initialize_network();
+                        }
+                        this->active_address_ = this->connect_address_ = 0;
+                    }
+
+                    // Copy Constructor
+                    host(const host& other) {
+                        std::scoped_lock locks(this->hostname_mutex_, this->port_mutex_, this->active_address_mutex_, this->connect_address_mutex_, this->connect_socket_mutex_);
+                        this->hostname_ = other.hostname_;
+                        this->portvalue_ = other.portvalue_;
+                        this->tcp_.store(other.tcp_.load());
+                        this->serving_.store(other.serving_.load());
+                        this->was_init_.store(other.was_init_.load());
+                        this->block_.store(other.block_.load());
+
+                        // TODO : Consider a deep copy.
+                        this->connect_address_ = other.connect_address_;
+                        this->connect_socket_ = other.connect_socket_;
+                    }
+
+
+                    // Move Constructor
+                    host(host&& other) noexcept {
+                        std::scoped_lock locks(this->hostname_mutex_, this->port_mutex_, this->active_address_mutex_, this->connect_address_mutex_, this->connect_socket_mutex_);
+                        this->hostname_ = std::move(other.hostname_);
+                        this->portvalue_ = std::move(other.portvalue_);
+                        this->tcp_.store(other.tcp_.load());
+                        this->serving_.store(other.serving_.load());
+                        this->was_init_.store(other.was_init_.load());
+                        this->block_.store(other.block_.load());
+                        this->connect_address_ = other.connect_address_;
+                        this->active_address_ = other.active_address_;
+                        this->connect_socket_ = other.connect_socket_;
+
+                        // Reset the values to defaults
+                        other.hostname_ = other.portvalue_ = "";
+                        other.connect_socket_ = invalid_socket;
+                        other.active_address_ = other.active_address_ = 0;
+                        other.tcp_.store(true);
+                        other.serving_.store(true);
+                        other.block_.store(true);
+                        other.was_init_.store(networking::network_initialized());
+                    }
+
+                    // Destructor
+                    ~host() {
+                        this->close_host();
+                    }
+
+
+                    // Copy Assignment Operator
+                    host& operator=(const host& other) {
+                        if (this != &other) {
+                            std::scoped_lock locks(this->hostname_mutex_, this->port_mutex_, this->active_address_mutex_, this->connect_address_mutex_, this->connect_socket_mutex_);
+                            this->hostname_ = other.hostname_;
+                            this->portvalue_ = other.portvalue_;
+                            this->tcp_.store(other.tcp_.load());
+                            this->serving_.store(other.serving_.load());
+                            this->was_init_.store(other.was_init_.load());
+                            this->block_.store(other.block_.load());
+                            this->connect_address_ = other.connect_address_;
+                            this->connect_socket_ = other.connect_socket_;
+                            
+                            if (other.connect_address_) {
+                                if (other.hostname_.empty() or other.portvalue_.empty()) {
+                                    int line_ = __LINE__ - 1;
+                                    std::string message = "Cannot retrieve address information. Missing ";
+                                    if (this->hostname_.empty() and not this->portvalue_.empty()) {
+                                        line_ = __LINE__ - 1;
+                                        message = message + "hostname";
+                                    }
+                                    else if (not this->hostname_.empty() and this->portvalue_.empty()) {
+                                        line_ = __LINE__ - 1;
+                                        message = message + "port";
+                                    }
+                                    else {
+                                        message = message + "hostname and port";
+                                    }
+                                    throw exceptions::getaddrinfo_failure(message, true, __FILE__, line_, socket_error, __FUNCTION__);
+                                }
+                                this->create_connection_address();
+                            }
+                            
+                            if (valid_socket(other.connect_socket_)) {
+                                if (not this->create_connection_socket()) {
+                                    throw networking::exceptions::create_connection_socket_failure("Failed to create the connection socket for the connection to the host \"" + this->hostname_ + "\"", unpack_exception_parameters(1));
+                                }
+                            }
+                        }
+                        return *this;
+                    }
+
+
+                    // Move Assignment Operator
+                    host& operator=(host&& other) noexcept {
+                        if (this != &other) {
+                            std::scoped_lock locks(this->hostname_mutex_, this->port_mutex_, this->active_address_mutex_, this->connect_address_mutex_, this->connect_socket_mutex_);
+                            this->hostname_ = std::move(other.hostname_);
+                            this->portvalue_ = std::move(other.portvalue_);
+                            this->tcp_.store(other.tcp_.load());
+                            this->serving_.store(other.serving_.load());
+                            this->was_init_.store(other.was_init_.load());
+                            this->block_.store(other.block_.load());
+                            this->connect_address_ = other.connect_address_;
+                            this->active_address_ = other.active_address_;
+                            this->connect_socket_ = other.connect_socket_;
+
+                            // Reset the values to defaults
+                            other.hostname_ = other.portvalue_ = "";
+                            other.connect_socket_ = invalid_socket;
+                            other.active_address_ = other.active_address_ = 0;
+                            other.tcp_.store(true);
+                            other.serving_.store(true);
+                            other.block_.store(true);
+                            other.was_init_.store(networking::network_initialized());
+                        }
+                        return *this;
+                    }
+
+
+
+                public:
+
+                    /**
+                        @brief Get the connection socket that is being used for communication.
+                        @returns A `socket_type` reference.
+                     */
+                    socket_type& connection_socket() {
+                        return this->connect_socket_;
+                    }
+                    
+                    /**
+                        @brief Get the hostname that this host is using.
+                     */
+                    std::string hostname() const {
+                        return this->hostname_;
+                    }
+
+                    /**
+                        @brief Set the hostname for this host.
+                        @param new_host (`const std::string`) : The new hostname to set 
+                        the host to.
+                        @returns A `host` generic reference (either a `tcp_server` or a `tcp_client`) 
+                        to the current host instance.
+                     */
+                    data& hostname(const std::string new_host) {
+                        std::scoped_lock locks(this->connect_socket_mutex_, this->connect_socket_mutex_, this->hostname_mutex_);
+                        if (not this->connect_address_ and not valid_socket(this->connect_socket_)) {
+                            this->hostname_ = new_host;
+                        }
+                        return static_cast<data&>(*this);
+                    }
+
+                    /**
+                        @brief Get the port that this host is using.
+                     */
+                    std::string port() const {
+                        return this->portvalue_;
+                    }
+
+                    /**
+                        @brief Set the port for this host.
+                        @param new_port (`const std::string`) : The new port for the host 
+                        to use.
+                        @returns A `host` generic reference (either a `tcp_server` or a `tcp_client`) 
+                        to the current host instance.
+                     */
+                    data& port(const std::string new_port) {
+                        std::scoped_lock locks(this->connect_address_mutex_, this->connect_socket_mutex_, this->port_mutex_);
+                        if (not this->connect_address_ and not valid_socket(this->connect_socket_)) {
+                            this->portvalue_ = new_port;
+                        }
+                        return static_cast<data&>(*this);
+                    }
+
+                    /**
+                        @brief Retrieve the hostname for the generic host to use for connection.
+                        @param adapter_name_options (const std::unordered_set<std::string>&`) : Defaults to 
+                            {networking::network_address_families::rel_adapter}.
+                            This holds all the adapters that should be be used for retrieving and setting the hostname.
+                        @param family_name_options (`const std::unordered_set<std::string>&`) : Defaults to 
+                            {networking::network_address_families::ip_version4_address_family, networking::network_address_families::ip_version6_address_family}.
+                            This holds all the address families within the adapter_name_options that hold a desired IP address.
+                        @returns A `host` generic reference (either a `tcp_server` or a `tcp_client`) 
+                        to the current host instance.
+                     */
+                    data& retrieve_hostname(const std::unordered_set<std::string>& adapter_name_options = {networking::network_address_families::rel_adapter}, const std::unordered_set<std::string>& family_name_options = {networking::network_address_families::ip_version6_address_family, networking::network_address_families::ip_version4_address_family}) {
+                        
+                        std::lock_guard<std::mutex> host_lock(this->hostname_mutex_);
+
+                        if (this->hostname_.empty()) {
+                            
+                            std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string> > > adapters = networking::machine_adapters();
+                            std::string adapter_name = "", adapter_family = "";
+                            
+                            for (const std::string& name : adapter_name_options) {
+
+                                if (string_functions::unordered_map_contains<std::unordered_map<std::string, std::set<std::string> > >(name, adapters)) {
+                                    adapter_name = name;
+                                    break;
+                                }
+                            }
+                            
+                            
+                            if (not adapter_name.empty()) {
+
+                                for (const std::string& name : family_name_options) {
+                                    if (string_functions::unordered_map_contains<std::set<std::string> >(name, adapters[adapter_name])) {
+                                        adapter_family = name;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            
+                            if (not adapter_family.empty()) {
+                                for (const std::string & name : adapters[adapter_name][adapter_family]) {
+                                    if (name.empty()) {
+                                        continue;
+                                    }
+                                    this->hostname_ = name;
+                                    break;
+                                }
+                            }
+                            
+                            if (this->hostname_.empty()) {
+                                this->hostname_ = std::string(default_hostname);
+                            }
+                        }
+                        return static_cast<data&>(*this);
+                    }
+
+                    /**
+                        @brief Check to see if the `host` blocking or not 
+                        with it's connection sockets.
+                     */
+                    bool block() const {
+                        return this->block_;
+                    }
+
+                    /**
+                        @brief Set the `host` to block, or not block with it's connecting 
+                        socket(s).
+                        @param blocking (`const bool`) : The new setting. `true` will set the 
+                        `host` blocking, and `false` will set it to non-blocking.
+                        @returns A `host` generic reference (either a `tcp_server` or a `tcp_client`) 
+                        to the current host instance.
+                     */
+                    data& block(const bool blocking) {
+                        
+                        this->block_.store(blocking);
+                        std::lock_guard<std::mutex> socket_lock(this->connect_socket_mutex_);
+                        const bool connected = networking::socket_connected(this->connect_socket_);
+                        if (connected) {
+                            networking::set_blocking(this->connect_socket_, this->block_);
+                        }
+                        return static_cast<data&>(*this);
+                    }
+
+            };
+
+            class tcp_server : public host<tcp_server> {
+
+                private:
+
+
+                    std::atomic<int> listening_limit_ = {10};
+                    
+                    std::atomic<bool> secure_ = {false};
+                    std::atomic<bool> was_secure_init_ = {false};
+                    std::atomic<bool> block_clients_ = {true};
+                    std::atomic<bool> certified_ = {false};
+                    std::atomic<bool> listening_ = {false};
+                        
+
+                    
+                    
+                    mutable std::mutex context_mutex_;
+                    context_type context_ = invalid_context;
+
+                    mutable std::mutex key_file_mutex_, cert_file_mutex_;
+                    std::string key_file_ = "", cert_file_ = "";
+
+                    mutable std::mutex clients_mutex_;
+                    std::unordered_map<networking::network_structures::client_id, 
+                                        networking::network_structures::client_connection,
+                                            std::hash<networking::network_structures::client_id>,
+                                                std::equal_to<networking::network_structures::client_id> > clients_;
+
+
+
+
+                    networking::network_structures::client_connection contains_client(const std::string hostname, const std::string port, const std::string connect_time = "");
+
+                    void drop_client(networking::network_structures::client_connection& client);
+
+                    bool create_context();
+
+                    bool set_cert_and_key();
+
+                public:
+
+                    // Default Constructor
+                    tcp_server();
+
+                    // Parameter Constructor
+                    tcp_server(const std::string host_name, const std::string port_value = default_port, const int listen_lim = 10, const bool secure = true, const std::string key_file = "", const std::string cert_file = "");
+
+                    // Copy Constructor
+                    tcp_server(const tcp_server& other);
+
+                    // Move Constructor
+                    tcp_server(tcp_server&& other) noexcept;
+
+                    // Destructor
+                    ~tcp_server();
+
+                    // Copy Assignment Operator
+                    tcp_server& operator=(const tcp_server& other);
+
+                    // Move Assignment Operator
+                    tcp_server& operator=(tcp_server&& other) noexcept;
+                    
+                    // Self Check Operator
+                    operator bool() const;
+
+                    /**
+                        @brief Check if the tcp server is a secure server or not.
+                        @returns `true` if the tcp server instance is secure, `false` otherwise.
+                     */
+                    bool secure() const;
+
+                    /**
+                        @brief Set the tcp server to secure or not secure, depending on 
+                        what the value of `set_secure` is.
+                        @param set_secure (`const std::string`) : The new setting for 
+                        the tcp server that dictates if it will be secure or not.
+                        @returns A reference to this tcp server instance, allowing for chaining.
+                        @note Only affects the tcp server when the tcp server is not running.
+                     */
+                    tcp_server& secure(const bool set_secure);
+
+                    /**
+                        @brief Get the key that the tcp server is using to set up a secure connection.
+                        @returns A `std::string` with the key that is being used for 
+                        the tcp server to establish a secure connection.
+                     */
+                    std::string secure_key() const;
+
+                    /**
+                        @brief Set the key that the tcp server will use to set up a secure connection.
+                        @param new_key (`const std::string`) : The new key that will be used to 
+                        set up the secure connection.
+                        @returns A reference to this tcp server instance, allowing for chaining.
+                        @note Only affects the tcp server when the tcp server is not running.
+                     */
+                    tcp_server& secure_key(const std::string new_key);
+
+                    /**
+                        @brief Get the certificate that is being used to set up a secure connection.
+                        @returns The `std::string` with the certificate that is being used for 
+                        the tcp server to establish a secure connection.
+                     */
+                    std::string certificate() const;
+
+                    /**
+                        @brief Set the certificate that the tcp server will use to set up a secure connection.
+                        @param new_certificate (`const std::string`) : The new certificate that will be used to 
+                        set up the secure connection.
+                        @returns A reference to this tcp server instance, allowing for chaining.
+                        @note Only affects the tcp server when the tcp server is not running.
+                     */
+                    tcp_server& certificate(const std::string new_certificate);
+                    
+                    /**
+                        @brief Get the listening limit for this tcp server.
+                        @returns The listneing limit of this server.
+                     */
+                    int listening_limit() const;
+
+                    /**
+                        @brief Set the listneing limit of this tcp server.
+                        @param new_limit (`const int`) : The new listening limit of 
+                        this tcp server.
+                        @returns A reference to this `tcp_server` object, allowing for chaining.
+                     */
+                    tcp_server& listening_limit(const int new_limit);
+
+
+                    /**
+                        @brief Get the status of this tcp server's 
+                        connection types with it's connected clients. 
+                    
+                        @returns `true` if the tcp_server sets all connections 
+                        to blocking, `false` if it sets all connections to non-blocking.
+                     */
+                    bool block_clients() const;
+
+                    /**
+                        @brief This tells the tcp server to set the 
+                        socket connections it establishes with the clients 
+                        to a blocking or non-blocking state, dependig on 
+                        what the value for `block_them` is set to.
+
+                        @param block_them : (`const bool`) : If `true`, then the 
+                        client connection sockets will be set to blocking, 
+                        if `false`, then the connection sockets will be set to non-blocking.
+
+                        @returns A reference to the current `tcp_server` object, allowing for chaining.
+                     */
+                    tcp_server& block_clients(const bool block_them);
+
+                    /**
+                        @brief Disconnect the client with the `client_id` passed in.
+                        @param client (`const networking::network_structures::client_id`) : The client to be disconnected from the tcp server instance.
+                        @param remove_client (`const bool`) : This is a flag specifying whether the client should be removed from memory once it's disconnected.
+                        @returns `true` if the client is successfully disconnected, `false` otherwise.
+                        @note If the client is not found within the tcp server's connection list, then `false` is returned.
+                     */
+                    bool disconnect_client(networking::network_structures::client_id client, const bool remove_client = true, const bool double_check = true);
+
+                    /**
+                        @brief Disconnect the client with the `client_id` passed in.
+                        @param client (`const networking::network_structures::client_connection`) : The client to be disconnected from the tcp server instance.
+                        @return `true` if the client is disconnected, `false` otherwise.
+                        @note If the client is not found within the tcp server's connection list, then `false` is returned.
+                     */
+                    bool disconnect_client(networking::network_structures::client_connection client);
+
+                    /**
+                        @brief Disconnect the client with the `client_id` passed in.
+                        @param host_name (`const std::string`) : The name of the client to be disconnected from the tcp server.
+                        @param port (`const std::string) : The port that `host_name` is using to connect to the tcp server on the server side.
+                        @param time (`const std::string`) : The time that the connection was made. If this is a null string, 
+                            then it's not used in the search to find the connection instance.
+                        @return `true` if the client is disconnected, `false` otherwise.
+                        @note If the client is not found within the tcp server's connection list, then `false` is returned.
+                     */
+                    bool disconnect_client(const std::string host_name, const std::string port, const std::string time = "");
+
+                    /**
+                        @brief Accept a new incoming connection, provided a new connection request is being made.
+                        @returns A `networking::network_structures::client_connection` with the connection information for the 
+                        new client that has just connected.
+                     */
+                    networking::network_structures::client_connection new_client(const bool wait_to_connect = false, const struct timeval timeout = {0, 20000});
+
+                    /**
+                        @brief Get all the clients connected to this server.
+                        @param all (`const bool`) : Defaults to `true`. If this value is true, then
+                         all the clients connected to this server are returned. Otherwise, if `all` is false, 
+                         then only the clients that are in a ready state are returned.
+                        @returns A `std::unordered_set<networking::network_structures::client_connection>` with all the clients that adhere 
+                        to the `all` parameter.
+                     */
+                    std::unordered_set<networking::network_structures::client_connection> clients(const bool all = true);
+
+                    /**
+                        @brief Update all the connections to the server, 
+                        deleting all the connections that have expired.
+                        @returns A reference to this current tcp server, allowing for chaining.
+                     */
+                    tcp_server& update();
+
+                    /**
+                        @brief Start the server.
+                        @returns A reference to the current tcp server object to allow for chaining.
+                     */
+                    tcp_server& start();
+
+                    /**
+                        @brief Halt the server.
+                        @returns `tcp_server` reference, allowing for chaining.
+                     */
+                    tcp_server& stop();
+
+                    /**
+                        @brief Broadcast a message to all clients.
+                        @param message (`const void*`) : The message to send to all the connected clients.
+                        @param byte_count (`bytes&`) : The number of bytes in message, to send.
+                        @param flags (`const int`) : Defaults to `0`. The flags to use when broadcasting `message` as a non-secure.
+                        @param disconnect (`const bool`) : Defaults to `true`. A flag specifying whether or not to disconnect failures.
+                        @returns A `networking::network_structures::complete_report` with 
+                        a report on all how all the client's messages were sent.
+                     */
+                    template <typename data> networking::network_structures::complete_report broadcast(data* the_message, const bytes byte_count, const int flags = 0, const bool disconnect = true, const std::chrono::duration<int> timeout = std::chrono::seconds(10)) {
+                        
+                        if (this->clients_.empty()) {
+                            return {};
+                        }
+                        
+                        networking::network_structures::complete_report the_answer;
+                        networking::network_structures::host_report report;
+                        for (const auto& [id, client] : this->clients_) {
+                            
+                            report = networking::send_message<data>(client, the_message, byte_count, flags, timeout);
+                            report.success = (report.byte_count == byte_count and report.byte_count >= 0) ? true : report.success;
+                            the_answer.add_report(report);
+                        }
+
+                        if (disconnect and the_answer.fails()) {
+                            for (const auto& host : the_answer.reports) {
+                                if (not host.success or not host.byte_count) {
+                                    this->disconnect_client(host.host.host_information);
+                                }
+                            }
+                        }
+
+                        return the_answer;
+                    }
+
+                    /**
+                        @brief Message the client passed in.
+                        @param client (`const networking::network_structures::client_id`) : The client to message.
+                        @param byte_count (`bytes&`) : The number of bytes in message, to send.
+                        @param flags (`const int`) : Defaults to `0`. The flags to use when broadcasting `message` as a non-secure.
+                        @param disconnect (`const bool`) : Defaults to `true`. A flag specifying whether or not to disconnect failures.
+                        @returns A `networking::network_structures::complete_report` with 
+                        a report on all how all the client's messages were sent.
+                     */
+                    template <typename data> networking::network_structures::complete_report message(const networking::network_structures::client_id client, data* the_message, const bytes byte_count, const int flags = 0, const bool disconnect = true, const std::chrono::duration<int> timeout = std::chrono::seconds(10)) {
+    
+                        networking::network_structures::complete_report the_answer;
+                        networking::network_structures::host_report report;
+                        std::vector<networking::network_structures::client_connection> connection;
+
+                        bytes send_, total_;
+
+                        for (const auto& [id, connect_info] : this->clients_) {
+
+                            if (id.hostname.empty()) {
+                                continue;
+                            }
+
+                            if (string_functions::same_string(id.hostname, client.hostname)) {
+
+                                if (id.port.empty()) {
+                                    // Found
+                                    connection.push_back(connect_info);
+                                    continue;
+                                }
+                                
+                                if (string_functions::same_string(id.port, client.port)) {
+                                    // If client.connection_time is empty, then the client is found. Message
+                                    if (client.connection_time.empty()) {
+                                        // Found
+                                        connection.push_back(connect_info);
+                                        continue;
+                                    }
+
+                                    if (string_functions::same_string(client.connection_time, id.connection_time)) {
+                                        // Found
+                                        connection.push_back(connect_info);
+                                    }
+                                    continue;
+                                }
+                            }
+                        }
+
+                        for (const auto& connect_info : connection) {
+                            report = networking::send_message(connect_info, the_message, byte_count, flags, timeout);
+                            report.success = (report.byte_count == byte_count and report.byte_count >= 0) ? true : report.success;
+                            the_answer.add_report(report);
+                        }
+
+                        if (disconnect and the_answer.fails()) {
+                            for (const auto& report : the_answer.reports) {
+                                if (not report.success) {
+                                    this->disconnect_client(report.host.host_information);
+                                }
+                            }
+                        }
+
+                        return the_answer;
+                    }
+
+                    /**
+                        @brief Get the total number of connected clients.
+                     */
+                    unsigned long connections() const;
+
+            };
+
+            class tcp_client : public host<tcp_client> {
+                private:
+                    bool secure_ = false,
+                        secure_was_init_ = false,
+                        connected_ = false,
+                        secure_fd_set_ = false,
+                        secure_connected_ = false,
+                        secure_handshook_= false,
+                        sni_ = true,
+                        server_name_indication_ = false;
+
+                        context_type context_ = invalid_context;
+                        secure_socket_type secure_socket_ = invalid_secure_socket;
+                        certificate_type certificate_ = invalid_certificate;
+
+                        std::string connect_time_ = "", cipher_ = "";
+
+                        bool create_context();
+
+                        bool connect_socket();
+
+                        bool create_secure_socket();
+
+                        bool server_name_indication();
+
+                        bool secure_file_descriptor();
+
+                        bool secure_handshake(const std::chrono::duration<int> timeout = std::chrono::seconds(10));
+
+                        bool get_cipher();
+
+                        bool get_peer_certificate();
+
+
+                public:
+
+                    // Parameter Constructor
+                    tcp_client(const std::string host_name, const std::string port = default_port, const bool secure = false, const bool sni = true);
+
+                    // Copy Constructor
+                    tcp_client(const tcp_client& other);
+
+                    // Move Constructor
+                    tcp_client(tcp_client&& other) noexcept;
+
+                    // Destructor
+                    ~tcp_client();
+
+                    // Assignment Copy Operator
+                    tcp_client& operator=(const tcp_client& other);
+
+                    // Assignment Move Operator
+                    tcp_client& operator=(tcp_client&& other) noexcept;
+
+                    // Self Check Operator
+                    operator bool() const;
+
+                    /**
+                        @brief Get the time when the connection was made with the server.
+                        @returns A `std::string` with the time when the `tcp_client` connected to the server.
+                     */
+                    std::string connection_time() const;
+
+                    /**
+                        @brief Check if the `tcp_client` established (or will established) a secure connection.
+                        @returns `true` if the `tcp_client` established 
+                        (or will establish) a secure connection, `false` otherwise.
+                     */
+                    bool secure() const;
+
+                    /**
+                        @brief Change the `tcp_client` to use a secure or a 
+                        non-secure connection, depending on what `set_secure` 
+                        is set to.
+                        @param set_secure (`const bool`) : The flag to specify 
+                        whether or not to make the `tcp_client` establish a secure connection 
+                        or not.
+                        @returns A reference to this `tcp_client` instance which allows for 
+                        chaining.
+                     */
+                    tcp_client& secure(const bool set_secure);
+
+                    /**
+                        @brief Start the `tcp_client` and establish a connection with the server 
+                        associated with the host for this `tcp_client`.
+                        @param timeout (`const std::chrono::duration<int>`) : Defaults to 10 seconds. This is the 
+                        wait time that the `tcp_client` will wait a maximum of while trying ot establish a secure handshake.
+                        @returns A reference to this `tcp_client` instance which allows for 
+                        chaining.
+                     */
+                    tcp_client& start(const std::chrono::duration<int> timeout = std::chrono::seconds(10));
+
+                    /**
+                        @brief Stop the `tcp_client`, disconnecting the communication.
+                        @returns A reference to this `tcp_client` instance which allows for 
+                        chaining.
+                     */
+                    tcp_client& stop();
+
+                    /**
+                        @brief Get the subject name that the `tcp_client` uses 
+                        for a secure connection with the remote host.
+                        @returns A `std::string` with the subject name 
+                        of the secure connection certificate.
+                     */
+                    std::string get_subject();
+
+                    /**
+                        @brief Get the issuer name that the `tcp_client` uses 
+                        for a secure connection with the remote host.
+                        @returns A `std::string` with the issuer name 
+                        of the secure connection certificate.
+                     */
+                    std::string get_issuer();
+
+                    /**
+                        @brief Check if here is a message from the server or not.
+                        @returns `true` if there is a message from the connected server, `false` otherwise.
+                     */
+                    bool message();
+
+                    /**
+                        @brief Send a message from the connected server, if there is a message.
+                        @param msg (`data*`) : The generic data type pointer (array) of length `bytes` with 
+                        all the data to be sent. The generic data type defaults to `void`, making the msg have 
+                        a type of `data*`.
+                        
+                        @param byte_count (`ssize_t&` (from macro bytes)) : The length of the pointer (array) `msg`. 
+                        This value is also changed in accordance with how much data was 
+                        successully received by the server or sent to the server.
+                        
+                        @param flags (`int`) : Defaults to 0. The flags to use while receiving the message to the server 
+                        in a non-secure manner. This is only really useful when receiving a non-secure message to the server.
+                        
+                        @param timeout (`const std::chrono::duration<int>`) : Defaults to 10 seconds. This is 
+                        the total amount of time to wait before timing out. 
+                        If the data is still trying to send (or receive) after waiting for this amount of time, 
+                        then `false` is returned.
+                        
+                        @param check_ready (`const bool`) : Defaults to `false`. This is a flag 
+                        specifying whether or not to check and see if there is data to be read from the server or not.
+                        It means that the `message` method 
+                        (that only checks if there is data to be read from the server) or 
+                        not before proceeding with receiving data.
+                        
+                        @note Be cautious about using this method. If used when there is 
+                        no message from the server, it could end up in a continously blocking state, 
+                        so pay attention to whether or not the client is set to a blocking state or not 
+                        and whether or not the `check_ready` flag is set to check if there is a 
+                        message to be read or not.
+                        @note DO NOT SET `check_ready` to true if you just called the `message` 
+                        method (non-parameter one), and got a return value of `true`. This could result 
+                        in unexpected blocking behavior.
+
+                        @returns `true` if data was successfully sent (depending on what `sending` is set to) 
+                        and `byte_count` is updated to reflect how much data was sent.
+                     */
+                    template <typename data = void> networking::network_structures::host_report message(data* msg, const bytes byte_count, const int flags = 0, const std::chrono::duration<int> timeout = std::chrono::seconds(10), const bool check_ready = false) {
+
+                        if (not *this) {
+                            throw networking::exceptions::connection_failure("tcp client is not connected to any remote machine. Cannot send or receive data through tcp client's " + std::string(__FUNCTION__) + " method.", unpack_exception_parameters(1));
+                        }
+
+                        static_assert(!std::is_const<data>::value, "Receiving requires a non-const buffer type.");
+                        // if (not std::is_const<data>::value) {
+                            
+                        // }
+
+                        networking::network_structures::host_report the_answer;
+                        the_answer.byte_count = 0;
+                        the_answer.success = false;
+                            the_answer.host.host_information.hostname = this->hostname_;
+                            the_answer.host.host_information.port = this->portvalue_;
+                            the_answer.host.host_information.connection_time = this->connect_time_;
+
+                        // Receiving data
+                        if (check_ready) {
+                            if (not this->message()) {
+                                return the_answer;
+                            }
+                        }
+
+                        // Call SSL_get_error() for details or check errno (macro socket_error).
+                        // Non-blocking SSL_get_error() will be < 1
+                        // SSL_read:
+                            // Success              bytes_ > 0                   :   Number of bytes read.
+                            // Connection Closed    bytes_ == 0                  :   Call SSL_get_error() → SSL_ERROR_ZERO_RETURN.
+                            // Error                bytes_ <= 0                  :   Call SSL_get_error() for details (e.g., SSL_ERROR_SSL).
+                            // Non-Blocking Issue   bytes_ == -1                 :   SSL_get_error() → SSL_ERROR_WANT_READ or SSL_ERROR_WANT_WRITE.
+                        //
+                        // recv:
+                            // Success              bytes_ > 0                   :   Number of bytes received.
+                            // Connection Closed    bytes_ == 0                  :   Peer initiated an orderly shutdown.
+                            // Error                bytes_ == -1                 :   Check errno (e.g., ECONNRESET, EINTR).
+                            // Non-Blocking Issue   bytes_ == -1                 :   errno → EAGAIN or EWOULDBLOCK (no data available).
+                        
+                        // const bool secure = valid_secure_socket(this->secure_socket_);
+                        bytes bytes_, total_ = 0;
+                        int bytes_error;//, block_write, block_read;
+                        #if defined(crap_os)
+                            const int block_read = (this->secure_) ? SSL_ERROR_WANT_READ : WSAWOULDBLOCK;
+                            const int block_write = (this->secure_) ? SSL_ERROR_WANT_WRITE : WSACONNRESET;
+                        #else
+                            const int block_write = (this->secure_) ? SSL_ERROR_WANT_WRITE : EWOULDBLOCK;
+                            const int block_read = (this->secure_) ? SSL_ERROR_WANT_READ : EAGAIN;
+                        #endif
+
+                        const auto start_time = std::chrono::steady_clock::now();
+                        
+                        while (total_ < byte_count) {
+                            bytes_ = (this->secure_) ? SSL_read(this->secure_socket_, reinterpret_cast<char*>(msg) + total_, byte_count - total_) :
+                                                recv(this->connect_socket_, reinterpret_cast<char*>(msg) + total_, byte_count - total_, flags);
+                            
+
+                            if (bytes_ < 1) {
+
+                                bytes_error = (this->secure_) ? SSL_get_error(this->secure_socket_, bytes_) : socket_error;
+
+                                if (bytes_error == block_read or bytes_error == block_write) {
+                                    // blocking related
+                                    if (std::chrono::steady_clock::now() - start_time < timeout) {
+                                        continue;
+                                    }
+                                }
+
+                                if (not bytes_) {
+                                    // Connection was closed
+                                    total_ = 0;
+                                    break;
+                                }
+
+                                // An actual error occured
+                                total_ = -1;
+                                break;
+                            }
+
+                            total_ = total_ + bytes_;
+                            std::printf("Just updated the total_ byte count.\n");
+                            if (not this->message()) {
+                                break;
+                            }
+                            // break; // This might cause premature readings. I need a way to retrieve ALL the data.
+                        }
+                        the_answer.success = (total_ > 0);
+                        the_answer.byte_count = total_;
+                        std::printf("Returning out of message() now with %ld bytes read...\n", the_answer.byte_count);
+                        return the_answer;
+                    }
+
+                    template <typename data = void> networking::network_structures::host_report message(const data* msg, bytes& byte_count, const int flags = 0, const std::chrono::duration<int> timeout = std::chrono::seconds(10)) {
+
+                        if (not *this) {
+                            throw networking::exceptions::connection_failure("tcp client is not connected to any remote machine. Cannot send or receive data through tcp client's " + std::string(__FUNCTION__) + " method.", unpack_exception_parameters(1));
+                        }
+
+
+                        static_assert(std::is_const<data>::value || std::is_same<data, void>::value, "Sending requires a const buffer type.");
+
+                        networking::network_structures::host_report the_answer;
+                        the_answer.byte_count = 0;
+                        the_answer.success = false;
+                            the_answer.host.host_information.hostname = this->hostname_;
+                            the_answer.host.host_information.port = this->portvalue_;
+                            the_answer.host.host_information.connection_time = this->connect_time_;
+
+                        // Call SSL_get_error() for details or check errno (macro socket_error).
+                        // Non-blocking SSL_get_error() will be < 1
+                        // SSL_write:
+                            // Success	            bytes_ > 0                   :       Number of bytes written.
+                            // Error	            bytes_ ≤ 0                   :       Call SSL_get_error() for details.
+                            // Non-Blocking Issue	bytes_ == -1                 :       SSL_get_error() → SSL_ERROR_WANT_READ or SSL_ERROR_WANT_WRITE.
+                            // Partial Write        bytes_ > 0 and < byte_count  : 	If SSL_MODE_ENABLE_PARTIAL_WRITE is enabled.
+                        
+                        // send:
+                            // Success	            bytes_ ≥ 0               :   Number of bytes sent (may be partial).
+                            // Error	            bytes_ ==-1              :   Check errno (e.g., ECONNRESET, EMSGSIZE).
+                            // Non-Blocking Issue	bytes_ == -1             :   errno → EAGAIN or EWOULDBLOCK (buffer full).
+                            // Partial Send	        0 ≤ bytes_ < byte_count	:   Check return value immediately; retry with remaining data.
+
+                            if (*this) {
+                                the_answer = networking::send_message(the_answer.host, msg, byte_count, flags, timeout);
+                            }
+                            return the_answer;
+
+                    }
+
+                    /**
+                        @brief Get the connection information that this `tcp_client` is using 
+                        for it's connection to the remote server.
+                        @returns A `networking::network_structures::server_connection` 
+                        with the connection information that is being used to 
+                        communicate with the remote host.
+                     */
+                    networking::network_structures::server_connection connection_information() const;
+
+
+
+            };
+
+        }
+    }
+
+#endif

@@ -1,0 +1,49 @@
+
+
+
+#if not defined(_definitions_)
+    #define _definitions_
+
+    // define the Operating system
+    #if defined(_WIN16) or defined(_WIN32) or defined(_WIN64) or defined(__WIN32__) or defined(__TOS_WIN__) or defined(__WINDOWS__)
+
+        #if not defined(crap_os)
+            #define crap_os
+        #endif
+    
+    #else
+        
+        #if not defined(unix_os)
+            #define unix_os
+        #endif
+
+        #if defined(__APPLE__) or defined(__APPLE_CC__)
+            #define mac_os
+        #else
+            #define linux_os
+        #endif
+
+    #endif
+
+
+    #if not defined(__kilo_byte__)
+        #define __kilo_byte__ 1024
+    #endif
+
+    #if not defined(__kilo_bytes__)
+        #define __kilo_bytes__(count) count * __kilo_byte__
+    #endif
+
+    #if not defined(__buffer_size__)
+        #define __buffer_size__ 100
+    #endif
+
+    #if not defined(__sys_slash__)
+        #if defined(unix_os)
+            #define __sys_slash__ "/"
+        #else
+            #define __sys_slash__ "\\"
+        #endif
+    #endif
+
+#endif

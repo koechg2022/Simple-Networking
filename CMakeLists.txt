@@ -2,45 +2,65 @@
 # Windows: cmake .. -G "MinGW Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 #           mingw32-make .
 
-cmake_minimum_required(VERSION 3.10)
-project(NetworkingProject CXX)
+cmake_minimum_required(VERSION 3.16)
+
+# Recognize custom C++ extensions
+set(CMAKE_CXX_SOURCE_FILE_EXTENSIONS c++ C++ cpp cxx cc C)
+set(CMAKE_CXX_HEADER_FILE_EXTENSIONS h++ H++ hpp hxx hh H h "")
+
+project(SimpleNetworking LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Set the output directory for the executable
+# Output directory for executables
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/objects)
 
-# Include directories
-include_directories(
-    ${CMAKE_SOURCE_DIR}/headers
-    ${CMAKE_SOURCE_DIR}/libs
+# Include headers directory
+include_directories(${CMAKE_SOURCE_DIR}/headers)
+
+# Gather library sources
+file(GLOB LIB_SOURCES
+    "${CMAKE_SOURCE_DIR}/libraries/*.c++"
+    "${CMAKE_SOURCE_DIR}/libraries/*.cpp"
+    "${CMAKE_SOURCE_DIR}/libraries/*.cc"
+    "${CMAKE_SOURCE_DIR}/libraries/*.cxx"
 )
 
-# Add source files
-set(SOURCES
-    tests/test_server.c++
-    libs/networking.c++
-    libs/string_functions.c++
-    libs/misc_functions.c++
+# Gather test sources
+file(GLOB TEST_SOURCES
+    "${CMAKE_SOURCE_DIR}/tests/*.c++"
+    "${CMAKE_SOURCE_DIR}/tests/*.cpp"
+    "${CMAKE_SOURCE_DIR}/tests/*.cc"
+    "${CMAKE_SOURCE_DIR}/tests/*.cxx"
 )
 
-# Create the executable
-add_executable(test_server ${SOURCES})
-
-# Platform-specific configurations
-if(WIN32)
-    include_directories("C:/Program Files/OpenSSL-Win64/include")
-    target_link_libraries(test_server
-        "C:/Program Files/OpenSSL-Win64/lib/VC/x64/MD/libssl.lib"
-        "C:/Program Files/OpenSSL-Win64/lib/VC/x64/MD/libcrypto.lib"
-        ws2_32
-        iphlpapi
-    )
-else()
-    find_package(OpenSSL REQUIRED)
-    target_link_libraries(test_server OpenSSL::SSL OpenSSL::Crypto)
+# OpenSSL discovery for macOS
+if(APPLE)
+    list(APPEND CMAKE_PREFIX_PATH "/usr/local/opt/openssl@3")
+    list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/openssl@3")
 endif()
 
-# Add compiler flags
-target_compile_options(test_server PRIVATE -Wall -Wextra)
+find_package(OpenSSL REQUIRED)
+
+# Create executables for each test source
+foreach(TEST_SRC ${TEST_SOURCES})
+    get_filename_component(TEST_NAME ${TEST_SRC} NAME_WE)
+    add_executable(${TEST_NAME} ${LIB_SOURCES} ${TEST_SRC})
+
+    if(WIN32)
+        target_link_libraries(${TEST_NAME}
+            ws2_32
+            crypt32
+            gdi32
+            iphlpapi
+            OpenSSL::SSL
+            OpenSSL::Crypto
+        )
+    else()
+        target_link_libraries(${TEST_NAME}
+            OpenSSL::SSL
+            OpenSSL::Crypto
+        )
+    endif()
+endforeach()
