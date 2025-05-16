@@ -857,7 +857,7 @@ void networking::network_structures::tcp_server::drop_client(networking::network
 bool networking::network_structures::tcp_server::create_context() {
     std::lock_guard<std::mutex> context_lock(this->context_mutex_);
     if (this->secure_ and not valid_context(this->context_)) {
-        std::printf("Creating secure connection context.\n");
+        // std::printf("Creating secure connection context.\n");
         const int count = 1;
         char msg[__kilo_bytes__(count)];
         ERR_clear_error();
@@ -1400,7 +1400,7 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
                     ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
                     throw networking::exceptions::initialize_network_failure("Failed to initialize secure networking library. Error \"" + std::string(msg) + "\"", unpack_secure_exception_parameters(2));
                 }
-                std::printf("Initialized the secure network.\n");
+                // std::printf("Initialized the secure network.\n");
                 this->was_secure_init_ = false;
             }
 
@@ -1409,7 +1409,7 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
                     ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
                     throw networking::exceptions::create_context_failure("Failed to create secure context for this tcp server's secure connection. Error \"" + std::string(msg) + "\"", unpack_exception_parameters(2));
                 }
-                std::printf("Created the secure context for this tcp_server.\n");
+                // std::printf("Created the secure context for this tcp_server.\n");
             }
 
             if (not this->set_cert_and_key()) {

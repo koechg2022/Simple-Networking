@@ -6,12 +6,12 @@
 #include <unordered_map>
 #include <iostream>
 #include <chrono>
+#include <filesystem>
 
 
 #include "../headers/string_functions"
 #include "../headers/misc_functions"
 #include "../headers/networking"
-#include "include"
 
 
 
@@ -120,6 +120,20 @@ const std::string UNDER_CONSTRUCTION = "UNDER CONSTRUCTION";
 const std::string connection_port = "5500";
 const std::string default_url = "example.com";
 
+// Change this to whatever the name of the project base directory is
+const std::string project_root_directory = [](std::string base_ = "Simple-Networking") {
+    std::filesystem::path the_answer = std::filesystem::path(__FILE__);
+    while (not string_functions::same_string(the_answer.filename().string(), base_)) {
+        
+        the_answer = the_answer.parent_path();
+        std::cout << "the_answer \"" << the_answer.string() << std::endl;
+        if (the_answer.string().length() == 1) {
+            break;
+        }
+    }
+    
+    return the_answer.string();
+}();
 
 const std::chrono::duration<int> timeout = std::chrono::seconds(10);
 
@@ -326,8 +340,8 @@ void test_secure_server() {
     server
         .retrieve_hostname()
         .secure(true)
-        .secure_key("../files/key.pem")
-        .certificate("../files/cert.pem");
+        .secure_key(project_root_directory + std::string(__sys_slash__) + "files" + std::string(__sys_slash__) + "key.pem")
+        .certificate(project_root_directory + std::string(__sys_slash__) + "files" + std::string(__sys_slash__) + "cert.pem");
 
     // std::cout << "Set all the attributes of the server." << std::endl;
 
@@ -347,10 +361,8 @@ void test_secure_server() {
                 }
             }
 
-            catch (networking::exceptions::base_exception& except) {
-                if (string_functions::same_string(except.type(), networking::exceptions::secure_handshake_failure_type)) {
-                    continue;
-                }
+            catch (networking::exceptions::secure_handshake_failure& except) {
+                continue;
             }
             
 
@@ -376,7 +388,12 @@ void test_secure_server() {
                 }
 
                 else if (string_functions::same_string(message, "list clients") or string_functions::same_string(message, "lc")) {
-                    clients = server.clients();
+                    
+                    if ((clients = server.clients()).empty()) {
+                        std::cout << "No clients to message" << std::endl;
+                        continue;
+                    }
+                    
                     for (const auto& client_ : clients) {
                         std::cout << client_.host_information.hostname << ":" << std::endl;
                         std::cout << "\t" << client_.host_information.port << ":" << std::endl;
@@ -385,9 +402,10 @@ void test_secure_server() {
                 }
 
                 else if (string_functions::same_string(message, "broadcast message") or string_functions::same_string(message, "broadcast") or string_functions::same_string(message, "brdcst")) {
-                    clients = server.clients();
-                    if (clients.empty()) {
+                    
+                    if ((clients = server.clients()).empty()) {
                         std::cout << "No clients to message" << std::endl;
+                        continue;
                     }
 
                     message = misc_functions::get_input("Broadcast message : ");
@@ -406,8 +424,8 @@ void test_secure_server() {
                 }
 
                 else if (string_functions::same_string(message, "message client") or string_functions::same_string(message, "msgc") or string_functions::same_string(message, "mc")) {
-                    clients = server.clients();
-                    if (clients.empty()) {
+                    
+                    if ((clients = server.clients()).empty()) {
                         std::cout << "No clients to message" << std::endl;
                         continue;
                     }
@@ -475,6 +493,10 @@ void test_secure_server() {
                     }
                 }
 
+                else {
+                    std::cerr << "Unrecognized command \"" << message << "\"" << std::endl;
+                }
+
             }
 
         }
@@ -483,8 +505,6 @@ void test_secure_server() {
     catch (networking::exceptions::base_exception& except) {
         std::cerr << "Caught exception \"" << except.message() << "\"" << std::endl;
     }
-    
-    std::cout << UNDER_CONSTRUCTION << std::endl;
 }
 
 void test_client() {
