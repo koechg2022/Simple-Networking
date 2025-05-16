@@ -857,6 +857,7 @@ void networking::network_structures::tcp_server::drop_client(networking::network
 bool networking::network_structures::tcp_server::create_context() {
     std::lock_guard<std::mutex> context_lock(this->context_mutex_);
     if (this->secure_ and not valid_context(this->context_)) {
+        std::printf("Creating secure connection context.\n");
         const int count = 1;
         char msg[__kilo_bytes__(count)];
         ERR_clear_error();
@@ -983,7 +984,10 @@ networking::network_structures::host<networking::network_structures::tcp_server>
 
 networking::network_structures::tcp_server::tcp_server(networking::network_structures::tcp_server&& other) noexcept :
 networking::network_structures::host<networking::network_structures::tcp_server>::host(std::move(other)) {
-
+    std::scoped_lock move_mutex(
+        this->clients_mutex_, this->context_mutex_, this->key_file_mutex_, this->cert_file_mutex_,
+        other.clients_mutex_, other.context_mutex_, other.key_file_mutex_, other.cert_file_mutex_
+    );
 
     // bools
     this->listening_.store(other.listening_.load());
@@ -1009,6 +1013,7 @@ networking::network_structures::host<networking::network_structures::tcp_server>
     other.certified_.store(false);
     other.listening_.store(false);
     other.was_secure_init_.store(valid_context(this->context_)); // Dont want to uninitialize network library prematurely
+    other.context_ = invalid_context;
 }
 
 networking::network_structures::tcp_server::~tcp_server() {
@@ -1017,21 +1022,17 @@ networking::network_structures::tcp_server::~tcp_server() {
 
 networking::network_structures::tcp_server& networking::network_structures::tcp_server::operator=(const networking::network_structures::tcp_server& other) {
     if (this != &other) {
-        std::lock_guard<std::mutex> copy_mutex(this->clients_mutex_);
+        
 
         networking::network_structures::host<networking::network_structures::tcp_server>::operator=(other);
         this->listening_limit_.store(other.listening_limit_.load());
-        // this->listening_ = other.listening_;
         this->secure_.store(other.secure_.load());
-        // this->secure_ = other.secure_;
         this->block_clients_.store(other.block_clients_.load());
-        // this->block_clients_ = other.block_clients_;
         this->certified_.store(other.certified_.load());
-        // this->certified_ = other.certified_;
         this->listening_.store(other.listening_.load());
-        // this->listening_ = other.listening_;
         this->was_secure_init_.store(other.was_secure_init_.load());
-        // this->was_secure_init_ = other.was_secure_init_;
+        
+        std::scoped_lock locks(this->clients_mutex_, this->context_mutex_, this->key_file_mutex_, this->cert_file_mutex_);
         
         // context_type
         this->context_ = other.context_;
@@ -1045,7 +1046,7 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
 
 networking::network_structures::tcp_server& networking::network_structures::tcp_server::operator=(networking::network_structures::tcp_server&& other) noexcept {
     if (this != &other) {
-        std::lock_guard<std::mutex> move_mutex(this->clients_mutex_);
+
         networking::network_structures::host<networking::network_structures::tcp_server>::operator=(std::move(other));
         // bools
         this->listening_.store(other.listening_.load());
@@ -1056,6 +1057,11 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
 
         // int
         this->listening_limit_.store(other.listening_limit_.load());
+
+        std::scoped_lock move_mutex(
+            this->clients_mutex_, this->context_mutex_, this->key_file_mutex_, this->cert_file_mutex_,
+            other.clients_mutex_, other.context_mutex_, other.key_file_mutex_, other.cert_file_mutex_
+        );
 
         // Context
         this->context_ = other.context_;
@@ -1071,11 +1077,15 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
         other.certified_.store(false);
         other.listening_.store(false);
         other.was_secure_init_.store(valid_context(this->context_)); // Dont want to uninitialize network library prematurely
+        
+        other.context_ = invalid_context;
+        other.key_file_ = other.cert_file_ = "";
     }
     return *this;
 }
 
 networking::network_structures::tcp_server::operator bool() const {
+    std::scoped_lock locks(this->context_mutex_, this->connect_socket_mutex_);
     return (this->secure_) ? valid_context(this->context_) and this->listening_ and valid_socket(this->connect_socket_) : this->listening_ and valid_socket(this->connect_socket_);
 }
 
@@ -1096,6 +1106,7 @@ std::string networking::network_structures::tcp_server::secure_key() const {
 
 networking::network_structures::tcp_server& networking::network_structures::tcp_server::secure_key(const std::string new_key) {
     if (not *this) {
+        std::lock_guard<std::mutex> key_lock(this->key_file_mutex_);
         this->key_file_ = new_key;
     }
     return *this;
@@ -1107,6 +1118,7 @@ std::string networking::network_structures::tcp_server::certificate() const {
 
 networking::network_structures::tcp_server& networking::network_structures::tcp_server::certificate(const std::string new_certificate) {
     if (not *this) {
+        std::lock_guard<std::mutex> cert_lock(this->cert_file_mutex_);
         this->cert_file_ = new_certificate;
     }
     return *this;
@@ -1118,7 +1130,7 @@ int networking::network_structures::tcp_server::listening_limit() const {
 
 networking::network_structures::tcp_server& networking::network_structures::tcp_server::listening_limit(const int new_limit) {
     if (not *this) {
-        this->listening_limit_ = new_limit;
+        this->listening_limit_ = (new_limit <= 0) ? 10 : new_limit;
     }
     return *this;
 }
@@ -1160,12 +1172,22 @@ bool networking::network_structures::tcp_server::disconnect_client(networking::n
     if (client_.host_information) {
         std::lock_guard<std::mutex> disconnect_mutex(this->clients_mutex_);
         networking::network_structures::client_connection connection = this->clients_[client_.host_information];
-        (this->secure_) ? SSL_shutdown(connection.secure_connect_socket) : 0;
-        the_answer = valid_socket(connection.connect_socket);
-        (valid_socket(connection.connect_socket)) ? close_socket(connection.connect_socket) : 0;
-        (this->secure_) ? SSL_free(connection.secure_connect_socket) : (void) 0;
-        (remove_client) ? this->clients_.erase(client_.host_information) : 0;
+        the_answer = networking::socket_connected(connection.connect_socket);
+        this->clients_.erase(client_.host_information);
+        this->drop_client(connection);
         the_answer = (the_answer and not valid_socket(connection.connect_socket));
+        // valid_secure_socket(client.secure_connect_socket) ? SSL_shutdown(client.secure_connect_socket) : 0;
+        // (valid_socket(client.connect_socket)) ? close_socket(client.connect_socket) : 0;
+        // client.connect_socket = invalid_socket;
+        // valid_secure_socket(client.secure_connect_socket) ? SSL_free(client.secure_connect_socket) : (void) 0;
+        // client.secure_connect_socket = invalid_secure_socket;
+        
+
+        // (this->secure_) ? SSL_shutdown(connection.secure_connect_socket) : 0;
+        // the_answer = valid_socket(connection.connect_socket);
+        // (valid_socket(connection.connect_socket)) ? close_socket(connection.connect_socket) : 0;
+        // (this->secure_) ? SSL_free(connection.secure_connect_socket) : (void) 0;
+        // (remove_client) ? this->clients_.erase(client_.host_information) : 0;
     }
     
     return the_answer;
@@ -1228,28 +1250,28 @@ networking::network_structures::client_connection networking::network_structures
                 const int count = 1;
                 char msg[__kilo_bytes__(count)];
                 ERR_clear_error();
-                std::printf("Creating secure connection socket for the new connection.\n");
+                // std::printf("Creating secure connection socket for the new connection.\n");
                 the_answer.secure_connect_socket = SSL_new(this->context_);
                 if (not valid_secure_socket(the_answer.secure_connect_socket)) {
                     ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
                     this->drop_client(the_answer);
                     throw networking::exceptions::create_secure_socket_failure("Failed to create a secure socket layer socket for the new connection with cleint \"" + the_answer.host_information.hostname + "\". Error \"" + std::string(msg) + "\"", unpack_exception_parameters(4));
                 }
-                std::printf("Successfully established secure connection socket for the client.\n");
-                std::printf("Now setting secure connection socket's connection socket to the tcp socket used for communication with this client.\n");
+                // std::printf("Successfully established secure connection socket for the client.\n");
+                // std::printf("Now setting secure connection socket's connection socket to the tcp socket used for communication with this client.\n");
                 if (not SSL_set_fd(the_answer.secure_connect_socket, the_answer.connect_socket)) {
                     ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
                     this->drop_client(the_answer);
                     throw networking::exceptions::create_secure_socket_failure("Failed to set the secure socket layer (SSL) for the socket connecting this tcp server to \"" + the_answer.host_information.hostname + "\". Error \"" + std::string(msg) + "\"", unpack_secure_exception_parameters(3));
                 }
-                std::printf("Successfully set the secure connection socket's tcp communication socket.\n");
+                // std::printf("Successfully set the secure connection socket's tcp communication socket.\n");
 
                 if (SSL_accept(the_answer.secure_connect_socket) != 1) {
                     ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
                     this->drop_client(the_answer);
                     throw networking::exceptions::secure_handshake_failure("Failed to establish a secure handshake with new client \"" + the_answer.host_information.hostname + "\". Error \"" + std::string(msg) + "\"", unpack_secure_exception_parameters(3));
                 }
-                std::printf("Successfully established secure handshake with the new connection. Now encrypted communication will happen smoothly\n");
+                // std::printf("Successfully established secure handshake with the new connection. Now encrypted communication will happen smoothly\n");
             }
             // std::printf("Successfully established a new connection.\n");
             std::unique_lock<std::mutex> new_client_lock(this->clients_mutex_);
@@ -1378,6 +1400,7 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
                     ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
                     throw networking::exceptions::initialize_network_failure("Failed to initialize secure networking library. Error \"" + std::string(msg) + "\"", unpack_secure_exception_parameters(2));
                 }
+                std::printf("Initialized the secure network.\n");
                 this->was_secure_init_ = false;
             }
 
@@ -1386,6 +1409,7 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
                     ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
                     throw networking::exceptions::create_context_failure("Failed to create secure context for this tcp server's secure connection. Error \"" + std::string(msg) + "\"", unpack_exception_parameters(2));
                 }
+                std::printf("Created the secure context for this tcp_server.\n");
             }
 
             if (not this->set_cert_and_key()) {

@@ -1,6 +1,5 @@
 
-// #include "headers"
-// #include "misc_functions"
+
 #include <string>
 #include <set>
 #include <unordered_set>
@@ -13,6 +12,7 @@
 #include "../headers/misc_functions"
 #include "../headers/networking"
 #include "include"
+
 
 
 
@@ -309,6 +309,89 @@ void test_server() {
 }
 
 void test_secure_server() {
+    
+    const int count = 1, flags = 0;
+    char msg[__kilo_bytes__(count)];
+    bytes byte_count;
+    std::string message;
+
+    networking::network_structures::client_connection client;
+    std::unordered_set<networking::network_structures::client_connection> clients;
+
+    networking::network_structures::tcp_server server;
+
+
+    server
+        .retrieve_hostname()
+        .secure(true)
+        .secure_key("../files/key.pem")
+        .certificate("../files/cert.pem");
+
+    // std::cout << "Set all the attributes of the server." << std::endl;
+
+    try {
+
+        if (not server.start()) {
+            std::cerr << "Failed to successfully start the server" << std::endl;
+            return;
+        }
+        std::cout << "Successfully started the server. Connect to the secure server using " << server.hostname() << ":" << server.port() << std::endl;
+
+        while (server) {
+
+            try {
+
+                if ((client = server.new_client())) {
+                    std::cout << "New connection from \"" << client.host_information.hostname << "\"" << std::endl;
+                }
+
+            }
+
+            catch (networking::exceptions::base_exception& except) {
+                if (string_functions::same_string(except.type(), networking::exceptions::secure_handshake_failure_type)) {
+                    continue;
+                }
+            }
+            
+
+            if (not (clients = server.clients(false)).empty()) {
+
+                for (auto& client_ : clients) {
+                    byte_count = (server.secure()) ? SSL_read(client_.secure_connect_socket, msg, __kilo_bytes__(count)) :
+                                                    recv(client_.connect_socket, msg, __kilo_bytes__(count), flags);
+
+                    if (byte_count < 1) {
+                        std::cerr << "Something went wrong with client \"" << client_.host_information.hostname << "\". Disconnecting client now" << std::endl;
+                        server.disconnect_client(client_);
+                    }
+                }
+                clients.clear();
+            }
+
+            if (misc_functions::has_keyboard_input()) {
+                message = misc_functions::get_input();
+
+                if (string_functions::same_string(message, "close") or string_functions::same_string(message, "exit") or string_functions::same_string(message, "stop") or string_functions::same_string(message, "halt")) {
+                    server.stop();
+                }
+
+                else if (string_functions::same_string(message, "list clients") or string_functions::same_string(message, "lc")) {
+                    clients = server.clients();
+                    for (const auto& client_ : clients) {
+                        std::cout << client_.host_information.hostname << ":" << std::endl;
+                        std::cout << "\t" << client_.host_information.port << ":" << std::endl;
+                        std::cout << "\t" << client_.host_information.connection_time << ":" << std::endl;
+                    }
+                }
+            }
+
+        }
+    }
+
+    catch (networking::exceptions::base_exception& except) {
+        std::cerr << "Caught exception \"" << except.message() << "\"" << std::endl;
+    }
+    
     std::cout << UNDER_CONSTRUCTION << std::endl;
 }
 

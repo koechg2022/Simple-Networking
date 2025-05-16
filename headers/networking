@@ -813,15 +813,15 @@
 
                     // mutable std::mutex host_mutex_;
 
-                    std::mutex hostname_mutex_, port_mutex_;
+                    mutable std::mutex hostname_mutex_, port_mutex_;
                     std::string hostname_ = "", 
                         portvalue_ = default_port;
                     
 
-                    std::mutex active_address_mutex_, connect_address_mutex_;
+                    mutable std::mutex active_address_mutex_, connect_address_mutex_;
                     struct addrinfo* connect_address_ = 0, *active_address_ = 0;
                     
-                    std::mutex connect_socket_mutex_;
+                    mutable std::mutex connect_socket_mutex_;
                     socket_type connect_socket_ = invalid_socket;
                     
                     std::atomic<bool> tcp_ = true;
@@ -884,7 +884,8 @@
                             }
 
                             std::lock_guard<std::mutex> host_lock(this->hostname_mutex_);
-                            if (this->hostname_.empty() and not this->serving_) {
+                            // Consider adding the this->serving_ check too. Just removed
+                            if (this->hostname_.empty()) {
                                 throw networking::exceptions::getaddrinfo_failure("Cannot retrieve address information without a hostname specified", unpack_exception_parameters(1));
                             }
 
@@ -895,7 +896,7 @@
 
                             struct addrinfo hints;
                             std::memset(&hints, 0, sizeof(hints));
-                            hints.ai_family = (this->serving_) ? AF_UNSPEC : hints.ai_family;
+                            hints.ai_family = AF_UNSPEC;
                             hints.ai_socktype = (this->tcp_) ? SOCK_STREAM : SOCK_DGRAM;
                             hints.ai_flags = (this->serving_) ? AI_PASSIVE : 0;
 
@@ -917,7 +918,8 @@
                         if (not valid_socket(this->connect_socket_)) {
 
                             this->create_connection_address();
-                            this->reset_address();
+                            
+                            this->reset_address(); // This is redundant
                             // this->active_address_ points to the front of this->connect_address_
                             
                             while (true) {
@@ -1130,7 +1132,7 @@
                         to the current host instance.
                      */
                     data& hostname(const std::string new_host) {
-                        std::scoped_lock locks(this->connect_socket_mutex_, this->connect_socket_mutex_, this->hostname_mutex_);
+                        std::scoped_lock locks(this->connect_address_mutex_, this->connect_socket_mutex_, this->hostname_mutex_);
                         if (not this->connect_address_ and not valid_socket(this->connect_socket_)) {
                             this->hostname_ = new_host;
                         }
