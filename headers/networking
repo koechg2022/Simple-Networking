@@ -909,6 +909,7 @@
                             }
                             lock_address.unlock();
                             this->reset_address();
+                            std::printf("this->create_connection_address is about to return %s\n", (this->active_address_) ? "true" : "false");
                         }
                         return this->active_address_;
                     }
@@ -1592,7 +1593,7 @@
 
                         bool create_secure_socket();
 
-                        bool server_name_indication();
+                        bool set_server_name_indication();
 
                         bool secure_file_descriptor();
 
@@ -1864,6 +1865,21 @@
                      */
                     networking::network_structures::server_connection connection_information() const;
 
+
+                    /**
+                        @brief Get the status of the client regarding whether or not to set the Server Name Indication.
+                        @returns `true` if this client is currently set up to resolve the server name indication, `false` otherwise.
+                     */
+                    bool server_name_indication();
+
+
+                    /**
+                        @brief Set the flag that specified if the client should set the Server Name Indication.
+                        @param set_sni (`const bool`) : The flag that is used 
+                        to specify if the Server Name Indication is to be used or not.
+                        @returns A reference to the current `tcp_client` object allowing for chaining.
+                     */
+                    tcp_client& server_name_indication(const bool set_sni);
 
 
             };

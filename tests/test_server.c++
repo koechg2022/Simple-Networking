@@ -12,6 +12,7 @@
 #include "../headers/string_functions"
 #include "../headers/misc_functions"
 #include "../headers/networking"
+#include "include"
 
 
 
@@ -551,8 +552,14 @@ void test_web_client() {
 
     // variables for use
     bytes bytes;
-    const int count = 4, flags = 0;
+    const int count = 32, flags = 0;
     char msg[__kilo_bytes__(count)];
+
+    char *p = msg, *q, *end = msg + __kilo_bytes__(count), *body = 0;
+
+    enum {length, chunked, connection};
+    int encoding = 0, remaining = 0;
+
     const std::string ending = "\r\n";
     
     if (not url_parsed.contains(HOSTNAME)) {
@@ -562,7 +569,7 @@ void test_web_client() {
 
     networking::network_structures::tcp_client client(url_parsed[HOSTNAME], url_parsed[PORT]);
     
-    client.secure(true);
+    client.secure(true).server_name_indication(true);
 
     if (not client.start()) {
         std::cerr << "Failed to start client" << std::endl;
@@ -578,32 +585,41 @@ void test_web_client() {
 
     // bytes = message.length();
     networking::network_structures::host_report response;
-    bytes = message.length();
-    response = client.message<const char>(message.c_str(), bytes, flags, timeout);
-    if (response.success) {
-        std::cerr << "Failed to send resource request to server" << std::endl;
+    networking::network_structures::server_connection server = client.connection_information();
+    bytes = (valid_secure_socket(server.secure_connect_socket)) ? SSL_write(server.secure_connect_socket, message.c_str(), message.length()) :
+                        send(server.connect_socket, message.c_str(), message.length(), flags);
+
+    
+    if (bytes < 1) {
+        std::cerr << "Failed to send the resource request to the server" << std::endl;
         client.stop();
         return;
     }
 
+    message.clear();
+    message.shrink_to_fit();
     std::cout << "Successfully requested resources" << std::endl;
     const auto start_time = std::chrono::steady_clock::now();
 
-    while (client and (std::chrono::steady_clock::now() - start_time) < timeout) {
-        bytes = __kilo_bytes__(count);
-        response = client.message<char>(msg, bytes, flags, std::chrono::seconds(5));
+    while (client and ((std::chrono::steady_clock::now() - start_time) < timeout)) {
 
-        if (response.byte_count <= 0) {
-            std::cerr << ((response.byte_count == 0) ? "Connection closed by server" : "An unexpected error occured") << std::endl;
+        // Does the client has a message?
+        if (client.message()) {
+            bytes = (client.secure()) ? SSL_read(server.secure_connect_socket, msg, __kilo_bytes__(count)) :
+                        recv(server.connect_socket, msg, __kilo_bytes__(count), flags);
+            if (bytes < 1) {
+                std::cerr << "Failed to receive data from server" << std::endl;
+                break;
+            }
+            message = std::string(msg, bytes);
             break;
         }
-
-        std::cout << std::string(msg, bytes);
     }
-
-
-    // auto start_time = std::chrono::steady_clock::now();
     client.stop();
+    std::cout << "Client connection closed after " << std::chrono::duration<double>(std::chrono::steady_clock::now() - start_time).count() << " seconds." << std::endl;
+    if (not message.empty()) {
+        std::cout << "Message from server" << ending << "\"" << message << "\"" << std::endl;
+    }
 }
 
 void print_socket_configs(socket_type the_socket) {
