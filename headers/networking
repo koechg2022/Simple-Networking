@@ -1819,7 +1819,7 @@
                                 // To track the errors
                                 if (byte_chunk < 0) byte_error = byte_error;
 
-                                std::printf("Inside error branch of receiving message method. byte_chunk is \"%ld\"\n", byte_chunk);
+                                // std::printf("Inside error branch of receiving message method. byte_chunk is \"%ld\"\n", byte_chunk);
                                 break;
                             }
 
