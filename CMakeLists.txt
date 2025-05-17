@@ -1,6 +1,24 @@
-# Unix: cmake .. -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-# Windows: cmake .. -G "MinGW Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-#           mingw32-make .
+
+
+# Run on unix:
+#     cmake .. -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+#     make
+#
+# On windows:
+#     Powershell (no longer have to add -DOPENSSL_ROOT_DIR extension for powershell):
+#           cmake -S .. -B build -G "MinGW Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENSSL_ROOT_DIR="C:/OpenSSL-Win64"
+#           cmake -S .. -B build -G "MinGW Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENSSL_ROOT_DIR="C:/openssl-mingw64"
+#           
+#           cmake --build build
+#
+#     MSYS2:
+#           cmake .. -G "MinGW Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENSSL_ROOT_DIR=/mingw64
+#           
+#           cmake --build buid
+
+
+
+
 
 cmake_minimum_required(VERSION 3.16)
 
