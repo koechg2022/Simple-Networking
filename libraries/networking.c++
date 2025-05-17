@@ -900,8 +900,8 @@ bool networking::network_structures::tcp_server::set_cert_and_key() {
         ERR_clear_error();
 
         // lock the cert and key file mutexes
-        // std::unique_lock<std::mutex> cert_lock(this->cert_file_mutex_);
-        // std::unique_lock<std::mutex> key_lock(this->key_file_mutex_);
+        std::unique_lock<std::mutex> cert_lock(this->cert_file_mutex_);
+        std::unique_lock<std::mutex> key_lock(this->key_file_mutex_);
         if (this->cert_file_.empty() and this->key_file_.empty()) {
             throw networking::exceptions::use_key_and_cert_failure("Missing certificate and key (files(?)). They are both needed for a secure connection to be established.", unpack_exception_parameters(1));
         }
@@ -937,7 +937,9 @@ bool networking::network_structures::tcp_server::set_cert_and_key() {
             ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
             throw networking::exceptions::create_context_failure("Failed to create context for the secure connection. Error \"" + std::string(msg) + "\"", unpack_exception_parameters(2));
         }
-
+        
+        // lock the context, key/cert already locked.
+        std::lock_guard<std::mutex> context_lock(this->context_mutex_);
         if (not SSL_CTX_use_certificate_file(this->context_, this->cert_file_.c_str(), SSL_FILETYPE_PEM) or not SSL_CTX_use_PrivateKey_file(this->context_, this->key_file_.c_str(), SSL_FILETYPE_PEM)) {
             ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
             throw networking::exceptions::use_key_and_cert_failure("Failed to set the certificate and/or private key to use for a secure connection. Error \"" + std::string(msg) + "\"", unpack_exception_parameters(2));
@@ -1211,6 +1213,8 @@ networking::network_structures::client_connection networking::network_structures
         FD_SET(this->connect_socket_, &reads);
         struct timeval timeout_ = {timeout.tv_sec < 0 ? 0 : timeout.tv_sec, timeout.tv_usec < 0 ? 0 : timeout.tv_usec};
 
+        
+        std::lock_guard<std::mutex> socket_lock(this->connect_socket_mutex_);
         if (select(this->connect_socket_ + 1, &reads, 0, 0, (wait_to_connect) ? 0 : &timeout_) < 0) {
             throw networking::exceptions::select_failure("Failed to select for the tcp server' actively listening socket.", unpack_exception_parameters(1));
         }
@@ -1250,33 +1254,32 @@ networking::network_structures::client_connection networking::network_structures
                 const int count = 1;
                 char msg[__kilo_bytes__(count)];
                 ERR_clear_error();
-                // std::printf("Creating secure connection socket for the new connection.\n");
+                
                 the_answer.secure_connect_socket = SSL_new(this->context_);
                 if (not valid_secure_socket(the_answer.secure_connect_socket)) {
                     ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
                     this->drop_client(the_answer);
                     throw networking::exceptions::create_secure_socket_failure("Failed to create a secure socket layer socket for the new connection with cleint \"" + the_answer.host_information.hostname + "\". Error \"" + std::string(msg) + "\"", unpack_exception_parameters(4));
                 }
-                // std::printf("Successfully established secure connection socket for the client.\n");
-                // std::printf("Now setting secure connection socket's connection socket to the tcp socket used for communication with this client.\n");
+                
                 if (not SSL_set_fd(the_answer.secure_connect_socket, the_answer.connect_socket)) {
                     ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
                     this->drop_client(the_answer);
                     throw networking::exceptions::create_secure_socket_failure("Failed to set the secure socket layer (SSL) for the socket connecting this tcp server to \"" + the_answer.host_information.hostname + "\". Error \"" + std::string(msg) + "\"", unpack_secure_exception_parameters(3));
                 }
-                // std::printf("Successfully set the secure connection socket's tcp communication socket.\n");
+                
 
                 if (SSL_accept(the_answer.secure_connect_socket) != 1) {
                     ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
                     this->drop_client(the_answer);
                     throw networking::exceptions::secure_handshake_failure("Failed to establish a secure handshake with new client \"" + the_answer.host_information.hostname + "\". Error \"" + std::string(msg) + "\"", unpack_secure_exception_parameters(3));
                 }
-                // std::printf("Successfully established secure handshake with the new connection. Now encrypted communication will happen smoothly\n");
+                
             }
-            // std::printf("Successfully established a new connection.\n");
-            std::unique_lock<std::mutex> new_client_lock(this->clients_mutex_);
+            
+            std::lock_guard<std::mutex> client_lock(this->clients_mutex_);
             this->clients_.insert({the_answer.host_information, the_answer});
-            new_client_lock.unlock();
+            
         }
 
     }
@@ -1358,14 +1361,12 @@ std::unordered_set<networking::network_structures::client_connection> networking
 networking::network_structures::tcp_server& networking::network_structures::tcp_server::update() {
     std::vector<networking::network_structures::client_id> remove_me;
 
+    std::lock_guard<std::mutex> socket_lock(this->connect_socket_mutex_);
     networking::set_blocking(this->connect_socket_, this->block_);
 
+    std::lock_guard<std::mutex> client_lock(this->clients_mutex_);
     for (auto& [id, client] : this->clients_) {
         if (not valid_socket(client.connect_socket)) {
-            remove_me.push_back(id);
-            continue;
-        }
-        if (not networking::socket_connected(client.connect_socket)) {
             remove_me.push_back(id);
             continue;
         }
@@ -1395,6 +1396,7 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
         if (this->secure_) {
             ERR_clear_error();
 
+            // All contain a mutex lock
             if (not networking::secure_network_initialized()) {
                 if (not networking::initialize_secure_network()) {
                     ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
@@ -1403,15 +1405,14 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
                 // std::printf("Initialized the secure network.\n");
                 this->was_secure_init_ = false;
             }
-
-            if (not valid_context(this->context_)) {
-                if (not this->create_context()) {
-                    ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
-                    throw networking::exceptions::create_context_failure("Failed to create secure context for this tcp server's secure connection. Error \"" + std::string(msg) + "\"", unpack_exception_parameters(2));
-                }
-                // std::printf("Created the secure context for this tcp_server.\n");
+            
+            // Contains a mutex lock
+            if (not this->create_context()) {
+                ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
+                throw networking::exceptions::create_context_failure("Failed to create secure context for this tcp server's secure connection. Error \"" + std::string(msg) + "\"", unpack_exception_parameters(2));
             }
 
+            // Contains a mutex lock
             if (not this->set_cert_and_key()) {
                 ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
                 throw networking::exceptions::use_key_and_cert_failure("Failed to use key and certificate to establish secure connection channels with connected clients. Error \"" + std::string(msg) + "\"", unpack_secure_exception_parameters(2));
@@ -1419,13 +1420,18 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
             
         }
         
+        // Contains mutex lock
         if (not this->create_connection_address()) {
             throw networking::exceptions::create_connection_address_failure("Failed to create the connection address to be used for the creation of the connection socket.", unpack_exception_parameters(1));
         }
 
+        // Contains mutex lock
         if (not this->create_connection_socket()) {
             throw networking::exceptions::create_connection_socket_failure("Failed to create connection socket for this tcp server to listen for connections from.", unpack_exception_parameters(1));
         }
+
+        // From here on, need a socket lock, and a connection lock
+        std::scoped_lock connect_locks(this->connect_address_mutex_, this->connect_socket_mutex_);
 
         // Redundant check
         if (not valid_socket(this->connect_socket_)) {
@@ -1457,6 +1463,7 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
 
 networking::network_structures::tcp_server& networking::network_structures::tcp_server::stop() {
 
+    std::scoped_lock stoping_locks(this->clients_mutex_, this->context_mutex_, this->key_file_mutex_, this->cert_file_mutex_);
     for (auto& [name, client] : this->clients_) {
         // this->disconnect_client(name, false);
         this->drop_client(client);
@@ -1467,10 +1474,8 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
     (this->secure_ and this->context_) ? SSL_CTX_free(this->context_) : (void) 0;
     this->context_ = invalid_context;
 
-    // this->max_secure_socket = invalid_secure_socket;
-    // this->max_socket_ = invalid_socket;
-    
     this->key_file_ = this->cert_file_ = "";
+
     
     (not this->was_secure_init_) ? networking::uninitialize_secure_network() : true;
     

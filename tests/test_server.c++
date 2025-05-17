@@ -320,6 +320,63 @@ void resolve_hostname_name() {
 }
 
 void test_server() {
+
+    const int count = 1, flags = 0;
+    char msg[__kilo_bytes__(count)];
+    bytes byte_count;
+    std::string message;
+
+    networking::network_structures::host_report report;
+    networking::network_structures::complete_report reports;
+    networking::network_structures::client_connection client;
+    std::unordered_set<networking::network_structures::client_connection> clients;
+
+    networking::network_structures::tcp_server server;
+
+    server
+        .retrieve_hostname()
+        .secure(false)
+        .block_clients(false)
+        .block(false);
+
+    try {
+
+        if (not server.start()) {
+            std::cerr << "Failed to start the server" << std::endl;
+            return;
+        }
+
+        while (server) {
+
+            try {
+
+                if ((client = server.new_client(false, {0, 200}))) {
+                    std::cout << "New connection from \"" << client.host_information.hostname << "\"" << std::endl;
+                }
+
+            }
+
+            catch (networking::exceptions::base_exception& except) {
+                std::cerr << "Caught an exception of type \"" << except.type() << "\" while trying to receive a new client connection" << std::endl;
+            }
+
+
+            if (not (clients = server.clients(false)).empty()) {
+                
+            }
+
+            if (misc_functions::has_keyboard_input()) {
+                message = misc_functions::get_input();
+            }
+        }
+
+
+    }
+
+    catch (networking::exceptions::base_exception& except) {
+        std::cerr << "Caught an exception : " << except.message() << std::endl;
+    }
+
     std::cout << UNDER_CONSTRUCTION << std::endl;
 }
 
