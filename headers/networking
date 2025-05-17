@@ -1702,7 +1702,7 @@
                         @param flags (`const int`) : Defaults to 0, The flags to use while sending data to the connected machine. 
                         This is only useful when sending data in a non-securely connected machine.
 
-                        @param timeout (const `std::chrono::duration<int>`) : Defaults to std::chrono::seconds(10). The maximum waittime that this 
+                        @param timeout (`const std::chrono::duration<int>`) : Defaults to std::chrono::seconds(10). The maximum wait time that this 
                         client should spend while trying to send data. If it this timeout time is exceeded and the data is not sent, 
                         a failure host_report is sent.
 
@@ -1729,6 +1729,24 @@
                         return networking::send_message<data>(remote, msg, length, flags, timeout);
                     }
 
+                    /**
+                        @brief This method receives data from the connected remote machine.
+
+                        @param msg (`data*`) : The data to be sent. This is a generic data type pointer holding 
+                        the buffer space to receive the data.
+
+                        @param length (const bytes`) : This is the length of the buffer space that will receive the data.
+
+                        @param flags (`const int`) : Defaults to 0. This is the flag that is to be used while receiving data from the 
+                        the connected machine. This is only useful when receiving data from a non-securely connected machine.
+
+                        @param timeout (`const std::chrono::duration<int>`) : Defaults to std::chrono::seconds(10). This is the maximum wait time that 
+                        this client should spend while trying to receive data. If this amount of time is exceeded and the data is not received such that 
+                        the connection is no longer receiving data, the connection is closed, or there was an error, then a failure is returned.
+
+                        @returns A `networking::network_structures::host_report` With a status of the current connection information, the totla 
+                        number of bytes received, and a flag specifying whether a message was successfully received or not.
+                     */
                     template <typename data> networking::network_structures::host_report message(data* msg, const bytes length, const int flags = 0, const std::chrono::duration<int> timeout = std::chrono::seconds(10)) {
                         
                         if (std::is_const_v<data>) {
