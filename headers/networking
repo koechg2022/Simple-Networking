@@ -764,7 +764,7 @@
 
                     if (not bytes_) {
                         // Connection was closed
-                        total_ = 0;
+                        total_ = (total_ > 1) ? total_ : 0;
                         break;
                     }
                     // An actual error occured
