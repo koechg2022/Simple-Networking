@@ -774,11 +774,12 @@
                 // std::printf("\tAbout to update total_\n");
                 total_ = total_ + bytes_;
             }
-            the_answer.host = host;
-            the_answer.byte_count = total_;
-            the_answer.success = (total_ == byte_count and total_ >= 1);
+            // the_answer.host = host;
+            // the_answer.byte_count = total_;
+            // the_answer.success = (total_ == byte_count and total_ >= 1);
 
-            return the_answer;
+            // return the_answer;
+            return {host, total_, (total_ == byte_count)};
         }
 
     }

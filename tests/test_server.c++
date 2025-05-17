@@ -127,7 +127,7 @@ const std::string project_root_directory = [](std::string base_ = "Simple-Networ
     while (not string_functions::same_string(the_answer.filename().string(), base_)) {
         
         the_answer = the_answer.parent_path();
-        std::cout << "the_answer \"" << the_answer.string() << std::endl;
+        // std::cout << "the_answer \"" << the_answer.string() << std::endl;
         if (the_answer.string().length() == 1) {
             break;
         }
