@@ -1560,6 +1560,7 @@ unsigned long networking::network_structures::tcp_server::connections() const {
 
 
 bool networking::network_structures::tcp_client::create_context() {
+    std::lock_guard<std::mutex> context_lock(this->context_mutex_);
     if (this->secure_ and not valid_context(this->context_)) {
         const int count = 1;
         char msg[__kilo_bytes__(count)];
@@ -1621,12 +1622,11 @@ bool networking::network_structures::tcp_client::connect_socket() {
         if (not this->create_connection_socket()) {
             throw networking::exceptions::create_connection_socket_failure("Failed to create the connection socket for this tcp clien to use for establishing a connection to a remote host.", unpack_exception_parameters(1));
         }
-
+        std::scoped_lock socket_lock(this->connect_socket_mutex_, this->connect_address_mutex_, this->connect_time_mutex_);
         if (connect(this->connect_socket_, this->active_address_->ai_addr, this->active_address_->ai_addrlen)) {
             throw networking::exceptions::connection_failure("Failed to connect this tcp client to the remote host.", unpack_exception_parameters(1));
         }
-        // std::printf("connect system call was a success. But the socket it created is %s\n", (valid_socket(this->connect_socket_)) ? "true" : "false");
-        // std::printf("socket_connected is returning %s\n", networking::socket_connected(this->connect_socket_) ? "true" : "false");
+        
         this->connect_time_ = misc_functions::get_current_time();
         this->connected_ = true;
     }
@@ -1635,7 +1635,7 @@ bool networking::network_structures::tcp_client::connect_socket() {
 }
 
 bool networking::network_structures::tcp_client::create_secure_socket() {
-
+    std::lock_guard<std::mutex> secure_sock_lock(this->secure_socket_mutex_);
     if (this->secure_ and not valid_secure_socket(this->secure_socket_)) {
         const int count = 1;
         char msg[__kilo_bytes__(count)];
@@ -1667,7 +1667,6 @@ bool networking::network_structures::tcp_client::create_secure_socket() {
         if (not this->connect_socket()) {
             throw networking::exceptions::connection_failure("Failed to connect the tcp client to the remote host.", unpack_exception_parameters(1));
         }
-
         this->secure_socket_ = SSL_new(this->context_);
     }
 
@@ -1708,7 +1707,7 @@ bool networking::network_structures::tcp_client::set_server_name_indication() {
             ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
             throw networking::exceptions::create_secure_socket_failure("Failed to create the secure connection socket for encrypted communication with the remote host. Error \"" + std::string(msg) + "\"", unpack_secure_exception_parameters(2));
         }
-        
+        std::scoped_lock locks(this->secure_socket_mutex_, this->hostname_mutex_);
         if (not SSL_set_tlsext_host_name(this->secure_socket_, this->hostname_.c_str())) {
             ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
             throw networking::exceptions::socket_information_failure("Failed to establish the Server Name Indication (SNI) and choose host to connect to. Error \"" + std::string(msg) + "\"", unpack_secure_exception_parameters(2));
@@ -1760,7 +1759,7 @@ bool networking::network_structures::tcp_client::secure_file_descriptor() {
             ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
             throw networking::exceptions::connection_failure("Failed to select the hostname for this tcp client to connect to. Error \"" + std::string(msg) + "\"", unpack_secure_exception_parameters(2));
         }
-
+        std::scoped_lock locks(this->secure_socket_mutex_, this->connect_socket_mutex_);
         if (not SSL_set_fd(this->secure_socket_, this->connect_socket_)) {
             ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
             throw networking::exceptions::connection_failure("Failed to set the socket (file descriptor) for the secure socket to communcate over. Error \"" + std::string(msg) + "\"", unpack_secure_exception_parameters(2));
@@ -1810,7 +1809,7 @@ bool networking::network_structures::tcp_client::secure_handshake(const std::chr
             ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
             throw networking::exceptions::connection_failure("Failed to select the hostname for this tcp client to connect to. Error \"" + std::string(msg) + "\"", unpack_secure_exception_parameters(2));
         }
-
+        std::lock_guard<std::mutex> secure_lock(this->secure_socket_mutex_);
         int result = SSL_connect(this->secure_socket_);
         
         if (result <= 0) {
@@ -1873,6 +1872,7 @@ bool networking::network_structures::tcp_client::secure_handshake(const std::chr
 
 bool networking::network_structures::tcp_client::get_cipher() {
 
+    std::lock_guard<std::mutex> cipher_lock(this->cipher_mutex_);
     if (this->secure_ and this->cipher_.empty()) {
 
         const int count = 1;
@@ -1923,7 +1923,7 @@ bool networking::network_structures::tcp_client::get_cipher() {
 }
 
 bool networking::network_structures::tcp_client::get_peer_certificate() {
-
+    std::lock_guard<std::mutex> cert_lock(this->certificate_mutex_);
     if (this->secure_ and not valid_certificate(this->secure_socket_)) {
 
         const int count = 1;
@@ -1993,14 +1993,27 @@ networking::network_structures::tcp_client::tcp_client(const networking::network
 networking::network_structures::tcp_client::host<networking::network_structures::tcp_client>::host(other) {
 
     // bools
-    this->secure_ = other.secure_;
-    this->secure_was_init_ = other.secure_was_init_;
-    this->connected_ = other.connected_;
-    this->secure_fd_set_ = other.secure_fd_set_;
-    this->secure_connected_ = other.secure_connected_;
-    this->secure_handshook_ = other.secure_handshook_;
-    this->server_name_indication_ = other.server_name_indication_;
-    this->sni_ = other.sni_;
+    this->secure_.store(other.secure_.load());
+    this->secure_was_init_.store(other.secure_was_init_.load());
+    this->connected_.store(other.connected_.load());
+    this->secure_fd_set_.store(other.secure_fd_set_.load());
+    this->secure_connected_.store(other.secure_connected_.load());
+    this->secure_handshook_.store(other.secure_handshook_.load());
+    this->server_name_indication_.store(other.server_name_indication_.load());
+    this->sni_.store(other.sni_.load());
+
+    std::scoped_lock locks(
+        this->context_mutex_, 
+        this->secure_socket_mutex_, 
+        this->certificate_mutex_,
+        this->connect_time_mutex_, 
+        this->cipher_mutex_,
+        other.context_mutex_, 
+        other.secure_socket_mutex_, 
+        other.certificate_mutex_,
+        other.connect_time_mutex_, 
+        other.cipher_mutex_
+    );
 
     // pointers
     this->context_ = other.context_;
@@ -2019,14 +2032,27 @@ networking::network_structures::tcp_client::host<networking::network_structures:
 
 
     // bools
-    this->secure_ = other.secure_;
-    this->secure_was_init_ = other.secure_was_init_;
-    this->connected_ = other.connected_;
-    this->secure_fd_set_ = other.secure_fd_set_;
-    this->secure_connected_ = other.secure_connected_;
-    this->secure_handshook_ = other.secure_handshook_;
-    this->server_name_indication_ = other.server_name_indication_;
-    this->sni_ = other.sni_;
+    this->secure_.store(other.secure_.load());
+    this->secure_was_init_.store(other.secure_was_init_.load());
+    this->connected_.store(other.connected_.load());
+    this->secure_fd_set_.store(other.secure_fd_set_.load());
+    this->secure_connected_.store(other.secure_connected_.load());
+    this->secure_handshook_.store(other.secure_handshook_.load());
+    this->server_name_indication_.store(other.server_name_indication_.load());
+    this->sni_.store(other.sni_.load());
+
+    std::scoped_lock locks(
+        this->context_mutex_, 
+        this->secure_socket_mutex_, 
+        this->certificate_mutex_,
+        this->connect_time_mutex_, 
+        this->cipher_mutex_,
+        other.context_mutex_, 
+        other.secure_socket_mutex_, 
+        other.certificate_mutex_,
+        other.connect_time_mutex_, 
+        other.cipher_mutex_
+    );
 
     // pointers
     this->context_ = other.context_;
@@ -2063,14 +2089,27 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
         networking::network_structures::host<networking::network_structures::tcp_client>::operator=(other);
 
         // bools
-        this->secure_ = other.secure_;
-        this->secure_was_init_ = other.secure_was_init_;
-        this->connected_ = other.connected_;
-        this->secure_fd_set_ = other.secure_fd_set_;
-        this->secure_connected_ = other.secure_connected_;
-        this->secure_handshook_ = other.secure_handshook_;
-        this->server_name_indication_ = other.server_name_indication_;
-        this->sni_ = other.sni_;
+        this->secure_.store(other.secure_.load());
+        this->secure_was_init_.store(other.secure_was_init_.load());
+        this->connected_.store(other.connected_.load());
+        this->secure_fd_set_.store(other.secure_fd_set_.load());
+        this->secure_connected_.store(other.secure_connected_.load());
+        this->secure_handshook_.store(other.secure_handshook_.load());
+        this->server_name_indication_.store(other.server_name_indication_.load());
+        this->sni_.store(other.sni_.load());
+
+        std::scoped_lock locks(
+            this->context_mutex_, 
+            this->secure_socket_mutex_, 
+            this->certificate_mutex_,
+            this->connect_time_mutex_, 
+            this->cipher_mutex_,
+            other.context_mutex_, 
+            other.secure_socket_mutex_, 
+            other.certificate_mutex_,
+            other.connect_time_mutex_, 
+            other.cipher_mutex_
+        );
 
         // pointers
         this->context_ = other.context_;
@@ -2091,14 +2130,27 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
     if (this != &other) {
 
         // bools
-        this->secure_ = other.secure_;
-        this->secure_was_init_ = other.secure_was_init_;
-        this->connected_ = other.connected_;
-        this->secure_fd_set_ = other.secure_fd_set_;
-        this->secure_connected_ = other.secure_connected_;
-        this->secure_handshook_ = other.secure_handshook_;
-        this->server_name_indication_ = other.server_name_indication_;
-        this->sni_ = other.sni_;
+        this->secure_.store(other.secure_.load());
+        this->secure_was_init_.store(other.secure_was_init_.load());
+        this->connected_.store(other.connected_.load());
+        this->secure_fd_set_.store(other.secure_fd_set_.load());
+        this->secure_connected_.store(other.secure_connected_.load());
+        this->secure_handshook_.store(other.secure_handshook_.load());
+        this->server_name_indication_.store(other.server_name_indication_.load());
+        this->sni_.store(other.sni_.load());
+
+        std::scoped_lock locks(
+            this->context_mutex_, 
+            this->secure_socket_mutex_, 
+            this->certificate_mutex_,
+            this->connect_time_mutex_, 
+            this->cipher_mutex_,
+            other.context_mutex_, 
+            other.secure_socket_mutex_, 
+            other.certificate_mutex_,
+            other.connect_time_mutex_, 
+            other.cipher_mutex_
+        );
 
         // pointers
         this->context_ = other.context_;
@@ -2129,6 +2181,7 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
 
 // Self Check Operator
 networking::network_structures::tcp_client::operator bool() const {
+    std::scoped_lock locks(this->context_mutex_, this->secure_socket_mutex_, connect_socket_mutex_);
     return  (this->secure_) ? valid_context(this->context_) and 
                                 valid_secure_socket(this->secure_socket_) and 
                                 valid_socket(this->connect_socket_) and 
@@ -2156,6 +2209,7 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
     if (not *this) {
         // Start the client
 
+        std::unique_lock<std::mutex> host_lock(this->hostname_mutex_), port_lock(this->port_mutex_);
         if (this->hostname_.empty()) {
             throw networking::exceptions::unexpected_failure("No hostname specified to connect to.", unpack_exception_parameters(1));
         }
@@ -2163,7 +2217,6 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
         if (this->portvalue_.empty()) {
             throw networking::exceptions::unexpected_failure("No port value specified to use for the connection to \"" + this->hostname_ + "\"", unpack_exception_parameters(1));
         }
-
 
 
         const int count = 1;
@@ -2176,7 +2229,8 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
                 throw networking::exceptions::initialize_network_failure("Failed to initialize the network. (Crappy windows non sense)", unpack_exception_parameters(1));
             }
         }
-
+        host_lock.unlock();
+        port_lock.unlock();
         if (this->secure_) {
 
             if (not networking::secure_network_initialized()) {
@@ -2244,20 +2298,20 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
             
         }
 
-        // std::printf("At the end of tcp_client::start(), the connection socket is \"%svalid\", and the secure_socket is \"%svalid\"\n", 
-        //                     (valid_socket(this->connect_socket_)) ? "" : "in", (valid_secure_socket(this->secure_socket_)) ? "" : "in");
-
     }
     return *this;
 }
 
 networking::network_structures::tcp_client& networking::network_structures::tcp_client::stop() {
     if (*this) {
+
+        std::scoped_lock stop_locks(this->certificate_mutex_, this->secure_socket_mutex_, this->context_mutex_);
         (this->secure_ and valid_certificate(this->certificate_)) ? X509_free(this->certificate_) : (void) 0;
         this->certificate_ = invalid_certificate;
         
         (this->secure_ and valid_secure_socket(this->secure_socket_)) ? SSL_shutdown(this->secure_socket_) : 0;
-        // Investigate calling this->close_host() here instead of at the end.
+        
+        
         (this->secure_ and valid_secure_socket(this->secure_socket_)) ? SSL_free(this->secure_socket_) : (void) 0;
         this->secure_socket_ = invalid_secure_socket;
 
@@ -2288,6 +2342,7 @@ std::string networking::network_structures::tcp_client::get_subject() {
         ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
         throw networking::exceptions::certificate_failure("Failed to retrieve peer certificate to retrieve issuer name." + std::string(msg) + "\"", unpack_secure_exception_parameters(2));
     }
+    std::lock_guard<std::mutex> cert_lock(this->certificate_mutex_);
     char* answer;
     std::string the_answer = "";
     if ((answer = X509_NAME_oneline(X509_get_subject_name(this->certificate_), 0, 0))) {
@@ -2314,6 +2369,7 @@ std::string networking::network_structures::tcp_client::get_issuer() {
         ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
         throw networking::exceptions::certificate_failure("Failed to retrieve peer certificate to retrieve issuer name." + std::string(msg) + "\"", unpack_secure_exception_parameters(2));
     }
+    std::lock_guard<std::mutex> cert_lock(this->certificate_mutex_);
     char* answer;
     std::string the_answer = "";
     if ((answer = X509_NAME_oneline(X509_get_issuer_name(this->certificate_), 0, 0))) {
@@ -2327,7 +2383,7 @@ bool networking::network_structures::tcp_client::message() {
     if (not *this) {
         return false;
     }
-
+    std::lock_guard<std::mutex> sock_lock(this->connect_socket_mutex_);
     fd_set reads;
     struct timeval timeout = {0, 0};
     FD_ZERO(&reads);
@@ -2342,6 +2398,7 @@ bool networking::network_structures::tcp_client::message() {
 
 networking::network_structures::server_connection networking::network_structures::tcp_client::connection_information() const {
     networking::network_structures::server_connection the_answer;
+    std::scoped_lock locks(this->hostname_mutex_, this->port_mutex_, this->connect_time_mutex_, this->connect_socket_mutex_, this->secure_socket_mutex_, this->active_address_mutex_);
     the_answer.host_information = {this->hostname_, this->portvalue_, this->connect_time_};
     the_answer.connect_socket = this->connect_socket_;
     the_answer.secure_connect_socket = this->secure_socket_;

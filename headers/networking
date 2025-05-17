@@ -1595,36 +1595,39 @@
 
             class tcp_client : public host<tcp_client> {
                 private:
-                    bool secure_ = false,
-                        secure_was_init_ = false,
-                        connected_ = false,
-                        secure_fd_set_ = false,
-                        secure_connected_ = false,
-                        secure_handshook_= false,
-                        sni_ = true,
-                        server_name_indication_ = false;
+                    
+                    std::atomic<bool> secure_ = {false};
+                    std::atomic<bool> secure_was_init_ = {false};
+                    std::atomic<bool> connected_ = {false};
+                    std::atomic<bool> secure_fd_set_ = {false};
+                    std::atomic<bool> secure_connected_ = {false};
+                    std::atomic<bool> secure_handshook_= {false};
+                    std::atomic<bool> sni_ = {true};
+                    std::atomic<bool> server_name_indication_ = {false};
 
-                        context_type context_ = invalid_context;
-                        secure_socket_type secure_socket_ = invalid_secure_socket;
-                        certificate_type certificate_ = invalid_certificate;
+                    mutable std::mutex context_mutex_, secure_socket_mutex_, certificate_mutex_;
+                    context_type context_ = invalid_context;
+                    secure_socket_type secure_socket_ = invalid_secure_socket;
+                    certificate_type certificate_ = invalid_certificate;
 
-                        std::string connect_time_ = "", cipher_ = "";
+                    mutable std::mutex connect_time_mutex_, cipher_mutex_;
+                    std::string connect_time_ = "", cipher_ = "";
 
-                        bool create_context();
+                    bool create_context();
 
-                        bool connect_socket();
+                    bool connect_socket();
 
-                        bool create_secure_socket();
+                    bool create_secure_socket();
 
-                        bool set_server_name_indication();
+                    bool set_server_name_indication();
 
-                        bool secure_file_descriptor();
+                    bool secure_file_descriptor();
 
-                        bool secure_handshake(const std::chrono::duration<int> timeout = std::chrono::seconds(10));
+                    bool secure_handshake(const std::chrono::duration<int> timeout = std::chrono::seconds(10));
 
-                        bool get_cipher();
+                    bool get_cipher();
 
-                        bool get_peer_certificate();
+                    bool get_peer_certificate();
 
 
                 public:
