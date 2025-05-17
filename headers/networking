@@ -597,11 +597,17 @@
                 
                 std::string hostname = "", port = "", connection_time = "";
 
+                client_id();
+
+                client_id(const std::string hname, const std::string hport, const std::string ctime_);
+
                 bool operator<(const client_id& other) const;
 
                 bool operator==(const client_id& other) const;
                 
                 operator bool() const;
+
+                client_id& operator=(const client_id& other);
 
             } client_id;
 
@@ -610,11 +616,17 @@
                 socket_type connect_socket = invalid_socket;
                 secure_socket_type secure_connect_socket = invalid_secure_socket;
 
+                host_connection();
+                
+                host_connection(client_id client_, const socket_type sock_, secure_socket_type sec_sock);
+
                 bool operator<(const host_connection& other) const;
 
                 virtual bool operator==(const host_connection& other) const;
 
                 operator bool() const;
+
+                host_connection& operator=(const host_connection& other);
 
             } host_connection;
 
@@ -622,12 +634,20 @@
                 host_connection host;
                 bytes byte_count = 0;
                 bool success = false;
+
+                host_report();
+
+                host_report(const host_connection con_host, bytes total_bytes, const bool succeeded);
+
+                host_report(const std::string hname, const std::string hport, const std::string hctime, const socket_type conn_sock, secure_socket_type sec_sock);
                 
                 bool operator==(const host_report& other) const;
 
                 operator bool() const;
 
                 bool operator<(const host_report& other) const;
+
+                host_report& operator=(const host_report& other);
 
             } host_report;
 
@@ -640,12 +660,14 @@
 
                 bool operator<(const complete_report& other) const;
 
+                host_report& operator[](const unsigned long index);
+
                 void add_report(const host_report new_report);
 
                 unsigned long success() const;
 
                 unsigned long fails() const;
-                
+
                 private:
                     unsigned long successes = 0, failures = 0;                
 

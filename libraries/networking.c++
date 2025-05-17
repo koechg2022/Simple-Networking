@@ -694,6 +694,14 @@ std::string networking::this_machine_name() {
 
 /* network_structures::client_id */
 
+networking::network_structures::client_id::client_id() {}
+
+networking::network_structures::client_id::client_id(const std::string hname, const std::string hport, const std::string ctime_) {
+    this->hostname = hname;
+    this->port = hport;
+    this->connection_time = ctime_;
+}
+
 bool networking::network_structures::client_id::operator<(const networking::network_structures::client_id& other) const {
     return this->hostname < other.hostname and this->port < other.port and this->connection_time < other.connection_time;
 }
@@ -708,6 +716,14 @@ networking::network_structures::client_id::operator bool() const {
     return not this->hostname.empty() and not this->port.empty() and not this->connection_time.empty();
 }
 
+networking::network_structures::client_id& networking::network_structures::client_id::operator=(const networking::network_structures::client_id& other) {
+    if (this != &other) {
+        this->hostname = other.hostname;
+        this->port = other.port;
+        this->connection_time = other.connection_time;
+    }
+    return *this;
+}
 
 /***********************************************************************************************/
 
@@ -715,6 +731,13 @@ networking::network_structures::client_id::operator bool() const {
 
 /* network_structures::host_connection */
 
+networking::network_structures::host_connection::host_connection() {}
+
+networking::network_structures::host_connection::host_connection(client_id client_, const socket_type sock_, secure_socket_type sec_sock) {
+    this->host_information = client_;
+    this->connect_socket = sock_;
+    this->secure_connect_socket = sec_sock;
+}
 
 bool networking::network_structures::host_connection::operator<(const networking::network_structures::host_connection& other) const {
     return this->host_information < other.host_information;
@@ -728,12 +751,38 @@ networking::network_structures::host_connection::operator bool() const {
     return this->host_information and valid_socket(this->connect_socket);
 }
 
+networking::network_structures::host_connection& networking::network_structures::host_connection::operator=(const networking::network_structures::host_connection& other) {
+    if (this != &other) {
+        this->host_information = other.host_information;
+        this->connect_socket = other.connect_socket;
+        this->secure_connect_socket = other.secure_connect_socket;
+    }
+    return *this;
+}
 
 /***********************************************************************************************/
 
 
 
 /* host_report */
+
+networking::network_structures::host_report::host_report() {}
+
+networking::network_structures::host_report::host_report(const host_connection con_host, bytes total_bytes, const bool succeeded) {
+    this->host = con_host;
+    this->byte_count = total_bytes;
+    this->success = succeeded;
+}
+
+networking::network_structures::host_report::host_report(const std::string hname, const std::string hport, const std::string hctime, const socket_type conn_sock, secure_socket_type sec_sock) {
+    this->host.host_information.hostname = hname;
+    this->host.host_information.port = hport;
+    this->host.host_information.connection_time = hctime;
+    this->host.connect_socket = conn_sock;
+    this->host.secure_connect_socket = sec_sock;
+}
+
+
 bool networking::network_structures::host_report::operator==(const networking::network_structures::host_report& other) const {
     return this->host == other.host and this->byte_count == other.byte_count and this->success == other.success;
 }
@@ -744,6 +793,15 @@ networking::network_structures::host_report::operator bool() const {
 
 bool networking::network_structures::host_report::operator<(const networking::network_structures::host_report& other) const {
     return this->host < other.host and this->byte_count < other.byte_count;
+}
+
+networking::network_structures::host_report& networking::network_structures::host_report::operator=(const networking::network_structures::host_report& other){
+    if (this != &other) {
+        this->host = other.host;
+        this->byte_count = other.byte_count;
+        this->success = other.success;
+    }
+    return *this;
 }
 
 
@@ -778,6 +836,13 @@ bool networking::network_structures::complete_report::operator<(const networking
         return false;
     }
     return this->reports.size() < other.reports.size();
+}
+
+networking::network_structures::host_report& networking::network_structures::complete_report::operator[](const unsigned long index) {
+    if (index >= this->reports.size()) {
+        throw networking::exceptions::unexpected_failure("Cannot access index " + std::to_string(index) + "\". Can only access an index in range [0, " + std::to_string(this->reports.size()) + ")", unpack_exception_parameters(1));
+    }
+    return this->reports[index];
 }
 
 void networking::network_structures::complete_report::add_report(const host_report new_report) {
