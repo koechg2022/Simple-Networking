@@ -33,8 +33,8 @@ In order to run the cmake file, I've been running the commands (these commands a
 
     ‣ Windows - Ya windows is not an easy system to develop on. I initially tried using choco, 
     but the cmake could never find the openssl library on the machine, even after I set the environment 
-    variable for OpenSSL. In the end, I just used MSYS2 to install Openssl. It worked and I was even able 
-    to use powershell to run the cmake file.
+    variable for OpenSSL. In the end, I just used MSYS2 to install Openssl. It worked and I was even 
+    able to use powershell to run the cmake file.
 
 
 ***Note**
