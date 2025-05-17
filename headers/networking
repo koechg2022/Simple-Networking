@@ -1802,11 +1802,13 @@
                             }
 
                             total_bytes = total_bytes + byte_chunk;
-
-                            if (not this->message()) break;
                             
                             // Out of buffer space
                             if (total_bytes == length) break;
+
+                            
+                            if (not this->message()) break;
+                            
                         }
 
                         
