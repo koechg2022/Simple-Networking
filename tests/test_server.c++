@@ -561,6 +561,7 @@ void test_web_client() {
     int encoding = 0, remaining = 0;
 
     const std::string ending = "\r\n";
+    std::string message;
     
     if (not url_parsed.contains(HOSTNAME)) {
         std::cerr << "No hostname specified in url" << std::endl;
@@ -571,54 +572,63 @@ void test_web_client() {
     
     client.secure(true).server_name_indication(true);
 
+    if (client.message<char>(message.data(), message.length(), flags, timeout).success) {
+        std::cerr << "Falsely reports a successful send when no connection has been established" << std::endl;
+        return;
+    }
+
     if (not client.start()) {
         std::cerr << "Failed to start client" << std::endl;
         return;
     }
 
-    std::string message = 
+    message = 
             "GET " + url_parsed[PATH] + " HTTP/1.1" + ending +
             "Host: " + url_parsed[HOSTNAME] + ":" +url_parsed[PORT] + ending +
             "Connection: close" + ending +
             "User-Agent honpwc https_get 1.0" + ending +
             ending;
 
-    // bytes = message.length();
+    
     networking::network_structures::host_report response;
     networking::network_structures::server_connection server = client.connection_information();
-    bytes = (valid_secure_socket(server.secure_connect_socket)) ? SSL_write(server.secure_connect_socket, message.c_str(), message.length()) :
-                        send(server.connect_socket, message.c_str(), message.length(), flags);
-
     
-    if (bytes < 1) {
-        std::cerr << "Failed to send the resource request to the server" << std::endl;
+    
+    response = client.message<const char>(message.data(), message.length(), flags, timeout);
+
+    if (not response.success) {
+        std::cerr << "Failed to send the resource request. Sent " << response.byte_count << " bytes out of " << message.length() << " bytes" << std::endl;
         client.stop();
         return;
     }
-
+    
     message.clear();
     message.shrink_to_fit();
     std::cout << "Successfully requested resources" << std::endl;
     const auto start_time = std::chrono::steady_clock::now();
 
-    while (client and ((std::chrono::steady_clock::now() - start_time) < timeout)) {
+    // while (client and ((std::chrono::steady_clock::now() - start_time) < timeout)) {
 
-        // Does the client has a message?
-        if (client.message()) {
-            bytes = (client.secure()) ? SSL_read(server.secure_connect_socket, msg, __kilo_bytes__(count)) :
-                        recv(server.connect_socket, msg, __kilo_bytes__(count), flags);
-            if (bytes < 1) {
-                std::cerr << "Failed to receive data from server" << std::endl;
-                break;
-            }
-            message = std::string(msg, bytes);
-            break;
-        }
-    }
+    //     // Does the client has a message?
+    //     if (client.message()) {
+    //         bytes = (client.secure()) ? SSL_read(server.secure_connect_socket, msg, __kilo_bytes__(count)) :
+    //                     recv(server.connect_socket, msg, __kilo_bytes__(count), flags);
+    //         if (bytes < 1) {
+    //             std::cerr << "Failed to receive data from server" << std::endl;
+    //             break;
+    //         }
+    //         message = std::string(msg, bytes);
+    //         break;
+    //     }
+    // }
+    response = client.message<char>(msg, __kilo_bytes__(count), flags, timeout);
+
     client.stop();
     std::cout << "Client connection closed after " << std::chrono::duration<double>(std::chrono::steady_clock::now() - start_time).count() << " seconds." << std::endl;
-    if (not message.empty()) {
-        std::cout << "Message from server" << ending << "\"" << message << "\"" << std::endl;
+
+    if (response.success) {
+        // message = std::string(msg, response.byte_count);
+        std::cout << "Message from server" << ending << "\"" << std::string(msg, response.byte_count) << "\"" << std::endl;
     }
 }
 

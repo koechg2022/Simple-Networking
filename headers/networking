@@ -621,7 +621,7 @@
             typedef struct host_report {
                 host_connection host;
                 bytes byte_count = 0;
-                bool success = 0;
+                bool success = false;
                 
                 bool operator==(const host_report& other) const;
 
@@ -909,7 +909,7 @@
                             }
                             lock_address.unlock();
                             this->reset_address();
-                            std::printf("this->create_connection_address is about to return %s\n", (this->active_address_) ? "true" : "false");
+                            // std::printf("this->create_connection_address is about to return %s\n", (this->active_address_) ? "true" : "false");
                         }
                         return this->active_address_;
                     }
@@ -1692,83 +1692,61 @@
                     bool message();
 
                     /**
-                        @brief Send a message from the connected server, if there is a message.
-                        @param msg (`data*`) : The generic data type pointer (array) of length `bytes` with 
-                        all the data to be sent. The generic data type defaults to `void`, making the msg have 
-                        a type of `data*`.
+                        @brief Send a message to the connected server machine.
                         
-                        @param byte_count (`ssize_t&` (from macro bytes)) : The length of the pointer (array) `msg`. 
-                        This value is also changed in accordance with how much data was 
-                        successully received by the server or sent to the server.
-                        
-                        @param flags (`int`) : Defaults to 0. The flags to use while receiving the message to the server 
-                        in a non-secure manner. This is only really useful when receiving a non-secure message to the server.
-                        
-                        @param timeout (`const std::chrono::duration<int>`) : Defaults to 10 seconds. This is 
-                        the total amount of time to wait before timing out. 
-                        If the data is still trying to send (or receive) after waiting for this amount of time, 
-                        then `false` is returned.
-                        
-                        @param check_ready (`const bool`) : Defaults to `false`. This is a flag 
-                        specifying whether or not to check and see if there is data to be read from the server or not.
-                        It means that the `message` method 
-                        (that only checks if there is data to be read from the server) or 
-                        not before proceeding with receiving data.
-                        
-                        @note Be cautious about using this method. If used when there is 
-                        no message from the server, it could end up in a continously blocking state, 
-                        so pay attention to whether or not the client is set to a blocking state or not 
-                        and whether or not the `check_ready` flag is set to check if there is a 
-                        message to be read or not.
-                        @note DO NOT SET `check_ready` to true if you just called the `message` 
-                        method (non-parameter one), and got a return value of `true`. This could result 
-                        in unexpected blocking behavior.
+                        @param msg (`data*`) : The data to be sent. This is a generic data type pointer holding 
+                        the data to be sent.
 
-                        @returns `true` if data was successfully sent (depending on what `sending` is set to) 
-                        and `byte_count` is updated to reflect how much data was sent.
+                        @param length (`const bytes`) : The length of the pointer with data to be sent.
+
+                        @param flags (`const int`) : Defaults to 0, The flags to use while sending data to the connected machine. 
+                        This is only useful when sending data in a non-securely connected machine.
+
+                        @param timeout (const `std::chrono::duration<int>`) : Defaults to std::chrono::seconds(10). The maximum waittime that this 
+                        client should spend while trying to send data. If it this timeout time is exceeded and the data is not sent, 
+                        a failure host_report is sent.
+
+                        @returns A `networking::network_structures::host_report` With a status of the current connection information, the total 
+                        number of bytes, and a flag specifying whether the message was successfully sent or not.
+
                      */
-                    template <typename data = void> networking::network_structures::host_report message(data* msg, const bytes byte_count, const int flags = 0, const std::chrono::duration<int> timeout = std::chrono::seconds(10), const bool check_ready = false) {
+                    template <typename data> networking::network_structures::host_report message(const data* msg, const bytes length, const int flags = 0, const std::chrono::duration<int> timeout = std::chrono::seconds(10)) {
+                        
+                        if (not std::is_const_v<data>) {
+                            throw networking::exceptions::unexpected_failure("Error. To send a message, a constant data type must be passed into the message method.", unpack_exception_parameters(1));
+                        }
 
                         if (not *this) {
-                            throw networking::exceptions::connection_failure("tcp client is not connected to any remote machine. Cannot send or receive data through tcp client's " + std::string(__FUNCTION__) + " method.", unpack_exception_parameters(1));
+                            return {};
                         }
 
-                        static_assert(!std::is_const<data>::value, "Receiving requires a non-const buffer type.");
-                        // if (not std::is_const<data>::value) {
-                            
-                        // }
-
-                        networking::network_structures::host_report the_answer;
-                        the_answer.byte_count = 0;
-                        the_answer.success = false;
-                            the_answer.host.host_information.hostname = this->hostname_;
-                            the_answer.host.host_information.port = this->portvalue_;
-                            the_answer.host.host_information.connection_time = this->connect_time_;
-
-                        // Receiving data
-                        if (check_ready) {
-                            if (not this->message()) {
-                                return the_answer;
-                            }
-                        }
-
-                        // Call SSL_get_error() for details or check errno (macro socket_error).
-                        // Non-blocking SSL_get_error() will be < 1
-                        // SSL_read:
-                            // Success              bytes_ > 0                   :   Number of bytes read.
-                            // Connection Closed    bytes_ == 0                  :   Call SSL_get_error() → SSL_ERROR_ZERO_RETURN.
-                            // Error                bytes_ <= 0                  :   Call SSL_get_error() for details (e.g., SSL_ERROR_SSL).
-                            // Non-Blocking Issue   bytes_ == -1                 :   SSL_get_error() → SSL_ERROR_WANT_READ or SSL_ERROR_WANT_WRITE.
-                        //
-                        // recv:
-                            // Success              bytes_ > 0                   :   Number of bytes received.
-                            // Connection Closed    bytes_ == 0                  :   Peer initiated an orderly shutdown.
-                            // Error                bytes_ == -1                 :   Check errno (e.g., ECONNRESET, EINTR).
-                            // Non-Blocking Issue   bytes_ == -1                 :   errno → EAGAIN or EWOULDBLOCK (no data available).
+                        // Connected to remote machine. This should work now.
+                        networking::network_structures::host_connection remote;
+                        remote.host_information = {this->hostname_, this->portvalue_, this->connect_time_};
+                        remote.secure_connect_socket = this->secure_socket_;
+                        remote.connect_socket = this->connect_socket_;
                         
-                        // const bool secure = valid_secure_socket(this->secure_socket_);
-                        bytes bytes_, total_ = 0;
-                        int bytes_error;//, block_write, block_read;
+                        return networking::send_message<data>(remote, msg, length, flags, timeout);
+                    }
+
+                    template <typename data> networking::network_structures::host_report message(data* msg, const bytes length, const int flags = 0, const std::chrono::duration<int> timeout = std::chrono::seconds(10)) {
+                        
+                        if (std::is_const_v<data>) {
+                            throw networking::exceptions::unexpected_failure("Error. To receive a message, the pointer passed into message cannot be of `const` data type.", unpack_exception_parameters(1));
+                        }
+
+                        
+                        if (not *this) {
+                            return {};
+                        }
+
+                        // Connected to remote machine. This should work now.
+                        networking::network_structures::host_connection remote;
+                        remote.host_information = {this->hostname_, this->portvalue_, this->connect_time_};
+                        remote.secure_connect_socket = this->secure_socket_;
+                        remote.connect_socket = this->connect_socket_;
+
+                        int byte_error;
                         #if defined(crap_os)
                             const int block_read = (this->secure_) ? SSL_ERROR_WANT_READ : WSAWOULDBLOCK;
                             const int block_write = (this->secure_) ? SSL_ERROR_WANT_WRITE : WSACONNRESET;
@@ -1776,84 +1754,48 @@
                             const int block_write = (this->secure_) ? SSL_ERROR_WANT_WRITE : EWOULDBLOCK;
                             const int block_read = (this->secure_) ? SSL_ERROR_WANT_READ : EAGAIN;
                         #endif
-
-                        const auto start_time = std::chrono::steady_clock::now();
-                        
-                        while (total_ < byte_count) {
-                            bytes_ = (this->secure_) ? SSL_read(this->secure_socket_, reinterpret_cast<char*>(msg) + total_, byte_count - total_) :
-                                                recv(this->connect_socket_, reinterpret_cast<char*>(msg) + total_, byte_count - total_, flags);
-                            
-
-                            if (bytes_ < 1) {
-
-                                bytes_error = (this->secure_) ? SSL_get_error(this->secure_socket_, bytes_) : socket_error;
-
-                                if (bytes_error == block_read or bytes_error == block_write) {
-                                    // blocking related
-                                    if (std::chrono::steady_clock::now() - start_time < timeout) {
-                                        continue;
-                                    }
-                                }
-
-                                if (not bytes_) {
-                                    // Connection was closed
-                                    total_ = 0;
-                                    break;
-                                }
-
-                                // An actual error occured
-                                total_ = -1;
-                                break;
-                            }
-
-                            total_ = total_ + bytes_;
-                            std::printf("Just updated the total_ byte count.\n");
-                            if (not this->message()) {
-                                break;
-                            }
-                            // break; // This might cause premature readings. I need a way to retrieve ALL the data.
-                        }
-                        the_answer.success = (total_ > 0);
-                        the_answer.byte_count = total_;
-                        std::printf("Returning out of message() now with %ld bytes read...\n", the_answer.byte_count);
-                        return the_answer;
-                    }
-
-                    template <typename data = void> networking::network_structures::host_report message(const data* msg, bytes& byte_count, const int flags = 0, const std::chrono::duration<int> timeout = std::chrono::seconds(10)) {
-
-                        if (not *this) {
-                            throw networking::exceptions::connection_failure("tcp client is not connected to any remote machine. Cannot send or receive data through tcp client's " + std::string(__FUNCTION__) + " method.", unpack_exception_parameters(1));
-                        }
-
-
-                        static_assert(std::is_const<data>::value || std::is_same<data, void>::value, "Sending requires a const buffer type.");
+                        bytes byte_chunk, total_bytes = 0;
 
                         networking::network_structures::host_report the_answer;
-                        the_answer.byte_count = 0;
-                        the_answer.success = false;
-                            the_answer.host.host_information.hostname = this->hostname_;
-                            the_answer.host.host_information.port = this->portvalue_;
-                            the_answer.host.host_information.connection_time = this->connect_time_;
+                        the_answer.host = remote;
 
-                        // Call SSL_get_error() for details or check errno (macro socket_error).
-                        // Non-blocking SSL_get_error() will be < 1
-                        // SSL_write:
-                            // Success	            bytes_ > 0                   :       Number of bytes written.
-                            // Error	            bytes_ ≤ 0                   :       Call SSL_get_error() for details.
-                            // Non-Blocking Issue	bytes_ == -1                 :       SSL_get_error() → SSL_ERROR_WANT_READ or SSL_ERROR_WANT_WRITE.
-                            // Partial Write        bytes_ > 0 and < byte_count  : 	If SSL_MODE_ENABLE_PARTIAL_WRITE is enabled.
-                        
-                        // send:
-                            // Success	            bytes_ ≥ 0               :   Number of bytes sent (may be partial).
-                            // Error	            bytes_ ==-1              :   Check errno (e.g., ECONNRESET, EMSGSIZE).
-                            // Non-Blocking Issue	bytes_ == -1             :   errno → EAGAIN or EWOULDBLOCK (buffer full).
-                            // Partial Send	        0 ≤ bytes_ < byte_count	:   Check return value immediately; retry with remaining data.
+                        const auto start_time = std::chrono::steady_clock::now();
+                        while (*this and (std::chrono::steady_clock::now() - start_time < timeout)) {
+                            byte_error = 0;
+                            byte_chunk = (this->secure_) ? SSL_read(this->secure_socket_, reinterpret_cast<char*>(msg) + total_bytes, length - total_bytes) :
+                                        recv(this->connect_socket_, reinterpret_cast<char*>(msg) + total_bytes, length - total_bytes, flags);
+                            
+                            if (byte_chunk < 1) {
+                                byte_error = (this->secure_) ? SSL_get_error(this->secure_socket_, byte_chunk) : socket_error;
 
-                            if (*this) {
-                                the_answer = networking::send_message(the_answer.host, msg, byte_count, flags, timeout);
+                                if (byte_error == block_read or byte_error == block_write) continue;
+
+                                // Connection was either closed 
+                                if (not byte_chunk) break;
+                                
+                                
+                                // or an actual error occured.
+                                
+                                // To track the errors
+                                if (byte_chunk < 0) byte_error = byte_error;
+
+                                std::printf("Inside error branch of receiving message method. byte_chunk is \"%ld\"\n", byte_chunk);
+                                break;
                             }
-                            return the_answer;
 
+                            total_bytes = total_bytes + byte_chunk;
+
+                            if (not this->message()) break;
+                            
+                            // Out of buffer space
+                            if (total_bytes == length) break;
+                        }
+
+                        
+                        the_answer.byte_count = total_bytes;
+                        the_answer.success = (0 < total_bytes);
+
+                        return the_answer;
                     }
 
                     /**

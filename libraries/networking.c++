@@ -739,7 +739,7 @@ bool networking::network_structures::host_report::operator==(const networking::n
 }
 
 networking::network_structures::host_report::operator bool() const {
-    return this->host;
+    return this->success;
 }
 
 bool networking::network_structures::host_report::operator<(const networking::network_structures::host_report& other) const {
@@ -1555,7 +1555,7 @@ bool networking::network_structures::tcp_client::connect_socket() {
         if (connect(this->connect_socket_, this->active_address_->ai_addr, this->active_address_->ai_addrlen)) {
             throw networking::exceptions::connection_failure("Failed to connect this tcp client to the remote host.", unpack_exception_parameters(1));
         }
-        std::printf("connect system call was a success. But the socket it created is %s\n", (valid_socket(this->connect_socket_)) ? "true" : "false");
+        // std::printf("connect system call was a success. But the socket it created is %s\n", (valid_socket(this->connect_socket_)) ? "true" : "false");
         // std::printf("socket_connected is returning %s\n", networking::socket_connected(this->connect_socket_) ? "true" : "false");
         this->connect_time_ = misc_functions::get_current_time();
         this->connected_ = true;
@@ -1617,7 +1617,7 @@ bool networking::network_structures::tcp_client::set_server_name_indication() {
                 throw networking::exceptions::initialize_network_failure("Failed to initialize the network for this tcp client to utilize for a secure connecion.", unpack_exception_parameters(1));
             }
         }
-        std::printf("Reached 1\n");
+        
         if (not networking::secure_network_initialized()) {
             this->secure_was_init_ = networking::secure_network_initialized();
             if (not networking::initialize_secure_network()) {
@@ -1625,25 +1625,25 @@ bool networking::network_structures::tcp_client::set_server_name_indication() {
                 throw networking::exceptions::initialize_network_failure("Failed to initialize the secure entworking library for this tcp client to establish a secure connection with the remote server. Error \"" + std::string(msg) + "\"", unpack_secure_exception_parameters(2));
             }
         }
-        std::printf("Reached 2\n");
+        
         if (not this->create_connection_address()) {
             throw networking::exceptions::create_connection_address_failure("Failed to create the connection address for the tcp client to use for the creation of a connection socket.", unpack_exception_parameters(1));
         }
-        std::printf("Reached 3\n");
+        
         if (not this->create_connection_socket()) {
             throw networking::exceptions::create_connection_socket_failure("Failed to create the connection socket for this tcp clien to use for establishing a connection to a remote host.", unpack_exception_parameters(1));
         }
-        std::printf("Reached 4\n");
+        
         if (not this->create_secure_socket()) {
             ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
             throw networking::exceptions::create_secure_socket_failure("Failed to create the secure connection socket for encrypted communication with the remote host. Error \"" + std::string(msg) + "\"", unpack_secure_exception_parameters(2));
         }
-        std::printf("Reached 5\n");
+        
         if (not SSL_set_tlsext_host_name(this->secure_socket_, this->hostname_.c_str())) {
             ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
             throw networking::exceptions::socket_information_failure("Failed to establish the Server Name Indication (SNI) and choose host to connect to. Error \"" + std::string(msg) + "\"", unpack_secure_exception_parameters(2));
         }
-        std::printf("Reached 6\n");
+        
         this->server_name_indication_ = true;
     }
 
@@ -2174,8 +2174,8 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
             
         }
 
-        std::printf("At the end of tcp_client::start(), the connection socket is \"%svalid\", and the secure_socket is \"%svalid\"\n", 
-                            (valid_socket(this->connect_socket_)) ? "" : "in", (valid_secure_socket(this->secure_socket_)) ? "" : "in");
+        // std::printf("At the end of tcp_client::start(), the connection socket is \"%svalid\", and the secure_socket is \"%svalid\"\n", 
+        //                     (valid_socket(this->connect_socket_)) ? "" : "in", (valid_secure_socket(this->secure_socket_)) ? "" : "in");
 
     }
     return *this;
