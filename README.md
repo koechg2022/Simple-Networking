@@ -517,6 +517,22 @@ to blocking, `false` to set it to non-blocking.
 * Return type is `networking::network_structures::host_report`
 
 * Namespace parent is `networking`.
+<br>
+<br>
+<br>
+<br>
+
+#### <h2><div align = "center"><u>`Networking::Networking Structures`</u></div></h2>
+
+##### <div align = "center"><u><h3>networking::network_structures</h3></u></div>
+
+###### <div align = "center"><u>client_id</u></div>
+###### <div align = "center"><u>host_connection</u></div>
+###### <div align = "center"><u>host_report</u></div>
+###### <div align = "center"><u>complete_report</u></div>
+###### <div align = "center"><u>client_connection</u></div>
+###### <div align = "center"><u>server_connection</u></div>
+
 
 # <div align = "center">**<h3><u>How to use Simple-Networking</u></h3>**</div>
 
