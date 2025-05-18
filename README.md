@@ -1,11 +1,11 @@
-# **<div align="center"><h2>Simple-Networking</h2></div>**
-***
 
 ***
 
 ***
 
-**<div align = "center"><h1>!!DOCUMENTATION UNDER CONSTRUCTION!!</h1></div>**
+***
+
+**<div align = "center"><h3>!!DOCUMENTATION UNDER CONSTRUCTION!!</h3></div>**
 ----
 ----
 
@@ -14,6 +14,17 @@
 ***
 
 ***
+
+
+**<div align="center"><h1>Simple-Networking</h1></div>**
+
+
+***
+
+***
+
+***
+
 
 
 *This is an outline of a simple implementation to connect remote machines with a TCP or a UDP connection (UDP hasn't been set up yet)*
@@ -64,7 +75,7 @@ What I'm still planning on adding:
 ***
 
 
-# **<div align="center"><h3>Compiling the tests</h3></div>**
+# **<div align="center" style="font:sans-serif"><h3>Compiling the tests</h3></div>**
 ---
 
 
@@ -148,20 +159,6 @@ is called. Then the next code snippet in the `CMakeLists.txt` file, the line,
 
 
 Is used to gather all the files that will be linked to the test executable. The test executable is created when the `make` command is executed and the executable object files are placed within the `objects` directory.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 This library works well, but to run it, OpenSSL will need to be installed on the system. In this code package here, I created a testing program that will run the networking code. It demonstrates how the code is structured and how to use the coding library. The tests are located in the `tests` directory.
