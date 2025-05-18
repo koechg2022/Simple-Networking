@@ -189,7 +189,7 @@ In order to run the cmake file, I've been running the commands (these commands a
 
 
 
-# **<h3>Library Features</h3>**
+# <div align = "center">**<h3>Library Features</h3>**</div>
 ---
 
 * All the functions, objects, and features that this library hold are located within the `networking` namespace.
@@ -208,6 +208,6 @@ In order to run the cmake file, I've been running the commands (these commands a
 
 
 
-# **<h3>How to use Simple-Networking</h3>**
+# <div align = "center">**<h3>How to use Simple-Networking</h3>**</div>
 
 <div align="center"><h3>UNDER CONSTRUCTION</h3></div>
