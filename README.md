@@ -681,5 +681,9 @@ to blocking, `false` to set it to non-blocking.
 # <div align = "center">**<h3><u>TO DO list</u></h3>**</div>
 
 <ul>
+    <li>Make all the functions and objects thread safe when in execution. ✅</li>
+    <li>Make the structures utilize operation overloading, allowing for simplified code ✅</li>
+    <li>Make sure the code works on all operating systems ✅</li>
+    <li>Add javadoc comments to all methods and functions (In progress- Still documenting the `tcp_client` object's methods)</li>
     <li>Write `http_server` and `http_client` classes that utilize the `tcp_server` and `tcp_client` classes for establishing connections.</li>
 </ul>
