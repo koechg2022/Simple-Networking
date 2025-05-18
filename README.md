@@ -352,7 +352,8 @@ Again this is only to create the tests for the networking library that are inclu
 ###### • `bool networking::uninitialize_network()` :
     Again really only useful on windows systems. It uninitializes the networking library and returns 
     `true` if the network was successfully uninitialized within the context of the networking 
-    library namespace during the current runtime session, `false` if it was not or an exception is thrown.
+    library namespace during the current runtime session, `false` if it 
+    was not or an exception is thrown.
 
 ###### • `bool networking::secure_network_initialized()` :
     Check if the [OpenSSL](https://openssl-library.org/) library has been initialized within the 
@@ -360,10 +361,11 @@ Again this is only to create the tests for the networking library that are inclu
     Returns `true` if the library is initialized, `false` if it's not.
 
 ###### • `bool networking::initialize_secure_network()` :
-    This is to initialize the [OpenSSL](https://openssl-library.org/) secure networking library within 
-    the context of the networking library namespace during the current runtime session. 
-    There are currently no checks for whether or not the network was initialized though, 
-    so this will pretty much always initialize the library then return `true`.
+    This is to initialize the [OpenSSL](https://openssl-library.org/) secure networking 
+    library within the context of the networking library namespace during the 
+    current runtime session. There are currently no checks for whether or 
+    not the network was initialized though, so this will pretty 
+    much always initialize the library then return `true`.
 
 ###### • `bool uninitialize_secure_network()` :
     Uninitialize the [OpenSSL](https://openssl-library.org/) secure networking library within the 
