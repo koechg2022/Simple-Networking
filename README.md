@@ -208,12 +208,6 @@ Again this is only to create the tests for the networking library that are inclu
 ---
 
 * All the functions, objects, and features that this library hold are located within the `networking` namespace.
-
-* Create networking exceptions specific to this networking library.
-    * All networking exceptions are located within the namespace exceptions.
-    * All exceptions are children of the `base_exception` type. So any of them can be caught as a `base_exception` reference:
-            
-        `catch (networking::exceptions::base_exception& except)`
     
 * Data types:
     
@@ -265,19 +259,26 @@ Again this is only to create the tests for the networking library that are inclu
 | valid certificate                   | `(certificate != invalid_certificate)`  | `(certificate != invalid_certificate)`  | valid_certificate()       |
 
 
+* Create networking exceptions specific to this networking library.
+    * All networking exceptions are located within the namespace exceptions.
+    * All exceptions are children of the `base_exception` type. So any of them can be caught as a `base_exception` reference:
+            
+        ```
+        catch (networking::exceptions::base_exception& except) {
+            
+            std::cerr << except.type() << std::endl; // To see the exception type
+            
+            std::cerr << except.message() << std::endl; // To see the message generated for the exception
+            
+            std::cerr << except.file() << std::endl; // To see the file where the exception was thrown from
+            
+            std::cerr << except.error_line() << std::endl; // To se the line where the exception was thrown from
+            
+            std::cerr << except.error_number() << std::endl; // To see the error number
 
-
-
-
-
-
-
-
-* Implement networking functions that are useful for handling networking programs ✅
-    *
-
-
-
+            except.print(); // To print the error message associated with this exception being thrown.
+        }
+        ```
 
 
 # <div align = "center">**<h3><u>How to use Simple-Networking</u></h3>**</div>
