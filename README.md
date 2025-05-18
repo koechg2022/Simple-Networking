@@ -39,7 +39,9 @@
 * [About the Program](#about-the-program)
 * [Compiling the tests](#compiling-the-tests)
 * [Library Features](#library-features)
+    * Add links to the functions/classes descriptions.
 * [How to use Simple-Networking](#how-to-use-simple-networking)
+* [TO DO list](#to-do-list)
 
 
 
@@ -703,6 +705,7 @@ In progress
     <li>Make the tcp_client capable of timing out when establishing a connection. ✅ (BUT STILL NEEDS TO BE TESTED)</li>
     <li>Make the tcp_server and tcp_client capable of sending any data type across the network connection. ✅ (BUT STILL NEEDS TO BE TESTED)</li>
     <li>Investigate if there's a way to check if the windows networking library has already been implemented, and if the secure networking library has already been initialized or not.</li>
+    <li>Write documentation.✅ (STILL MORE TO COME)</li>
 </ul>
 Still to come
 <ul>
