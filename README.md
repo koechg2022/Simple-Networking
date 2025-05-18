@@ -46,7 +46,7 @@ The structure of the program is as follows:
         .
         ├── CMakeLists.txt
         ├── README.md
-        ├── files
+        ├── files // This is for testing purposes. This directory is not required to run Simple-Networking
         │   ├── cert.pem
         │   └── key.pem
         ├── headers
