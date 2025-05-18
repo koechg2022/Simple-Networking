@@ -524,7 +524,7 @@ to blocking, `false` to set it to non-blocking.
 
 #### <h2><div align = "center"><u>`Networking::Networking Structures`</u></div></h2>
 
-##### <div align = "center"><u><h3>networking::network_structures</h3></u></div>
+##### <h2><div align = "center"><u><h3>networking::network_structures</h3></u></div></h2>
 
 ###### <h3><div align = "center"><u>client_id</u></div></h3>
 ###### <h3><div align = "center"><u>host_connection</u></div></h3>
