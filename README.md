@@ -80,34 +80,31 @@ What I'm still planning on adding:
 ---
 
 
-<span style = "color:red">**• Note**</span><br>
-
-
-
 The program itself has been written in `C++23`, though should work in `C++17+`.
 The library can be used in most other networking programs as long as it's compiled in the proper manner. 
+The manner of compilation here can be applied to any other project this library is included in. 
 The structure of the program is as follows:
 
-        .
-        ├── CMakeLists.txt
-        ├── README.md
-        ├── files // For testing purposes. Not required to run Simple-Networking
-        │   ├── cert.pem
-        │   └── key.pem
-        ├── headers
-        │   ├── include
-        │   ├── included
-        │   ├── misc_functions
-        │   ├── networking
-        │   └── string_functions
-        ├── libraries
-        │   ├── misc_functions.c++
-        │   ├── networking.c++
-        │   └── string_functions.c++
-        ├── objects
-        │   └── test_server
-        └── tests
-            └── test_server.c++
+    .
+    ├── CMakeLists.txt
+    ├── README.md
+    ├── files // For testing purposes. Not required to run Simple-Networking
+    │   ├── cert.pem
+    │   └── key.pem
+    ├── headers
+    │   ├── include
+    │   ├── included
+    │   ├── misc_functions
+    │   ├── networking
+    │   └── string_functions
+    ├── libraries
+    │   ├── misc_functions.c++
+    │   ├── networking.c++
+    │   └── string_functions.c++
+    ├── objects
+    │   └── test_server
+    └── tests
+        └── test_server.c++
 
 
 Within this structure, the all the files in the `headers` directory are C/C++ header files.
