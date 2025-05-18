@@ -510,7 +510,7 @@ to blocking, `false` to set it to non-blocking.
 <br>
 <br>
 
-###### <h3><div align = "center"><u>`send_message(networking::network_structures::host_connection host, const data* the_message, const bytes </h3></u></div>byte_count, const int flags = 0, const std::chrono::duration<int> timeout = std::chrono::seconds(10))` :
+###### <h3><div align = "center"><u>`send_message(networking::network_structures::host_connection host, const data* the_message, const bytes byte_count, const int flags = 0, const std::chrono::duration<int> timeout = std::chrono::seconds(10))`</h3></u></div>
 * This function sends a message to the host that is specified with the `host` parameters.
 
 
