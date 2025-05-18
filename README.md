@@ -266,17 +266,23 @@ Again this is only to create the tests for the networking library that are inclu
         ```
         catch (networking::exceptions::base_exception& except) {
             
-            std::cerr << except.type() << std::endl; // To see the exception type
+            // To see the exception type
+            std::cerr << except.type() << std::endl;
             
-            std::cerr << except.message() << std::endl; // To see the message generated for the exception
+            // To see the message generated for the exception
+            std::cerr << except.message() << std::endl;
             
-            std::cerr << except.file() << std::endl; // To see the file where the exception was thrown from
+            // To see the file where the exception was thrown from
+            std::cerr << except.file() << std::endl;
             
-            std::cerr << except.error_line() << std::endl; // To se the line where the exception was thrown from
+            // To se the line where the exception was thrown from
+            std::cerr << except.error_line() << std::endl;
             
-            std::cerr << except.error_number() << std::endl; // To see the error number
+            // To see the error number
+            std::cerr << except.error_number() << std::endl;
 
-            except.print(); // To print the error message associated with this exception being thrown.
+            // To print the error message associated with this exception being thrown.
+            except.print();
         }
         ```
 
