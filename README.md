@@ -406,8 +406,7 @@ pretty much always uninitilize the library then return `true`.
 <br>
 <br>
 
-###### <div align = "center"><u>`std::unordered_set<std::string> networking::resolve_hostname(const std::string hostname, const std::stirng port = default_port, const bool name = </
-u></div>false)` :
+###### <div align = "center"><u>`std::unordered_set<std::string> networking::resolve_hostname(const std::string hostname, const std::stirng port = default_port, const bool name = false)` :</u></div>
     
 * Parameters:
         
