@@ -223,7 +223,7 @@ Again this is only to create the tests for the networking library that are inclu
     | type/func        | Lin/Mac                | Win                        | abstraction                  |
     |------------------|:----------------------:|:--------------------------:|:----------------------------:|
     | adapter ptr      | `struct ifaddrs*`      | `PIP_ADAPTER_ADDRESSES`    | adapter_type                 |
-    | adapter name     | `the_adapter->ifa_name` | `the_adapter->FriendlyName` | get_adapter_name()           |
+    | adapter name     | `std::string(the_adapter->ifa_name)` | `std::stringthe_adapter->FriendlyName)` | get_adapter_name()           |
     | next adapter     | `the_adapter->ifa_next`| `this_adapter->Next`       | get_next_adapter()           |
     | addr from adapter| `the_adapter`          | `this_adapter->FirstUnicastAddress` | get_address_from_adapter()   |
     | free adapters    | `freeifaddrs(the_adapters)` | `std::free(the_adapters)` | free_adapters()              |
