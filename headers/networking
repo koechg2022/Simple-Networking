@@ -32,6 +32,9 @@
             #include <iphlpapi.h>
         #endif
 
+        #include <winsock2.h>
+        #include <ws2tcpip.h>
+
         #include <windows.h>
 
         #if not defined(WSAWOULDBLOCK)
@@ -1615,7 +1618,7 @@
 
                     bool create_context();
 
-                    bool connect_socket();
+                    bool connect_socket(const std::chrono::duration<int> timeout = std::chrono::seconds(10));
 
                     bool create_secure_socket();
 
