@@ -8,7 +8,7 @@
 
 
 # *<h3>About the Program</h3>*
-
+---
 <span style = "color:red">**• Note**</span><br>
     
     ⦿ Regarding the commands to run the the cmake file and the corresponding makefiles.
@@ -38,9 +38,9 @@
 
 
 
-The program itself has been written in `C++23`, it should work in `C++17+` though.
-The library can be used in most other networking programs as long as it's compiled in the proper manner.
-The structure of the program is as follows:
+The program itself has been written in `C++23`, though should work in `C++17+`.
+The library can be used in most other networking programs as long as it's compiled in the proper manner 
+([How to use Simple-Networking](#how-to-use-simple-networking)). The structure of the program is as follows:
 <span style="color:red">This text is red.</span>
 
         .
@@ -66,6 +66,7 @@ The structure of the program is as follows:
 
 
 # **<h3>How to use Simple-Networking</h3>**
+---
 
 This program works well, but to run it, OpenSSL will need to be installed on the system. The CMakeLists.txt file works well on unix systems and on windows systems too. Furthermore, the CMakeLists.txt file has been confirmed to work on MSYS2.
 
