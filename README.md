@@ -26,27 +26,31 @@ In order to run the cmake file, I've been running the commands (these commands a
 
 
 <span style = "color:red">**• Note**</span><br>
-    Regarding the commands to run the the cmake file and the corresponding makefiles.
-    ‣ MacOS - I used Homebrew to install 
-    openssl and that was it. Beautiful, 
-    simple and easy to set up.
-    ‣ LinuxOS - I used the linux package 
-    manager. Again, beautiful, simple 
-    and easy to set up.
-    ‣ Windows - Ya windows is not an 
-    easy system to develop on. I 
-    initially tried using choco, 
-    but the cmake could never find 
-    the openssl library on the machine, 
-    even after I set the environment 
-    variable for OpenSSL. In the end, 
-    I just used MSYS2 to install Openssl. 
-    It worked and I was even 
-    able to use powershell to run the cmake file.
+    
+    ⦿ Regarding the commands to run the the cmake file and the corresponding makefiles.
+        ‣ MacOS - I used Homebrew to install 
+            openssl and that was it. Beautiful, 
+            simple and easy to set up.
+        ‣ LinuxOS - I used the linux package 
+            manager. Again, beautiful, simple 
+            and easy to set up.
+        ‣ Windows - Ya windows is not an 
+            easy system to develop on. I 
+            initially tried using choco, 
+            but the cmake could never find 
+            the openssl library on the machine, 
+            even after I set the environment 
+            variable for OpenSSL. In the end, 
+            I just used MSYS2 to install Openssl. 
+            It worked and I was even 
+            able to use powershell to run the cmake file.
 
-
-<span style = "color:red">**• Note**</span><br>
-    The secure connection has been tested and it works great. To run the secure connection, be sure to be situated in the build directory (if it doesn't exist, create it in the same directory where the `CMakeLists.txt` file exists then enter into it) and execute the file in the objects directory with the appropriate command. Again this is for the secure tcp client/server tests programs.
+    ⦿ The secure connection has been tested and it works great. 
+    To run the secure connection, be sure to be situated in the 
+    build directory (if it doesn't exist, create it in the same directory 
+    where the `CMakeLists.txt` file exists then enter into it) 
+    and execute the file in the objects directory with the 
+    appropriate command. Again this is for the secure tcp client/server tests programs.
 
 
 *<h3>About the Program</h3>*
