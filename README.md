@@ -241,9 +241,9 @@ Again this is only to create the tests for the networking library that are inclu
 | close socket     | `close(the_socket)`    | `closesocket(the_socket)`  | close_socket()                |
 
 
-    <br>
-    <br>
-    <br>
+<br>
+<br>
+<br>
         
     * And for dealing with the OpenSSL. This was not necessary and is still not necessary to use, but I find
     these renames easier to follow along
