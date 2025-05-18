@@ -338,41 +338,41 @@ Again this is only to create the tests for the networking library that are inclu
 
 * Networking namespace functions:
 
-###### `bool networking::network_initialized()`:
+###### <div align = "center"><u>`bool networking::network_initialized()`:</u></div>
 * This is a function that is really only useful for windows systems. But it works on all platforms. 
 Windows systems need to have their networking libraries initialized. This function 
 simply checks if the network was initialized within the context of using this networking library 
 during the current runtime session.
     
-###### `bool networking::initialize_network()` :
+###### <div align = "center"><u>`bool networking::initialize_network()` :</u></div>
 * Again this is really only useful on windows systems. It initializes the networking library and 
 returns `true` within the context of the networking library namespace during the current runtime 
 session, `false` if it was not initialized, or an exception.
 
-###### `bool networking::uninitialize_network()` :
+###### <div align = "center"><u>`bool networking::uninitialize_network()` :</u></div>
 * Again really only useful on windows systems. It uninitializes the networking library and returns 
 `true` if the network was successfully uninitialized within the context of the networking 
 library namespace during the current runtime session, `false` if it 
 was not or an exception is thrown.
 
-###### `bool networking::secure_network_initialized()` :
+###### <div align = "center"><u>`bool networking::secure_network_initialized()` :</u></div>
 * Check if the [OpenSSL](https://openssl-library.org/) library has been initialized within the 
 context of the networking namespace during the current runtime session. 
 Returns `true` if the library is initialized, `false` if it's not.
 
-###### `bool networking::initialize_secure_network()` :
+###### <div align = "center"><u>`bool networking::initialize_secure_network()` :</u></div>
 * This is to initialize the [OpenSSL](https://openssl-library.org/) secure networking 
 library within the context of the networking library namespace during the 
 current runtime session. There are currently no checks for whether or 
 not the network was initialized though, so this will pretty 
 much always initialize the library then return `true`.
 
-###### `bool uninitialize_secure_network()` :
+###### <div align = "center"><u>`bool uninitialize_secure_network()` :</u></div>
 * Uninitialize the [OpenSSL](https://openssl-library.org/) secure networking library within the 
 context of the networking library namespace during the current runtime session, so this will 
 pretty much always uninitilize the library then return `true`.
 
-###### `std::unordered_set<std::string> networking::resolve_hostname(const std::string hostname, const std::stirng port = default_port, const bool name = false)` :
+###### <div align = "center"><u>`std::unordered_set<std::string> networking::resolve_hostname(const std::string hostname, const std::stirng port = default_port, const bool name = </u></div>false)` :
     
 * Parameters:
         
@@ -392,7 +392,7 @@ the `hostname` passed in.
 * If the networking library fails to initilize, a `initialize_network_failure` 
 exception is thrown.
 
-###### `std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string> > > networking::machine_adapters(const bool names = false)` :
+###### <div align = "center"><u>`std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string> > > networking::machine_adapters(const bool names = false)` :</u></div>
 * Parameters:
 
 | data type | parameter name | default value | Notes |
@@ -400,20 +400,20 @@ exception is thrown.
 |const bool |     names      |     false     | This is the same as [resolve_hostname](#-stdunordered_setstdstring-networkingresolve_hostnameconst-stdstring-hostname-const-stdstirng-port--default_port-const-bool-name--false-)'s names parameter. This specified whether or not to use the NI_NAMREQD with the getnameinfo function. It can take a while on windows machines, so it might not be worth using.
 
 
-###### `bool socket_is_blocking(const socket_type& the_socket)` :
+###### <div align = "center"><u>`bool socket_is_blocking(const socket_type& the_socket)` :</u></div>
 * This still hasn't been tested, but it's supposed to check if the socket is in a blocking state or not. 
 If the socket is blocking, then `true` is returned, if it's not blocking or an error occured, `false` is returned.
 * So be sure to always check if the socket passed in is still valid after using this function.
 
-###### `bool set_blocking(socket_type& the_socket, const bool block)` :
+###### <div align = "center"><u>`bool set_blocking(socket_type& the_socket, const bool block)` :</u></div>
 * Set the socket passed in to blocking or non-blocking, depending on what `block` is. `true` to set the socket 
 to blocking, `false` to set it to non-blocking.
 
-###### `bool socket_connected(socket_type& the_socket)` :
+###### <div align = "center"><u>`bool socket_connected(socket_type& the_socket)` :</u></div>
 * Honestly, this is a bad function. It's almost always unreliable and breaks sockets. Gonna get rid of it soon.
 
 
-###### `networking::network_structures::host_report send_message(networking::network_structures::host_connection host, const data* the_message, const bytes byte_count, const int flags = 0, const std::chrono::duration<int> timeout = std::chrono::seconds(10))` :
+###### <div align = "center"><u>`networking::network_structures::host_report send_message(networking::network_structures::host_connection host, const data* the_message, const bytes </u></div>byte_count, const int flags = 0, const std::chrono::duration<int> timeout = std::chrono::seconds(10))` :
 * This function sends a message to the host that is specified with the `host` parameters.
 
 
