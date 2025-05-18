@@ -440,10 +440,7 @@ pretty much always uninitilize the library then return `true`.
     to be resolved into an IP address. This hostname's IP address(es) are what are returned.
     | const std::string | port | default_port (macro - #define "8080") | This is the port to use for 
     the DNS query. Not usually necessary to change it, but it can be changed if necessary.
-    | const bool | name | false | The name flag is used to specify whether or not to use the 
-    `NI_NAMEREQD` macro in the call to retrieve the name information for the address. This is a 
-    flag because it can take a while to retrieve this data, for some reason, this is especially 
-    true on the windows system I've been using. |
+    | const bool | name | false | The name flag is used to specify whether or not to use the `NI_NAMEREQD` macro in the call to retrieve the name information for the address. This is a flag because it can take a while to retrieve this data, for some reason, this is especially true on the windows system I've been using. |
 
 * Returns a `std::unordered_set<std::string>` with all the IP addresses that were resolved for 
 the `hostname` passed in.
