@@ -34,11 +34,12 @@
 
 
 
-*<h4>Table of Content:</h4>*
+***<div align="center"><h4>Table of Content:</h4></div>***
 
 * [About the Program](#about-the-program)
-* [How to use Simple-Networking](#how-to-use-simple-networking)
+* [Compiling the tests](#compiling-the-tests)
 * [Library Features](#library-features)
+* [How to use Simple-Networking](#how-to-use-simple-networking)
 
 
 
@@ -202,3 +203,11 @@ In order to run the cmake file, I've been running the commands (these commands a
 
 * Implement networking functions that are useful for handling networking programs ✅
     *
+
+
+
+
+
+# **<h3>How to use Simple-Networking</h3>**
+
+<div align="center"><h3>UNDER CONSTRUCTION</h3></div>
