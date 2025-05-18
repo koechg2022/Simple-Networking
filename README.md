@@ -220,25 +220,26 @@ Again this is only to create the tests for the networking library that are inclu
     cross platform code. Here's a list of the networking types and their abstracted away working type names:
 
 
-    | type/function      | Linux/macOS         | Windows                | abstraction      |
-    |--------------------|:-------------------:|:---------------------:|:----------------:|
-    | adapter ptr        | `struct ifaddrs*`   | `PIP_ADAPTER_ADDRESSES`| `adapter_type`   |
-    | adapter name       | `std::string(ifa_name)` | `wchar_to_string(FriendlyName)` | `get_adapter_name` |
-    | next adapter       | `ifa_next`          | `Next`                 | `get_next_adapter`|
-    | addr from adapter  | `the_adapter`       | `FirstUnicastAddress`  | `get_address_from_adapter`|
-    | free adapters      | `freeifaddrs`       | `std::free`            | `free_adapters`  |
-    | addr ptr           | `struct ifaddrs*`   | `PIP_ADAPTER_UNICAST_ADDRESS` | `address_type`   |
-    | next addr          | `NULL`              | `Next`                 | `get_next_address`|
-    | addr sockaddr      | `ifa_addr`          | `Address.lpSockaddr`   | `get_address_sockaddr`|
-    | addr sockaddr len  | `sizeof(*ifa_addr)` | `Address.iSockaddrLength`| `get_address_sockaddrlen`|
-    | addr family        | `ifa_addr->sa_family`| `Address.lpSockaddr->sa_family`| `get_address_family`|
-    | socket error       | `errno`             | `WSAGetLastError()`    | `socket_error`   |
-    | error string       | `gai_strerror`      | `gai_strerrorA`        | `socket_error_string`|
-    | socket type        | `int`               | `SOCKET`               | `socket_type`    |
-    | socket family type | `unsigned short` (Linux)<br>`unsigned char` (macOS) | `int` | `socket_family_type`|
-    | invalid socket     | `-1`                | `INVALID_SOCKET`       | `invalid_socket` |
-    | valid socket       | `s >= 0`            | `s != invalid_socket`  | `valid_socket`   |
-    | close socket       | `close(s)`          | `closesocket(s)`       | `close_socket`   |
+| type/func        | Lin/Mac                | Win                        | abstraction                  |
+|------------------|:----------------------:|:--------------------------:|:----------------------------:|
+| adapter ptr      | `struct ifaddrs*`      | `PIP_ADAPTER_ADDRESSES`    | adapter_type                 |
+| adapter name     | `std::string(the_adapter->ifa_name)` | `wchar_to_string(the_adapter->FriendlyName)` | get_adapter_name      |
+| next adapter     | `the_adapter->ifa_next`| `this_adapter->Next`       | get_next_adapter             |
+| addr from adapter| `the_adapter`          | `this_adapter->FirstUnicastAddress` | get_address_from_adapter  |
+| free adapters    | `freeifaddrs(the_adapters)` | `std::free(the_adapters)` | free_adapters                |
+| addr ptr         | `struct ifaddrs*`      | `PIP_ADAPTER_UNICAST_ADDRESS` | address_type              |
+| next addr        | `NULL`                 | `this_address->Next`       | get_next_address             |
+| addr sockaddr    | `this_address->ifa_addr` | `this_address->Address.lpSockaddr` | get_address_sockaddr    |
+| addr sockaddr len| `sizeof(*this_address->ifa_addr)` | `this_address->Address.iSockaddrLength` | get_address_sockaddrlen |
+| addr family      | `this_address->ifa_addr->sa_family` | `this_address->Address.lpSockaddr->sa_family` | get_address_family     |
+| socket error     | `(errno)`              | `(WSAGetLastError())`      | socket_error                  |
+| error string     | `gai_strerror(error_number)` | `gai_strerrorA(error_number)` | socket_error_string      |
+| socket type      | `int`                  | `SOCKET`                   | socket_type                   |
+| socket family type | `unsigned short` (Linux),<br>`unsigned char` (Mac) | `int` | socket_family_type    |
+| invalid socket   | `-1`                   | `INVALID_SOCKET`           | invalid_socket                |
+| valid socket     | `(this_socket >= 0)`   | `(this_socket != invalid_socket)` | valid_socket             |
+| close socket     | `close(the_socket)`    | `closesocket(the_socket)`  | close_socket                  |
+
 
         
     * And for dealing with the OpenSSL. This was not necessary and is still not necessary to use, but I find
