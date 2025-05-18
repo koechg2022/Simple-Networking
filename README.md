@@ -1,9 +1,14 @@
-# Simple Networking
+# *<h2>Simple Networking</h2>*
 
 
 *This is an outline of a simple implementation to connect remote machines with a TCP or a UDP connection (UDP hasn't been set up yet)*
 
 **The code works on all three systems (Linux, MacOS, and Windows). There will be more code added soon though.**
+
+
+
+# *<h3>About the Program</h3>*
+
 
 This program works well, but to run it, OpenSSL will need to be installed on the system. The CMakeLists.txt file works well on unix systems and on windows systems too. Furthermore, the CMakeLists.txt file has been confirmed to work on MSYS2.
 
@@ -53,7 +58,6 @@ In order to run the cmake file, I've been running the commands (these commands a
     appropriate command. Again this is for the secure tcp client/server tests programs.
 
 
-*<h3>About the Program</h3>*
 
 The program itself has been written in `C++23`, it should work in `C++17+` though.
 The library can be used in most other networking programs as long as it's compiled in the proper manner.
