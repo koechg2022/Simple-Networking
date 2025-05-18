@@ -430,8 +430,7 @@ exception is thrown.
 <br>
 <br>
 
-###### <div align = "center"><u>`std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string> > > networking::machine_adapters(const bool names = false)` :</
-u></div>
+###### <div align = "center"><u>`std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string> > > networking::machine_adapters(const bool names = false)` :</u></div>
 * Parameters:
 
 | data type | parameter name | default value | Notes |
