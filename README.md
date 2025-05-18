@@ -24,7 +24,7 @@ In order to run the cmake file, I've been running the commands (these commands a
         cmake .. -G "MinGW Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENSSL_ROOT_DIR=/mingw64
         cmake --build buid
 
-***NOTE**
+**•NOTE**
     Regarding the commands to run the the cmake file and the corresponding makefiles.
     
             ‣ MacOS - I used Homebrew to install 
@@ -47,7 +47,7 @@ In order to run the cmake file, I've been running the commands (these commands a
             able to use powershell to run the cmake file.
 
 
-***Note**
+**•Note**
 The secure connection has been tested and it works great. To run the secure connection, be sure to be situated in the build directory (if it doesn't exist, create it in the same directory where the `CMakeLists.txt` file exists then enter into it) and execute the file in the objects directory with the appropriate command. Again this is for the secure tcp client/server tests programs.
 
 
