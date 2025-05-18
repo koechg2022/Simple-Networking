@@ -40,8 +40,8 @@
 
 The program itself has been written in `C++23`, though should work in `C++17+`.
 The library can be used in most other networking programs as long as it's compiled in the proper manner 
-([How to use Simple-Networking](#how-to-use-simple-networking)). The structure of the program is as follows:
-<span style="color:red">This text is red.</span>
+(next section - [How to use Simple-Networking](#how-to-use-simple-networking)). 
+The structure of the program is as follows:
 
         .
         ├── CMakeLists.txt
@@ -72,12 +72,12 @@ This program works well, but to run it, OpenSSL will need to be installed on the
 
 In order to run the cmake file, I've been running the commands (these commands are also in the cmake file at the top):
 
-*Unix:*
+*<span style="color:green">Unix</span>:*
 
     `Unix : cmake .. -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`
     `make`
 
-*Windows:*
+*<span style="color:blue">Windows</span>:*
     
     Powershell:
         cmake .. -G "MinGW Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
