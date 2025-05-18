@@ -215,6 +215,8 @@ Again this is only to create the tests for the networking library that are inclu
             
         `catch (networking::exceptions::base_exception& except)`
     
+* Data types:
+    
     * All the `primitive` networking data types are still available 
     (i.e ints for sockets on unix machines and SOCKETs for windows sockets), but their types have been abstracted away to allow for 
     cross platform code. Here's a list of the networking types and their abstracted away working type names:
@@ -244,7 +246,9 @@ Again this is only to create the tests for the networking library that are inclu
 <br>
 <br>
 <br>
-        
+
+* Data types:
+
     * And for dealing with the OpenSSL. This was not necessary and is still not necessary to use, but I find
     these renames easier to follow along
 
