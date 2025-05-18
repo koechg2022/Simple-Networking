@@ -1,4 +1,4 @@
-# **<h2>Simple Networking</h2>**
+# **<h2>Simple-Networking</h2>**
 
 
 *This is an outline of a simple implementation to connect remote machines with a TCP or a UDP connection (UDP hasn't been set up yet)*
@@ -8,27 +8,6 @@
 
 
 # *<h3>About the Program</h3>*
-
-
-This program works well, but to run it, OpenSSL will need to be installed on the system. The CMakeLists.txt file works well on unix systems and on windows systems too. Furthermore, the CMakeLists.txt file has been confirmed to work on MSYS2.
-
-In order to run the cmake file, I've been running the commands (these commands are also in the cmake file at the top):
-
-*Unix:*
-
-    `Unix : cmake .. -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`
-    `make`
-
-*Windows:*
-    
-    Powershell:
-        cmake .. -G "MinGW Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-        cmake --build build
-
-    MSYS2:
-        cmake .. -G "MinGW Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENSSL_ROOT_DIR=/mingw64
-        cmake --build buid
-
 
 <span style = "color:red">**• Note**</span><br>
     
@@ -84,3 +63,25 @@ The structure of the program is as follows:
         │   └── test_server
         └── tests
             └── test_server.c++
+
+
+# **<h3>How to use Simple-Networking</h3>**
+
+This program works well, but to run it, OpenSSL will need to be installed on the system. The CMakeLists.txt file works well on unix systems and on windows systems too. Furthermore, the CMakeLists.txt file has been confirmed to work on MSYS2.
+
+In order to run the cmake file, I've been running the commands (these commands are also in the cmake file at the top):
+
+*Unix:*
+
+    `Unix : cmake .. -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`
+    `make`
+
+*Windows:*
+    
+    Powershell:
+        cmake .. -G "MinGW Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+        cmake --build build
+
+    MSYS2:
+        cmake .. -G "MinGW Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENSSL_ROOT_DIR=/mingw64
+        cmake --build buid
