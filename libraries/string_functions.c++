@@ -124,7 +124,7 @@ std::string string_functions::remove_first_of(const std::string the_string, cons
     return the_string;
 }
 
-size_t string_functions::first_index_of(const std::string the_string, const std::string to_find, bool ignore_case) {
+size_t string_functions::first_index_of(const std::string& the_string, const std::string to_find, bool ignore_case) {
 
     if (the_string.empty() or to_find.empty()) {
         return std::string::npos;

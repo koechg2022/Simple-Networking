@@ -86,14 +86,14 @@
 
         /**
             @brief Find the first occurance of the `to_find` substring within `the_string`
-            @param the_string (`const std::string`) : The string to be searched through for `to_find`
+            @param the_string (`const std::string&`) : The string to be searched through for `to_find`
             @param to_find (`const std::string`) : The string to find from within `the_string`
             @param ignore_case (`const std::string`) : A bool flag specifying whether or not to ignore the cases 
             @returns A `size_t` that is the index of `the_string` with the first instance of `to_find`
             @note If there is no instance of `to_find` within `the_string`, then a size_t 
                 std::string::npos is returned.
         */
-        size_t first_index_of(const std::string the_string, const std::string to_find, bool ignore_case = true);
+        size_t first_index_of(const std::string& the_string, const std::string to_find, bool ignore_case = true);
 
 
         /**

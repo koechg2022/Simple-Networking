@@ -1805,40 +1805,69 @@
 
                         networking::network_structures::host_report the_answer;
                         the_answer.host = remote;
+                        byte_error = 0;
 
-                        const auto start_time = std::chrono::steady_clock::now();
-                        while (*this and (std::chrono::steady_clock::now() - start_time < timeout)) {
-                            byte_error = 0;
-                            byte_chunk = (this->secure_) ? SSL_read(this->secure_socket_, reinterpret_cast<char*>(msg) + total_bytes, length - total_bytes) :
+                        if (flags == MSG_PEEK) {
+                            const auto start_time = std::chrono::steady_clock::now();
+                            re_read:
+
+                            if (std::chrono::steady_clock::now() - start_time > timeout) {
+                                the_answer.byte_count = byte_chunk;
+                                return the_answer;
+                            }
+                            byte_chunk = (this->secure_) ? SSL_peek(this->secure_socket_, reinterpret_cast<char*>(msg), length) :
                                         recv(this->connect_socket_, reinterpret_cast<char*>(msg) + total_bytes, length - total_bytes, flags);
                             
+                            // std::printf("Just peeked at %ld bytes\n", byte_chunk);
                             if (byte_chunk < 1) {
+                                // An error occured or something due to non-blocking occured
                                 byte_error = (this->secure_) ? SSL_get_error(this->secure_socket_, byte_chunk) : socket_error;
 
-                                if (byte_error == block_read or byte_error == block_write) continue;
+                                if (byte_error == block_read or byte_error == block_write) goto re_read;
 
-                                // Connection was either closed 
-                                if (not byte_chunk) break;
+                                // Connection was closed or an actual error occured
                                 
-                                
-                                // or an actual error occured.
-                                
-                                // To track the errors
-                                if (byte_chunk < 0) byte_error = byte_error;
-
-                                // std::printf("Inside error branch of receiving message method. byte_chunk is \"%ld\"\n", byte_chunk);
-                                break;
+                                total_bytes = -1;
                             }
-
-                            total_bytes = total_bytes + byte_chunk;
-                            
-                            // Out of buffer space
-                            if (total_bytes == length) break;
-
-                            
-                            if (not this->message()) break;
-                            
+                            total_bytes = byte_chunk;
                         }
+
+                        else {
+                            const auto start_time = std::chrono::steady_clock::now();
+                            while (*this and (std::chrono::steady_clock::now() - start_time < timeout)) {
+                                byte_error = 0;                            
+                                byte_chunk = (this->secure_) ? SSL_read(this->secure_socket_, reinterpret_cast<char*>(msg) + total_bytes, length - total_bytes) :
+                                            recv(this->connect_socket_, reinterpret_cast<char*>(msg) + total_bytes, length - total_bytes, flags);
+                                
+                                if (byte_chunk < 1) {
+                                    byte_error = (this->secure_) ? SSL_get_error(this->secure_socket_, byte_chunk) : socket_error;
+
+                                    if (byte_error == block_read or byte_error == block_write) continue;
+
+                                    // Connection was either closed 
+                                    if (not byte_chunk) break;
+                                    
+                                    
+                                    // or an actual error occured.
+                                    
+                                    // To track the errors
+                                    if (byte_chunk < 0) byte_error = byte_error;
+
+                                    // std::printf("Inside error branch of receiving message method. byte_chunk is \"%ld\"\n", byte_chunk);
+                                    break;
+                                }
+
+                                total_bytes = total_bytes + byte_chunk;
+                                
+                                // Out of buffer space
+                                if (total_bytes == length) break;
+
+                                
+                                if (not this->message()) break;
+                                
+                            }
+                        }
+
 
                         
                         the_answer.byte_count = total_bytes;

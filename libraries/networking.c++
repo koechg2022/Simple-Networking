@@ -1630,7 +1630,7 @@ bool networking::network_structures::tcp_client::connect_socket(const std::chron
         // Consider adding a timeout setting for this aspect of the program
         std::scoped_lock socket_lock(this->connect_socket_mutex_, this->connect_address_mutex_, this->connect_time_mutex_);
         if (not this->block_) {
-            if (not networking::set_blocking(this->connect_socket_, not this->block_)) {
+            if (not networking::set_blocking(this->connect_socket_, this->block_)) {
                 throw networking::exceptions::socket_information_failure("Failed to set the connection socket to non-blocking before establishing a connection.", unpack_exception_parameters(1));
             }
             std::printf("Socket is now %s\n", (networking::socket_blocking(this->connect_socket_) ? "blocking" : "non-blocking"));
@@ -1644,7 +1644,7 @@ bool networking::network_structures::tcp_client::connect_socket(const std::chron
                 int connect_error = WSAEWOULDBLOCK;
             #endif
 
-            if (not this->block_ and socket_error != connect_error) {
+            if (not this->block_ and socket_error == connect_error) {
                 
                 // std::printf("waiting for timeout time again to establish the connection once more.\n");
 
@@ -1656,10 +1656,12 @@ bool networking::network_structures::tcp_client::connect_socket(const std::chron
                 timeout_struct.tv_usec = std::chrono::duration_cast<std::chrono::microseconds>(timeout).count() % 1000000; //C++14+ : 1'000'000;
 
                 // This will wait for the timeout then try again.
+                // std::printf("About to use select.\n");
                 if (select(this->connect_socket_ + 1, 0, &writes, 0, &timeout_struct) < 0) {
                     throw networking::exceptions::connection_failure("Failed to establish a connection and exceeded timeout wait time.", unpack_exception_parameters(1));
                 }
 
+                // std::printf("About to use FD_ISSET.\n");
                 if (not FD_ISSET(this->connect_socket_, &writes)) {
                     throw networking::exceptions::connection_failure("Connection socket is not capable of communicating with remote host, even after timeout wait.", unpack_exception_parameters(1));
                 }
@@ -1667,6 +1669,7 @@ bool networking::network_structures::tcp_client::connect_socket(const std::chron
                 connect_error = 0;
                 socklen_t len = sizeof(connect_error);
 
+                // std::printf("About to use getsockopt.\n");
                 if (getsockopt(this->connect_socket_, SOL_SOCKET, SO_ERROR, &connect_error, &len) < 0 or connect_error != 0) {
                     throw networking::exceptions::connection_failure("A connection issue occured while trying to establish a connection with the remote machine.", unpack_exception_parameters(1));
                 }

@@ -1,6 +1,7 @@
 
 
 #include <string>
+#include <sstream>
 #include <set>
 #include <unordered_set>
 #include <unordered_map>
@@ -148,6 +149,8 @@ std::unordered_map<std::string, std::string> parse_url(const std::string url = d
                 {HASH, ""}
             });
 
+std::unordered_map<std::string, std::string> parse_header(const std::string& raw_header, const std::string& separator = ":");
+
 void list_machine_adapters();
 
 void resolve_hostname();
@@ -281,6 +284,76 @@ std::unordered_map<std::string, std::string> parse_url(const std::string url, co
     }
 
     return the_answer;
+}
+
+std::unordered_map<std::string, std::string> parse_header(const std::string& raw_header, const std::string& separator) {
+    std::unordered_map<std::string, std::string> the_answer;
+
+    // Structure to parse:
+    // HTTP/1.1 301 Moved Permanently\r\n
+    // Content-Type: application/binary\r\n
+    // X-Content-Type-Options: nosniff\r\n
+    // Expires: Sun, 18 May 2025 21:19:06 GMT\r\n
+    // Date: Sun, 18 May 2025 21:19:06 GMT\r\n
+    // Cache-Control: private, max-age=31536000\r\n
+    // Location: https://www.youtube.com/\r\n
+    // Strict-Transport-Security: max-age=31536000; includeSubDomains; preload\r\n
+    // X-Frame-Options: SAMEORIGIN\r\n
+    // Content-Security-Policy: require-trusted-types-for 'script'\r\n
+    // Report-To: {"group":"youtube_main","max_age":2592000,"endpoints":[{"url":"https://csp.withgoogle.com/csp/report-to/youtube_main"}]}\r\n
+    // Cross-Origin-Opener-Policy: same-origin-allow-popups; report-to="youtube_main"\r\n
+    // Origin-Trial: AmhMBR6zCLzDDxpW+HfpP67BqwIknWnyMOXOQGfzYswFmJe+fgaI6XZgAzcxOrzNtP7hEDsOo1jdjFnVr2IdxQ4AAAB4eyJvcmlnaW4iOiJodHRwczovL3lvdXR1YmUuY29tOjQ0MyIsImZlYXR1cmUiOiJXZWJWaWV3WFJlcXVlc3RlZFdpdGhEZXByZWNhdGlvbiIsImV4cGlyeSI6MTc1ODA2NzE5OSwiaXNTdWJkb21haW4iOnRydWV9\r\n
+    // Permissions-Policy: ch-ua-arch=*, ch-ua-bitness=*, ch-ua-full-version=*, ch-ua-full-version-list=*, ch-ua-model=*, ch-ua-wow64=*, ch-ua-form-factors=*, ch-ua-platform=*, ch-ua-platform-version=*\r\n
+    // Server: ESF\r\n
+    // Content-Length: 0\r\n
+    // X-XSS-Protection: 0\r\n
+    // Alt-Svc: h3=":443"; ma=2592000,h3-29=":443"; ma=2592000\r\n
+    // Connection: close\r\n
+    // \r\n
+
+    std::istringstream stream(raw_header);
+    std::string line;
+    bool first_line = true;
+
+    while (std::getline(stream, line)) {
+        // Remove trailing '\r' if present
+        if (!line.empty() && line.back() == '\r') {
+            line.pop_back();
+        }
+        // Skip empty lines (end of headers)
+        if (line.empty()) break;
+
+        if (first_line) {
+            // Handle status line separately if needed
+            the_answer["Status"] = line;
+            first_line = false;
+            continue;
+        }
+
+        // Find the first ':' as separator
+        size_t sep = line.find(separator);
+        if (sep == std::string::npos) {
+            // Malformed header, skip or handle as needed
+            continue;
+        }
+        // Extract key and value, trim spaces
+        std::string key = line.substr(0, sep);
+        std::string value = line.substr(sep + 1);
+        // Trim leading spaces from value
+        size_t value_start = value.find_first_not_of(" ");
+        if (value_start != std::string::npos) {
+            value = value.substr(value_start);
+        } 
+        
+        else {
+            value.clear();
+        }
+        the_answer[key] = value;
+    }
+    return the_answer;
+
+
+   
 }
 
 void list_machine_adapters() {
@@ -609,10 +682,11 @@ void test_web_client() {
 
     // variables for use
     bytes bytes;
-    const int count = 32, flags = 0;
+    unsigned long index, message_length;
+    const int count = 32, flags = MSG_PEEK;
     char msg[__kilo_bytes__(count)];
 
-    char *p = msg, *q, *end = msg + __kilo_bytes__(count), *body = 0;
+    // char *p = msg, *q, *end = msg + __kilo_bytes__(count), *body = 0;
 
     enum {length, chunked, connection};
     int encoding = 0, remaining = 0;
@@ -643,7 +717,7 @@ void test_web_client() {
             "GET " + url_parsed[PATH] + " HTTP/1.1" + ending +
             "Host: " + url_parsed[HOSTNAME] + ":" +url_parsed[PORT] + ending +
             "Connection: close" + ending +
-            "User-Agent honpwc https_get 1.0" + ending +
+            "User-Agent: honpwc https_get 1.0" + ending +
             ending;
 
     
@@ -664,21 +738,49 @@ void test_web_client() {
     std::cout << "Successfully requested resources" << std::endl;
     const auto start_time = std::chrono::steady_clock::now();
 
-    // while (client and ((std::chrono::steady_clock::now() - start_time) < timeout)) {
-
-    //     // Does the client has a message?
-    //     if (client.message()) {
-    //         bytes = (client.secure()) ? SSL_read(server.secure_connect_socket, msg, __kilo_bytes__(count)) :
-    //                     recv(server.connect_socket, msg, __kilo_bytes__(count), flags);
-    //         if (bytes < 1) {
-    //             std::cerr << "Failed to receive data from server" << std::endl;
-    //             break;
-    //         }
-    //         message = std::string(msg, bytes);
-    //         break;
-    //     }
-    // }
+    
     response = client.message<char>(msg, __kilo_bytes__(count), flags, timeout);
+
+    if (not response.success) {
+        std::cerr << "Failed to retrieve data from server" << std::endl;
+        return;
+    }
+
+    message = std::string(msg, response.byte_count);
+    index = message.find(ending + ending);
+
+    if (index == std::string::npos) {
+        std::cerr << "Failed to parse the headers out of the response" << std::endl;
+        return;
+    }
+
+    std::unordered_map<std::string, std::string> headers = parse_header(message);
+    if (not headers.empty()) {
+        message_length = 0;
+        std::cout << "Parsed out headers : " << std::endl;
+        for (const auto& [tag, value] : headers) {
+            std::cout << tag << " : " << value << std::endl;
+            if (string_functions::same_string(tag, "content-length")) {
+                message_length = std::stoul(value, nullptr, 10);
+            }
+        }
+        std::cout << std::endl << std::endl << std::endl;
+        char complete_message[index + message_length];
+        response = client.message<char>(complete_message, index + message_length, 0, timeout);
+
+        if (not response.success) {
+            std::cerr << "Failed to retrieve the complete response" << std::endl;
+            return;
+        }
+
+        message = std::string(msg, index, message_length);
+
+        std::cout << "And the message is:" << std::endl;
+        std::cout << message << std::endl;
+        client.stop();
+        std::cout << "Client connection closed after " << std::chrono::duration<double>(std::chrono::steady_clock::now() - start_time).count() << " seconds." << std::endl;
+        return;
+    }
 
     client.stop();
     std::cout << "Client connection closed after " << std::chrono::duration<double>(std::chrono::steady_clock::now() - start_time).count() << " seconds." << std::endl;
