@@ -141,13 +141,17 @@ If you want to ensure that the compiler can find where you have [OpenSSL](https:
 
 * On mac, [Homebrew](https://brew.sh/)
 * On linux (I used Ubuntu) - [Installing OpenSSL on Ubuntu](https://stackoverflow.com/questions/3016956/how-do-i-install-the-openssl-libraries-on-ubuntu)
-*  On Windows, I wasn't able to find a good reference. This is what worked for me instead:
+*  On Windows, I wasn't able to find a good reference (Ya, windows is not nice...) This is what worked for me instead:
     
         1.) Open MSYS2
+        
         2.) Upgrade the package installer:
                 pacman -Syu
+        
+        3.) Install OpenSSl:
                 pacman -S mingw-w64-x86_64-openssl
-        3.) The packages should be installed now. Verify by checking if:
+        
+        4.) The packages should be installed now. Verify by checking if:
                 Headers are in:
                     /mingw64/include
 
@@ -156,6 +160,10 @@ If you want to ensure that the compiler can find where you have [OpenSSL](https:
                 
                 DLLs are in:
                     /mingw64/bin
+        
+        5.) If you want to compile using powershell, you'll have to link the path to where the MSYS2 compiler is located and where the [OpenSSL](https://openssl-library.org/) compiler is installed (In step 3, the MSYS2 compiler was installed along with openssl).
+                In my CMakeLists.txt file, I have the commented out line that links the [OpenSSL](https://openssl-library.org/) root directory location (this could be different on your machine). But I also linked the location where MSYS2 installed OPENSSL and the MSYS2 compiler (C:\mingw64\mingw64\bin) to the path variable in system environment.
+            
 
 Then in CMakeLists.txt, if you want the compiler to find the OpenSSL library, be sure to include these lines, no matter what system is being used:
 
@@ -167,49 +175,32 @@ The CMakeLists.txt file works well on unix systems and on windows systems too. F
 
 In order to run the cmake file, I've been running the commands (these commands are also in the cmake file at the top):
 
-*<span style="color:green">Unix</span>:*
+# *<span style="color:green">Unix</span>:*
 
-    `Unix : cmake .. -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`
-    `make`
+    Unix : cmake .. -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+    
+    make
 
-*<span style="color:blue">Windows</span>:*
+# *<span style="color:blue">Windows</span>:*
     
     Powershell:
-        cmake .. -G "MinGW Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+        cmake .. -G "MinGW Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENSSL_ROOT_DIR=/mingw64 // Not strictly necessary if directory was added to system path.
+        
         cmake --build build
 
     MSYS2:
-        cmake .. -G "MinGW Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENSSL_ROOT_DIR=/mingw64
+        cmake .. -G "MinGW Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENSSL_ROOT_DIR=/mingw64 // This is still necessary even if OPENSSL is in the system variable path. It failed for me if I didn't have this linking.
+        
         cmake --build buid
 
 
-* Regarding the commands to run the the cmake file and the corresponding makefiles.
-    
-    ‣ MacOS - I used Homebrew to install 
-        openssl and that was it. Beautiful, 
-        simple and easy to set up.
-    
-    ‣ LinuxOS - I used the linux package 
-        manager. Again, beautiful, simple 
-        and easy to set up.
-    
-    ‣ Windows - Ya windows is not an 
-        easy system to develop on. I 
-        initially tried using choco, 
-        but the cmake could never find 
-        the openssl library on the machine, 
-        even after I set the environment 
-        variable for OpenSSL. In the end, 
-        I just used MSYS2 to install Openssl. 
-        It worked and I was even 
-        able to use powershell to run the cmake file.
-
-* The secure connection has been tested and it works great. 
+* The secure connection has been tested and it works great so far.
 To run the secure connection, be sure to be situated in the 
 build directory (if it doesn't exist, create it in the same directory 
-where the `CMakeLists.txt` file exists then enter into it) 
-and execute the file in the objects directory with the 
-appropriate command. Again this is for the secure tcp client/server tests programs.
+where the `CMakeLists.txt` file exists then enter into it) and run the commands [above](#Unix).
+Run the cmake command first, then once that's done, run the `make command` (`make` on [Unix](#Unix), and `cmake --build build` on [Windows](#Windows)). After the `make command` successfully finishes it's execution, the executables 
+will have been created and placed into the `objects` directory. 
+Again this is only to create the tests for the networking library that are included in this codebase.
 
 
 
