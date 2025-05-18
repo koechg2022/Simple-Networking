@@ -627,7 +627,7 @@ void test_web_client() {
 
     networking::network_structures::tcp_client client(url_parsed[HOSTNAME], url_parsed[PORT]);
     
-    client.secure(true).server_name_indication(true);
+    client.secure(true).server_name_indication(true).block(false);
 
     if (client.message<char>(message.data(), message.length(), flags, timeout).success) {
         std::cerr << "Falsely reports a successful send when no connection has been established" << std::endl;

@@ -565,7 +565,7 @@ std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::st
     return the_answer;
 }
 
-bool networking::socket_is_blocking(const socket_type& the_socket) {
+bool networking::socket_blocking(const socket_type& the_socket) {
     if (not valid_socket(the_socket)) {
         return false;
     }
@@ -612,7 +612,7 @@ bool networking::socket_connected(socket_type& the_socket) {
         return false;
     }
 
-    const bool was_blocking = networking::socket_is_blocking(the_socket);
+    const bool was_blocking = networking::socket_blocking(the_socket);
 
     int retval = 0;
     
@@ -1633,6 +1633,7 @@ bool networking::network_structures::tcp_client::connect_socket(const std::chron
             if (not networking::set_blocking(this->connect_socket_, not this->block_)) {
                 throw networking::exceptions::socket_information_failure("Failed to set the connection socket to non-blocking before establishing a connection.", unpack_exception_parameters(1));
             }
+            std::printf("Socket is now %s\n", (networking::socket_blocking(this->connect_socket_) ? "blocking" : "non-blocking"));
         }
         int connect_return = connect(this->connect_socket_, this->active_address_->ai_addr, this->active_address_->ai_addrlen);
         if (connect_return) {
@@ -1644,7 +1645,9 @@ bool networking::network_structures::tcp_client::connect_socket(const std::chron
             #endif
 
             if (not this->block_ and socket_error != connect_error) {
-                const auto start_time = std::chrono::steady_clock::now();
+                
+                // std::printf("waiting for timeout time again to establish the connection once more.\n");
+
                 fd_set writes;
                 FD_ZERO(&writes);
                 FD_SET(this->connect_socket_, &writes);

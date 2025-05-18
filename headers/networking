@@ -567,7 +567,7 @@
             @returns `true` if the socket is blocking, `false` if it is not, or
             if there was an error.
          */
-        bool socket_is_blocking(const socket_type& the_socket);
+        bool socket_blocking(const socket_type& the_socket);
 
 
         /**
