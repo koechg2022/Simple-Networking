@@ -148,6 +148,7 @@ If you want to ensure that the compiler can find where you have [OpenSSL](https:
     <ul>
     <li>
         <ul>
+            <li>Download and install MSYS2</li>
             <li> Open MSYS2</li>
             <li> Upgrade the package installer:
                 <ul>
