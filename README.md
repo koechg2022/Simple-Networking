@@ -680,14 +680,22 @@ to blocking, `false` to set it to non-blocking.
 
 # <div align = "center">**<h3><u>TO DO list</u></h3>**</div>
 
+Complete
 <ul>
     <li>Make all the functions and objects thread safe when in execution. ✅</li>
     <li>Make the structures utilize operation overloading, allowing for simplified code. ✅</li>
     <li>Make sure the code works on all operating systems. ✅</li>
     <li>Implement the code so it works with both secure and non-secure connections. ✅</li>
+
+</ul>
+In progress
+<ul>
     <li>Make the tcp_client capable of timing out when establishing a connection. ✅ (BUT STILL NEEDS TO BE TESTED)</li>
     <li>Make the tcp_server and tcp_client capable of sending any data type across the network connection. ✅ (BUT STILL NEEDS TO BE TESTED)</li>
     <li>Investigate if there's a way to check if the windows networking library has already been implemented, and if the secure networking library has already been initialized or not.</li>
+</ul>
+Still to come
+<ul>
     <li>Add javadoc comments to all methods and functions (In progress- Still documenting the tcp_client object's methods)</li>
     <li>Write http_server and http_client classes that utilize the tcp_server and tcp_client classes for establishing connections.</li>
 </ul>
