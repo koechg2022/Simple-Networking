@@ -142,27 +142,30 @@ If you want to ensure that the compiler can find where you have [OpenSSL](https:
 * On mac, [Homebrew](https://brew.sh/)
 * On linux (I used Ubuntu) - [Installing OpenSSL on Ubuntu](https://stackoverflow.com/questions/3016956/how-do-i-install-the-openssl-libraries-on-ubuntu)
 *  On Windows, I wasn't able to find a good reference (Ya, windows is not nice...) This is what worked for me instead:
-    
-        1.) Open MSYS2
-        
-        2.) Upgrade the package installer:
-                pacman -Syu
-        
-        3.) Install OpenSSl:
-                pacman -S mingw-w64-x86_64-openssl
-        
-        4.) The packages should be installed now. Verify by checking if:
-                Headers are in:
-                    /mingw64/include
 
-                Libraries are in:
-                    /mingw64/lib
-                
-                DLLs are in:
-                    /mingw64/bin
-        
-        5.) If you want to compile using powershell, you'll have to link the path to where the MSYS2 compiler is located and where the [OpenSSL](https://openssl-library.org/) compiler is installed (In step 3, the MSYS2 compiler was installed along with openssl).
-                In my CMakeLists.txt file, I have the commented out line that links the [OpenSSL](https://openssl-library.org/) root directory location (this could be different on your machine). But I also linked the location where MSYS2 installed OPENSSL and the MSYS2 compiler (C:\mingw64\mingw64\bin) to the path variable in system environment.
+<ul>
+    <li> Open MSYS2</li>
+    <li> Upgrade the package installer:
+        <ul>
+            <li>pacman -Syu</li>
+        </ul>
+    </li>
+    <li> Install OpenSSl :
+        <ul>
+            <li>pacman -S mingw-w64-x86_64-openssl</li>
+        </ul>
+    </li>
+    <li> The packages should be installed now. Verify by checking if:
+        <ul>
+            <li>Headers are in : /mingw64/include</li>
+            <li>Libraries are in : /mingw64/lib</li>
+            <li>DLLs are in : /mingw64/bin</li>
+        </ul>
+    <li>
+    <li>If you want to compile using powershell, you'll have to link the path to where the MSYS2 compiler is located and where the [OpenSSL](https://openssl-library.org/) compiler is installed (In step 3, the MSYS2 compiler was installed along with openssl).
+    In my CMakeLists.txt file, I have the commented out line that links the [OpenSSL](https://openssl-library.org/) root directory location (this could be different on your machine). But I also linked the location where MSYS2 installed OPENSSL and the MSYS2 compiler (C:\mingw64\mingw64\bin) to the path variable in system environment.</li>
+
+</ul>
             
 
 Then in CMakeLists.txt, if you want the compiler to find the OpenSSL library, be sure to include these lines, no matter what system is being used:
