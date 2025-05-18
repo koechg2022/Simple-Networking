@@ -1,4 +1,4 @@
-# *<h2>Simple Networking</h2>*
+# **<h2>Simple Networking</h2>**
 
 
 *This is an outline of a simple implementation to connect remote machines with a TCP or a UDP connection (UDP hasn't been set up yet)*
