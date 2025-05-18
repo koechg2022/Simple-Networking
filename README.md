@@ -340,23 +340,35 @@ Again this is only to create the tests for the networking library that are inclu
 
 ###### • `bool networking::network_initialized()`:
     This is a function that is really only useful for windows systems. But it works on all platforms. 
-    Windows systems need to have their networking libraries initialized. This function simply checks if the network was initialized within the context of using this networking library during the current runtime session.
+    Windows systems need to have their networking libraries initialized. This function 
+    simply checks if the network was initialized within the context of using this networking library 
+    during the current runtime session.
     
 ###### • `bool networking::initialize_network()` :
-    Again this is really only useful on windows systems. It initializes the networking library and returns `true` within the context of the networking library namespace during the current runtime session, `false` if it was not initialized, or an exception.
+    Again this is really only useful on windows systems. It initializes the networking library and 
+    returns `true` within the context of the networking library namespace during the current runtime 
+    session, `false` if it was not initialized, or an exception.
 
 ###### • `bool networking::uninitialize_network()` :
-    Again really only useful on windows systems. It uninitializes the networking library and returns `true` if the network was successfully uninitialized within the context of the networking library namespace during the current runtime session, `false` if it was not or an exception is thrown.
+    Again really only useful on windows systems. It uninitializes the networking library and returns 
+    `true` if the network was successfully uninitialized within the context of the networking 
+    library namespace during the current runtime session, `false` if it was not or an exception is thrown.
 
 ###### • `bool networking::secure_network_initialized()` :
-    Check if the [OpenSSL](https://openssl-library.org/) library has been initialized within the context of the 
-    networking namespace during the current runtime session. Returns `true` if the library is initialized, `false` if it's not.
+    Check if the [OpenSSL](https://openssl-library.org/) library has been initialized within the 
+    context of the networking namespace during the current runtime session. 
+    Returns `true` if the library is initialized, `false` if it's not.
 
 ###### • `bool networking::initialize_secure_network()` :
-    This is to initialize the [OpenSSL](https://openssl-library.org/) secure networking library within the context of the networking library namespace during the current runtime session. There are currently no checks for whether or not the network was initialized though, so this will pretty much always initialize the library then return `true`.
+    This is to initialize the [OpenSSL](https://openssl-library.org/) secure networking library within 
+    the context of the networking library namespace during the current runtime session. 
+    There are currently no checks for whether or not the network was initialized though, 
+    so this will pretty much always initialize the library then return `true`.
 
 ###### • `bool uninitialize_secure_network()` :
-    Uninitialize the [OpenSSL](https://openssl-library.org/) secure networking library within the context of the networking library namespace during the current runtime session, so this will  pretty much always uninitilize the library then return `true`.
+    Uninitialize the [OpenSSL](https://openssl-library.org/) secure networking library within the 
+    context of the networking library namespace during the current runtime session, so this will 
+    pretty much always uninitilize the library then return `true`.
 
 ###### • `std::unordered_set<std::string> networking::resolve_hostname(const std::string hostname, const std::stirng port = default_port, const bool name = false)` :
     
@@ -364,12 +376,19 @@ Again this is only to create the tests for the networking library that are inclu
         
     | data type | parameter name | default value | Notes |
     |-----------|:--------------:|:-------------:|:---------------------------:|
-    | const std::string | hostname | no default value, must be set when called.| This is the hostname to be resolved into an IP address. This hostname's IP address(es) are what are returned.
-    | const std::string | port | default_port (macro - #define "8080") | This is the port to use for the DNS query. Not usually necessary to change it, but it can be changed if necessary.
-    | const bool | name | false | The name flag is used to specify whether or not to use the `NI_NAMEREQD` macro in the call to retrieve the name information for the address. This is a flag because it can take a while to retrieve this data, for some reason, this is especially true on the windows system I've been using. |
+    | const std::string | hostname | no default value, must be set when called.| This is the hostname 
+    to be resolved into an IP address. This hostname's IP address(es) are what are returned.
+    | const std::string | port | default_port (macro - #define "8080") | This is the port to use for 
+    the DNS query. Not usually necessary to change it, but it can be changed if necessary.
+    | const bool | name | false | The name flag is used to specify whether or not to use the 
+    `NI_NAMEREQD` macro in the call to retrieve the name information for the address. This is a 
+    flag because it can take a while to retrieve this data, for some reason, this is especially 
+    true on the windows system I've been using. |
 
-* Returns a `std::unordered_set<std::string>` with all the IP addresses that were resolved for the `hostname` passed in.
-* If the networking library fails to initilize, a `initialize_network_failure` exception is thrown.
+* Returns a `std::unordered_set<std::string>` with all the IP addresses that were resolved for 
+the `hostname` passed in.
+* If the networking library fails to initilize, a `initialize_network_failure` 
+exception is thrown.
 
 ###### • `std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string> > > networking::machine_adapters(const bool names = false)` :
 * Parameters:
