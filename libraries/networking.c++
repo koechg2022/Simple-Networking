@@ -1626,6 +1626,8 @@ bool networking::network_structures::tcp_client::connect_socket() {
         if (not this->create_connection_socket()) {
             throw networking::exceptions::create_connection_socket_failure("Failed to create the connection socket for this tcp clien to use for establishing a connection to a remote host.", unpack_exception_parameters(1));
         }
+
+        // Consider adding a timeout setting for this aspect of the program
         std::scoped_lock socket_lock(this->connect_socket_mutex_, this->connect_address_mutex_, this->connect_time_mutex_);
         if (connect(this->connect_socket_, this->active_address_->ai_addr, this->active_address_->ai_addrlen)) {
             throw networking::exceptions::connection_failure("Failed to connect this tcp client to the remote host.", unpack_exception_parameters(1));

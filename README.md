@@ -668,8 +668,18 @@ to blocking, `false` to set it to non-blocking.
 
 ###### <h3><div align = "center"><u>client_connection</u></div></h3>
 ###### <h3><div align = "center"><u>server_connection</u></div></h3>
+###### <h3><div align = "center"><u>tcp_server</u></div></h3>
+###### <h3><div align = "center"><u>tcp_client</u></div></h3>
 
 
 # <div align = "center">**<h3><u>How to use Simple-Networking</u></h3>**</div>
 
 <div align="center"><h3>UNDER CONSTRUCTION</h3></div>
+
+
+
+# <div align = "center">**<h3><u>TO DO list</u></h3>**</div>
+
+<ul>
+    <li>Write `http_server` and `http_client` classes that utilize the `tcp_server` and `tcp_client` classes for establishing connections.</li>
+</ul>
