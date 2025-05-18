@@ -343,7 +343,7 @@ Again this is only to create the tests for the networking library that are inclu
 <br>
 
 
-###### <h3><div align = "center"><u>`network_initialized()`:</u></div></h3>
+###### <h3><div align = "center"><u>`network_initialized()`</u></div></h3>
 * This is a function that is really only useful for windows systems. But it works on all platforms. 
 Windows systems need to have their networking libraries initialized. This function 
 simply checks if the network was initialized within the context of using this networking library 
@@ -358,7 +358,7 @@ during the current runtime session.
 <br>    
 
 
-###### <h3><div align = "center"><u>`initialize_network()` :</u></div></h3>
+###### <h3><div align = "center"><u>`initialize_network()`</u></div></h3>
 * Again this is really only useful on windows systems. It initializes the networking library and 
 returns `true` within the context of the networking library namespace during the current runtime 
 session, `false` if it was not initialized, or an exception.
@@ -372,7 +372,7 @@ session, `false` if it was not initialized, or an exception.
 <br>
 
 
-###### <h3><div align = "center"><u>`uninitialize_network()` :</u></div></h3>
+###### <h3><div align = "center"><u>`uninitialize_network()`</u></div></h3>
 * Again really only useful on windows systems. It uninitializes the networking library and returns 
 `true` if the network was successfully uninitialized within the context of the networking 
 library namespace during the current runtime session, `false` if it 
@@ -387,7 +387,7 @@ was not or an exception is thrown.
 <br>
 
 
-###### <h3><div align = "center"><u>`secure_network_initialized()` :</u></div></h3>
+###### <h3><div align = "center"><u>`secure_network_initialized()`</u></div></h3>
 * Check if the [OpenSSL](https://openssl-library.org/) library has been initialized within the 
 context of the networking namespace during the current runtime session. 
 Returns `true` if the library is initialized, `false` if it's not.
@@ -401,7 +401,7 @@ Returns `true` if the library is initialized, `false` if it's not.
 <br>
 
 
-###### <h3><div align = "center"><u>`initialize_secure_network()` :</u></div></h3>
+###### <h3><div align = "center"><u>`initialize_secure_network()`</u></div></h3>
 * This is to initialize the [OpenSSL](https://openssl-library.org/) secure networking 
 library within the context of the networking library namespace during the 
 current runtime session. There are currently no checks for whether or 
@@ -430,7 +430,7 @@ pretty much always uninitilize the library then return `true`.
 <br>
 <br>
 
-###### <h3><div align = "center"><u>`resolve_hostname(const std::string hostname, const std::stirng port = default_port, const bool name = false)` :</u></div></h3>
+###### <h3><div align = "center"><u>`resolve_hostname(const std::string hostname, const std::stirng port = default_port, const bool name = false)`</u></div></h3>
     
 * Parameters:
         
@@ -458,7 +458,7 @@ exception is thrown.
 <br>
 <br>
 
-###### <h3><div align = "center"><u>`networking::machine_adapters(const bool names = false)` :</u></div></h3>
+###### <h3><div align = "center"><u>`networking::machine_adapters(const bool names = false)`</u></div></h3>
 * Parameters:
 
 | data type | parameter name | default value | Notes |
@@ -474,7 +474,7 @@ exception is thrown.
 <br>
 
 
-###### <h3><div align = "center"><u>`socket_is_blocking(const socket_type& the_socket)` :</u></div></h3>
+###### <h3><div align = "center"><u>`socket_is_blocking(const socket_type& the_socket)`</u></div></h3>
 * This still hasn't been tested, but it's supposed to check if the socket is in a blocking state or not. 
 If the socket is blocking, then `true` is returned, if it's not blocking or an error occured, `false` is returned.
 * So be sure to always check if the socket passed in is still valid after using this function.
@@ -489,7 +489,7 @@ If the socket is blocking, then `true` is returned, if it's not blocking or an e
 <br>
 
 
-###### <h3><div align = "center"><u>`set_blocking(socket_type& the_socket, const bool block)` :</u></div></h3>
+###### <h3><div align = "center"><u>`set_blocking(socket_type& the_socket, const bool block)`</u></div></h3>
 * Set the socket passed in to blocking or non-blocking, depending on what `block` is. `true` to set the socket 
 to blocking, `false` to set it to non-blocking.
 
@@ -513,8 +513,7 @@ to blocking, `false` to set it to non-blocking.
 <br>
 <br>
 
-###### <h3><div align = "center"><u>`send_message(networking::network_structures::host_connection host, const data* the_message, const bytes </h3>
-</u></div>byte_count, const int flags = 0, const std::chrono::duration<int> timeout = std::chrono::seconds(10))` :
+###### <h3><div align = "center"><u>`send_message(networking::network_structures::host_connection host, const data* the_message, const bytes </h3></u></div>byte_count, const int flags = 0, const std::chrono::duration<int> timeout = std::chrono::seconds(10))` :
 * This function sends a message to the host that is specified with the `host` parameters.
 
 
