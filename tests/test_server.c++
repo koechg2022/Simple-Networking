@@ -764,8 +764,9 @@ void test_web_client() {
                 message_length = std::stoul(value, nullptr, 10);
             }
         }
+        client.message<char>(msg, message.length(), 0, timeout);
         std::cout << std::endl << std::endl << std::endl;
-        char complete_message[index + message_length];
+        char complete_message[message_length];
         response = client.message<char>(complete_message, index + message_length, 0, timeout);
 
         if (not response.success) {
