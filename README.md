@@ -524,12 +524,148 @@ to blocking, `false` to set it to non-blocking.
 
 #### <h2><div align = "center"><u>`Networking::Networking Structures`</u></div></h2>
 
+***Note** : These structures are implemened to be have their own comparison operations and they implement two different types of comparisions.
+
+***Another Note** : Another very useful book I used to learn about `C++'s Standard Library` and it's algorithms is [Data Structuresa nd Algorithms in C++ Pocket Primer](https://bookshop.org/p/books/data-structures-and-algorithms-in-c-pocket-primer-lee-wittenberg/b26326e0c97bebf4?ean=9781683920847&next=t&), by Lee Wittenberg. This book showed me basic data structures defined within C++'s Standard library, and it also went over how the data structures are implemented. For example it showed how a [`std::set`](https://en.cppreference.com/w/cpp/container/set) is implemented using a [`Binary Search Tree`](https://www.cs.usfca.edu/~galles/visualization/BST.html), and how an [`std::unordered_set`](https://en.cppreference.com/w/cpp/container/unordered_set) is implemented using a [`hash table`](https://www.hackerearth.com/practice/data-structures/hash-tables/basics-of-hash-tables/tutorial/). All the explanations in the book are short and easy to follow. This is good to learn about coding in C++, but also to learn about data structures & algorithms in general.
+    
+* # <h6>`Weak comparison` : Internal attributes are only compared if they are both defined.</h6>
+
+* # <h6>`Strong comparison` : Internal attributes of the structures are always compared</h6>
+
 ##### <h2><div align = "center"><u><h3>networking::network_structures</h3></u></div></h2>
 
 ###### <h3><div align = "center"><u>client_id</u></div></h3>
+* All the members of this struct are public.
+
+* The `client_id` structure is used primarily as a map key in the `tcp_server` to keep track of all the connected clients. This structure consists of three different strings (All of which have to be set manually):
+    * `hostname` 
+    * `port`
+    * `connection_time`
+
+* 2 Constructors:
+    * Default constructor:
+        * `client_id()`
+    
+    * Parameter constructor:
+        * `client_id(const std::string hname, const std::string hport, const std::string ctime_)`
+            * `const std::string hname` : The hostname of the client structure being pointed to.
+            * `const std::string hport` : The port this client structre being pointed to.
+            * `const std::string ctime_` : The time when the client connected to this machine.
+    
+* Operator overrides:
+    * `Operator<() const` : Allows for the `client_id` object to be used in an `std::set()`,
+    `std::map()`, and their unordered_counterparts too.
+        * Parameters:
+            * `const client_id& other` : The other `client_id` to be compared with. This comparision has been implemented to compare all three internal strings. This comparison also [strongly compares](#strong-comparison--internal-attributes-of-the-structures-are-always-compared) the `hostname` of each `client_id`, and [weakly compares](#weak-comparison--internal-attributes-are-only-compared-if-they-are-both-defined) the `port` and `connection_time`.
+
+    * `Operator==() const` : Used for comparisons between different `client_id` objects.
+        * Parameters:
+            * `const client_id& other` : The other `client_id` structure to be compared with. This comparison uses the `std::string_functions::same_string` function because it allows for string comparisons in a case independent manner. This comparison also [strongly compares](#strong-comparison--internal-attributes-of-the-structures-are-always-compared) the `hostname` of each `client_id`, and [weakly compares](#weak-comparison--internal-attributes-are-only-compared-if-they-are-both-defined) the `port` and `connection_time`.
+
+        * Returns a `bool`.
+        
+    * `Operator bool() const` : This method is used to check if the `client_id` is defined or not.
+        * To be defined, the `client_id` needs to have a hostname defined to it. The `port` and `connection_time` don't need to be defined.
+
+        * Returns a `bool`.
+
+    * `Operator=` : Assigns another `client_id` to the current `client_id`.
+        * Parameters:
+            * `const client_id& other` : The other `client_id` to assign to the current `client_id`.
+
+        * Returns a `client_id` reference to the current `client_id` object.
+
 ###### <h3><div align = "center"><u>host_connection</u></div></h3>
+
+* The `host_connection` is used as the base class for the `client_connection` & `server_connection` structs.
+
+* The `host_connection` struct consists of three data types (Again all of which need to be set manually):
+    * `host_information` of type `client_id`.
+    * `connect_socket` of type `socket_type`.
+    * `secure_connect_socket` of type `secure_socket_type`.
+
+* 2 Constructors:
+    * Default constructor:
+        * `host_connection()`
+    * Parameter constructor:
+        * `host_connection(client_id client_, const socket_type sock_, secure_socket_type sec_sock)`
+            * `client_` : The identifier for this `host_connection` structure.
+            * `connect_socket` : The socket that is used for creating connection to the remote machine.
+            *  `sec_sock` : The secure connection socket that is used to establish secure connections.
+
+* Operator overrides:
+    * `Operator<() const`: Used to compare a `host_connection` with another `host_connection`. This simply compares the `client_id` objects with each `host_connection`.
+        * Parameters:
+            `const host_connection& other` : The other `host_connection` to compare the current `host_connection` with.
+        
+        * Returns a `bool`.
+    
+    * `Operator==() const` : This [strongly compares](#strong-comparison--internal-attributes-of-the-structures-are-always-compared) the `host_connection` objects' `client_id`s and `connect_socket`s. It also [weakly compares](#weak-comparison--internal-attributes-are-only-compared-if-they-are-both-defined) the `host_connection`'s `secure_connect_socket`s.
+        * Parameters:
+            `const host_connection& other` : The other `host_connection` to compare this `host_connection` against.
+        * This is a `virtual` method.
+
+        * Returns a `bool`.
+
+    * `Operator bool() const` : This operator checks that the `host_connection`'s `host_information` is true (utilizing the `client_id's operator bool()`), and if the `connect_socket` of this `host_connection` is valid or not. The `secure_connect_socket` is not checked in this operator.
+
+        * Returns a `bool`.
+
+    * `Operator=()` : The assignment operator. Performs a deep copy of all data attributes of `other`'s data attributes, to `this`'s data attributes (provided `this` is not `other`).
+
+        * Returns a `host_connection` reference to the current `host_connection`.
+
+
+
 ###### <h3><div align = "center"><u>host_report</u></div></h3>
+
+* A `host_report` is a struct that is the atomic type for host communication. It consists of the attributes:
+    * `host` of type `host_connection` which holds the name of the host that either sent of received data.
+    * `byte_count` of type `bytes` which holds the total number of bytes that were sent or received (depending on the context in which the `host_report` is being returned).
+    * `success` of type `bool` which states if the send or receive was successful.
+
+* 3 Constructors:
+    * Default constructors:
+        * `host_report`
+
+    * Parameter constructor:
+        * `host_report(const host_connection con_host, bytes total_bytes, const bool succeeded)`
+            * TODO: Add explanations
+        * `host_report(const std::string hname, const std::string hport, const std::string hctime, const socket_type conn_sock, secure_socket_type sec_sock)`
+            * TODO: Add explanations
+
+* Operator overrides:
+
+    * `Operator==() const` : The comparison operator for this `host_report`. It compares this `host_report`'s `host`, `byte_count`, and `success` data fields, to the `other` `host_report`'s `host`, `byte_count`, and `success` fields.
+
+        * Parameters:
+            * `other` of type `const host_report&` : The other `host_report` to compare to the current `host_report` object.
+
+        * Returns a `bool`.
+
+    * `Operator bool() const` : The `bool` check for this `host_report`. It returns value of the `success` data field.
+
+        * Returns a `bool`.
+
+    * `Operator<() const` : The comparison operator that allows this `host_report` to be used in `std::set` and `std::map` and their `unordered` partner types.
+
+        * Parameters:
+            * `other` of type `const host_report&` : The other `host_report` to use for a comparison with the current `host_report`.
+
+        * Returns a `bool`.
+
+    * `Operator()=` : This is the assignment operator to change the values of this `host_report` to the values of `other`'s field values.
+
+        * Parameters:
+            * `other` of type `const host_report&` : The `host_report` whose values will be assigned to this `host_report`. If `other` is the same `host_report` as the `host_report` calling it, then nothing is changed.
+        
+        * Returns a reference to the current `host_report`.
+    
+
 ###### <h3><div align = "center"><u>complete_report</u></div></h3>
+
+* A `complete_report` is a 
+
 ###### <h3><div align = "center"><u>client_connection</u></div></h3>
 ###### <h3><div align = "center"><u>server_connection</u></div></h3>
 

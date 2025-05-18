@@ -703,17 +703,19 @@ networking::network_structures::client_id::client_id(const std::string hname, co
 }
 
 bool networking::network_structures::client_id::operator<(const networking::network_structures::client_id& other) const {
-    return this->hostname < other.hostname and this->port < other.port and this->connection_time < other.connection_time;
+    return this->hostname < other.hostname and 
+            (not this->port.empty() and not other.port.empty() ? this->port < other.port : true) and 
+                (this->connection_time.empty() and not other.connection_time.empty() ? this->connection_time < other.connection_time : true);
 }
 
 bool networking::network_structures::client_id::operator==(const networking::network_structures::client_id& other) const {
     return string_functions::same_string(this->hostname, other.hostname) and 
-            ((not this->port.empty() and not other.port.empty()) ? string_functions::same_string(this->port, other.port) : false) and 
-                ((not this->connection_time.empty() and not other.connection_time.empty()) ? string_functions::same_string(this->connection_time, other.connection_time) : false);
+            ((not this->port.empty() and not other.port.empty()) ? string_functions::same_string(this->port, other.port) : true) and 
+                ((not this->connection_time.empty() and not other.connection_time.empty()) ? string_functions::same_string(this->connection_time, other.connection_time) : true);
 }
 
 networking::network_structures::client_id::operator bool() const {
-    return not this->hostname.empty() and not this->port.empty() and not this->connection_time.empty();
+    return not this->hostname.empty();
 }
 
 networking::network_structures::client_id& networking::network_structures::client_id::operator=(const networking::network_structures::client_id& other) {
@@ -744,7 +746,9 @@ bool networking::network_structures::host_connection::operator<(const networking
 }
 
 bool networking::network_structures::host_connection::operator==(const networking::network_structures::host_connection& other) const {
-    return this->host_information == other.host_information and this->connect_socket == other.connect_socket;
+    return this->host_information == other.host_information and
+                this->connect_socket == other.connect_socket and 
+                    (valid_secure_socket(this->secure_connect_socket) and valid_secure_socket(other.secure_connect_socket)) ? this->secure_connect_socket == other.secure_connect_socket : true;
 }
 
 networking::network_structures::host_connection::operator bool() const {
