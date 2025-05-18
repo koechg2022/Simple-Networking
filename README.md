@@ -16,7 +16,7 @@
 ***
 
 
-**<div align="center"><h1>Simple-Networking</h1></div>**
+**<div align="center"><h1><u>Simple-Networking</u></h1></div>**
 
 
 ***
@@ -34,7 +34,7 @@
 
 
 
-***<div align="center"><h4>Table of Content:</h4></div>***
+***<div align="center"><h4><u>Table of Content</u>:</h4></div>***
 
 * [About the Program](#about-the-program)
 * [Compiling the tests](#compiling-the-tests)
@@ -50,7 +50,7 @@
 
 ***
 
-# **<div align="center"><h3>About the Program</h3></div>**
+# **<div align="center"><h3><u>About the Program</u></h3></div>**
 ---
 
 
@@ -76,7 +76,7 @@ What I'm still planning on adding:
 ***
 
 
-# **<div align="center" style="font:sans-serif"><h3>Compiling the tests</h3></div>**
+# **<div align="center" style="font:sans-serif"><h3><u>Compiling the tests</u></h3></div>**
 ---
 
 
@@ -175,13 +175,13 @@ The CMakeLists.txt file works well on unix systems and on windows systems too. F
 
 In order to run the cmake file, I've been running the commands (these commands are also in the cmake file at the top):
 
-#### *<span style="color:green">Unix</span>:*
+#### *<span style="color:green"><u>Unix</u></span>:*
 
     Unix : cmake .. -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
     
     make
 
-#### *<span style="color:blue">Windows</span>:*
+#### *<span style="color:blue"><u>Windows</u></span>:*
     
     Powershell:
         cmake .. -G "MinGW Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENSSL_ROOT_DIR=/mingw64 // Not strictly necessary if directory was added to system path.
@@ -204,17 +204,61 @@ Again this is only to create the tests for the networking library that are inclu
 
 
 
-# <div align = "center">**<h3>Library Features</h3>**</div>
+# <div align = "center">**<h3><u>Library Features</u></h3>**</div>
 ---
 
 * All the functions, objects, and features that this library hold are located within the `networking` namespace.
 
 * Create networking exceptions specific to this networking library.
     * All networking exceptions are located within the namespace exceptions.
-    * All exceptions are children of the `base_exception` type. So any of them can be caught as a `base_exception`:
+    * All exceptions are children of the `base_exception` type. So any of them can be caught as a `base_exception` reference:
             
         `catch (networking::exceptions::base_exception& except)`
-    * More im
+    
+    * All the `primitive` networking data types are still available 
+    (i.e ints for sockets on unix machines and SOCKETs for windows sockets), but their types have been abstracted away to allow for 
+    cross platform code. Here's a list of the networking types and their abstracted away working type names:
+
+
+        | data type/function                  | Linux                      | macOS                     | Windows                        | abstracted type/macro           |
+        |-------------------------------------|:---------------------------|:-------------------------:|:-------------------------------:|:-------------------------------:|
+        | network interface adapter pointer   | struct ifaddrs*            | struct ifaddrs*           | PIP_ADAPTER_ADDRESSES           | adapter_type                    |
+        | get adapter name                    | std::string(the_adapter->ifa_name) | std::string(the_adapter->ifa_name) | wchar_to_string(the_adapter->FriendlyName) | get_adapter_name         |
+        | get next adapter                    | the_adapter->ifa_next      | the_adapter->ifa_next     | this_adapter->Next              | get_next_adapter                |
+        | get address from adapter            | the_adapter                | the_adapter               | this_adapter->FirstUnicastAddress| get_address_from_adapter        |
+        | free adapters                       | freeifaddrs(the_adapters)  | freeifaddrs(the_adapters) | std::free(the_adapters)         | free_adapters                   |
+        | network address pointer             | struct ifaddrs*            | struct ifaddrs*           | PIP_ADAPTER_UNICAST_ADDRESS     | address_type                    |
+        | get next address                    | NULL                       | NULL                      | this_address->Next              | get_next_address                |
+        | get address sockaddr                | this_address->ifa_addr     | this_address->ifa_addr    | this_address->Address.lpSockaddr| get_address_sockaddr            |
+        | get address sockaddr len            | sizeof(*this_address->ifa_addr) | sizeof(*this_address->ifa_addr) | this_address->Address.iSockaddrLength | get_address_sockaddrlen   |
+        | get address family                  | this_address->ifa_addr->sa_family | this_address->ifa_addr->sa_family | this_address->Address.lpSockaddr->sa_family | get_address_family     |
+        | socket error                        | (errno)                    | (errno)                   | (WSAGetLastError())             | socket_error                    |
+        | socket error string                 | gai_strerror(error_number) | gai_strerror(error_number)| gai_strerrorA(error_number)     | socket_error_string             |
+        | socket data type                    | int                        | int                       | SOCKET                          | socket_type                     |
+        | socket family type                  | unsigned short             | unsigned char             | int                             | socket_family_type              |
+        | invalid socket                      | -1                         | -1                        | INVALID_SOCKET                  | invalid_socket                  |
+        | valid socket                        | (this_socket >= 0)         | (this_socket >= 0)        | (this_socket != invalid_socket) | valid_socket                    |
+        | close socket                        | close(the_socket)          | close(the_socket)         | closesocket(the_socket)         | close_socket                    |
+        
+    * And for dealing with the OpenSSL. This was not necessary and is still not necessary to use, but I find
+    these renames easier to follow along to.
+
+        | data type/function                  | Linux                      | macOS                     | Windows                        | abstracted type/macro           |
+        |-------------------------------------|:---------------------------|:-------------------------:|:-------------------------------:|:-------------------------------:|
+        | secure socket type pointer (OpenSSL)| SSL*                       | SSL*                      | SSL*                            | secure_socket_type              |
+        | networking context pointer (OpenSSL)| SSL_CTX*                   | SSL_CTX*                  | SSL_CTX*                        | context_type                    |
+        | certificate pointer (OpenSSL)       | X509*                      | X509*                     | X509*                           | certificate_type                |
+        | invalid secure socket               | nullptr                    | nullptr                   | nullptr                         | invalid_secure_socket           |
+        | invalid context                     | nullptr                    | nullptr                   | nullptr                         | invalid_context                 |
+        | invalid certificate                 | nullptr                    | nullptr                   | nullptr                         | invalid_certificate             |
+        | valid secure socket                 | (the_socket != invalid_secure_socket) | (the_socket != invalid_secure_socket) | (the_socket != invalid_secure_socket) | valid_secure_socket    |
+        | valid context                       | (the_context != invalid_context) | (the_context != invalid_context) | (the_context != invalid_context) | valid_context            |
+        | valid certificate                   | (certificate != invalid_certificate) | (certificate != invalid_certificate) | (certificate != invalid_certificate) | valid_certificate      |
+
+
+
+
+
 
 * Implement networking functions that are useful for handling networking programs ✅
     *
@@ -223,6 +267,6 @@ Again this is only to create the tests for the networking library that are inclu
 
 
 
-# <div align = "center">**<h3>How to use Simple-Networking</h3>**</div>
+# <div align = "center">**<h3><u>How to use Simple-Networking</u></h3>**</div>
 
 <div align="center"><h3>UNDER CONSTRUCTION</h3></div>
