@@ -175,13 +175,13 @@ The CMakeLists.txt file works well on unix systems and on windows systems too. F
 
 In order to run the cmake file, I've been running the commands (these commands are also in the cmake file at the top):
 
-# *<span style="color:green">Unix</span>:*
+##### *<span style="color:green">Unix</span>:*
 
     Unix : cmake .. -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
     
     make
 
-# *<span style="color:blue">Windows</span>:*
+##### *<span style="color:blue">Windows</span>:*
     
     Powershell:
         cmake .. -G "MinGW Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENSSL_ROOT_DIR=/mingw64 // Not strictly necessary if directory was added to system path.
