@@ -259,7 +259,7 @@ Again this is only to create the tests for the networking library that are inclu
 | valid certificate                   | `(certificate != invalid_certificate)`  | `(certificate != invalid_certificate)`  | valid_certificate()       |
 
 
-* Create networking exceptions specific to this networking library.
+* A networking exceptions specific to this networking library.
     * All networking exceptions are located within the namespace exceptions.
     * All exceptions are children of the `base_exception` type. So any of them can be caught as a `base_exception` reference:
             
@@ -285,6 +285,116 @@ Again this is only to create the tests for the networking library that are inclu
             except.print();
         }
         ```
+
+* A `network_address_families` namespace used for retrieving address families.
+
+    * There are two important aspects to the `network_address_families` namespace:
+
+        
+        * The Relevant adapter:
+            * This is assigned at compilation time. 
+            It's the adapter that is referenced most on the machine. I assigned them based off my machine, 
+            but your machine could be different. Be sure to check the name of your adapter on your 
+            machine and change this to match that name for smooth utilization of the networking structures.
+
+            * To retrieve rel_adapter, you can use the `machine_adapters()` function to retrieve all 
+            the adapters on your current machie, then change this value to match what you want to be the adapter 
+            that is referenced most often on your machine.
+
+            * `rel_adapter` is the default parameter for the following method (So be sure to either pass in a value for this method, or change rel_adapter to something that will be promising):
+                * `networking::network_structures::host::retrieve_hostname(std::unordered_set<std::string> {rel_adapter})`
+
+        
+        | Platform            | rel_adapter value |
+        |---------------------|:-----------------|
+        | Windows (`crap_os`) | "Wi-Fi 3"        |
+        | macOS (`mac_os`)    | "en0"            |
+        | Linux (other Unix)  | "enp0s8"         |
+
+
+        * The family constants:
+
+        | Constant Name                  | Value                                 | Platform(s)                  |
+        |--------------------------------|---------------------------------------|------------------------------|
+        | unspec_address_family          | "Unspecified Address Family"          | All                          |
+        | unrecognized_address_family    | "Unrecognized Address Family"         | All                          |
+        | ip_version4_address_family     | "IP Version 4 Family"                 | All                          |
+        | ip_version6_address_family     | "IP Version 6 Family"                 | All                          |
+        | link_layer_address_family      | "Link-Layer Interface Address Family" | macOS (Unix)                 |
+        | netlink_address_family         | "Netlink Address Family"              | Linux (Unix, not macOS)      |
+        | packet_address_family          | "Packet Address Family"               | Linux (Unix, not macOS)      |
+        | netbios_address_family         | "NetBIOS Address Family"              | Windows                      |
+        | irda_address_family            | "IrDa Address Family"                 | Windows                      |
+        | bluetooth_address_family       | "Bluetooth Address Family"            | Windows                      |
+
+    * The other aspect of the `network_address_families` namespace are the two functions:
+        
+        * `get_addresses_families()` function which retrieves a `std::set<std::string>` of all the family constants that the Platform uses.
+        
+        * `resolve_address_to_string(const socket_type the_family)` Converts the `socket_family_type` 
+        [See Library Features above](#library-features) into a `std::string` in the `family constants` above.
+
+
+
+* Networking namespace functions:
+
+###### * `bool networking::network_initialized()`:
+    This is a function that is really only useful for windows systems. But it works on all platforms. 
+    Windows systems need to have their networking libraries initialized. This function simply checks if the network was initialized within the context of using this networking library during the current runtime session.
+    
+###### * `bool networking::initialize_network()` :
+    Again this is really only useful on windows systems. It initializes the networking library and returns `true` within the context of the networking library namespace during the current runtime session, `false` if it was not initialized, or an exception.
+
+###### * `bool networking::uninitialize_network()` :
+    Again really only useful on windows systems. It uninitializes the networking library and returns `true` if the network was successfully uninitialized within the context of the networking library namespace during the current runtime session, `false` if it was not or an exception is thrown.
+
+###### * `bool networking::secure_network_initialized()` :
+    Check if the [OpenSSL](https://openssl-library.org/) library has been initialized within the context of the 
+    networking namespace during the current runtime session. Returns `true` if the library is initialized, `false` if it's not.
+
+###### * `bool networking::initialize_secure_network()` :
+    This is to initialize the [OpenSSL](https://openssl-library.org/) secure networking library within the context of the networking library namespace during the current runtime session. There are currently no checks for whether or not the network was initialized though, so this will pretty much always initialize the library then return `true`.
+
+###### * `bool uninitialize_secure_network()` :
+    Uninitialize the [OpenSSL](https://openssl-library.org/) secure networking library within the context of the networking library namespace during the current runtime session, so this will  pretty much always uninitilize the library then return `true`.
+
+###### * `std::unordered_set<std::string> networking::resolve_hostname(const std::string hostname, const std::stirng port = default_port, const bool name = false)` :
+    
+* Parameters:
+        
+    | data type | parameter name | default value | Notes |
+    |-----------|:--------------:|:-------------:|:---------------------------:|
+    | const std::string | hostname | no default value, must be set when called.| This is the hostname to be resolved into an IP address. This hostname's IP address(es) are what are returned.
+    | const std::string | port | default_port (macro - #define "8080") | This is the port to use for the DNS query. Not usually necessary to change it, but it can be changed if necessary.
+    | const bool | name | false | The name flag is used to specify whether or not to use the `NI_NAMEREQD` macro in the call to retrieve the name information for the address. This is a flag because it can take a while to retrieve this data, for some reason, this is especially true on the windows system I've been using. |
+
+* Returns a `std::unordered_set<std::string>` with all the IP addresses that were resolved for the `hostname` passed in.
+* If the networking library fails to initilize, a `initialize_network_failure` exception is thrown.
+
+###### * `std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string> > > networking::machine_adapters(const bool names = false)` :
+* Parameters:
+
+| data type | parameter name | default value | Notes |
+|-----------|:--------------:|:-------------:|:-----:|
+|const bool |     names      |     false     | This is the same as [resolve_hostname](#-stdunordered_setstdstring-networkingresolve_hostnameconst-stdstring-hostname-const-stdstirng-port--default_port-const-bool-name--false-)'s names parameter. This specified whether or not to use the NI_NAMREQD with the getnameinfo function. It can take a while on windows machines, so it might not be worth using.
+
+
+###### * `bool socket_is_blocking(const socket_type& the_socket)` :
+* This still hasn't been tested, but it's supposed to check if the socket is in a blocking state or not. 
+If the socket is blocking, then `true` is returned, if it's not blocking or an error occured, `false` is returned.
+* So be sure to always check if the socket passed in is still valid after using this function.
+
+###### * `bool set_blocking(socket_type& the_socket, const bool block)` :
+* Set the socket passed in to blocking or non-blocking, depending on what `block` is. `true` to set the socket 
+to blocking, `false` to set it to non-blocking.
+
+###### * `bool socket_connected(socket_type& the_socket)` :
+* Honestly, this is a bad function. It's almost always unreliable and breaks sockets. Gonna get rid of it soon.
+
+
+###### * `networking::network_structures::host_report send_message(networking::network_structures::host_connection host, const data* the_message, const bytes byte_count, const int flags = 0, const std::chrono::duration<int> timeout = std::chrono::seconds(10))` :
+* This function sends a message to the host that is specified with the `host` parameters.
+
 
 
 # <div align = "center">**<h3><u>How to use Simple-Networking</u></h3>**</div>
