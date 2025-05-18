@@ -65,10 +65,39 @@ The structure of the program is as follows:
             └── test_server.c++
 
 
+Within this structure, the all the files in the `headers` directory are C/C++ header files.
+(I just like the look of them without a file type extension), and they hold the prototypes for 
+functions and methods implemented in the `libraries` directory. So during compilation, the header 
+files in the `headers` directory must be linked to their counterparts in the `libraries` directory.
+
+In the CMakeLists.txt file, this line:
+    `include_directories(${CMAKE_SOURCE_DIR}/headers)`
+
+tells the compiler to look at the files in the `headers` directory whenever an include statement 
+is called. Then the next code snippet in the `CMakeLists.txt` file, the line,
+    
+    # Gather library sources
+    file(GLOB LIB_SOURCES
+        "${CMAKE_SOURCE_DIR}/libraries/*.c++"
+        "${CMAKE_SOURCE_DIR}/libraries/*.cpp"
+        "${CMAKE_SOURCE_DIR}/libraries/*.cc"
+        "${CMAKE_SOURCE_DIR}/libraries/*.cxx"
+    )
+
+
+
+Is used to gather all the files that will be linked to the executable. And finally, the loop at the end
+
+
 # **<h3>How to use Simple-Networking</h3>**
 ---
 
-This program works well, but to run it, OpenSSL will need to be installed on the system. The CMakeLists.txt file works well on unix systems and on windows systems too. Furthermore, the CMakeLists.txt file has been confirmed to work on MSYS2.
+This library works well, but to run it, OpenSSL will need to be installed on the system. In this code package here, I created a testing program that will run the networking code. It demonstrates how the code is structured and how to use the coding library. The tests are located in the `tests` directory.
+
+When any program is being compiled and you wish to include the networking library in it, be sure to link all the files in the
+    `headers` & `libraries` directory.
+
+The CMakeLists.txt file works well on unix systems and on windows systems too. Furthermore, the CMakeLists.txt file has been confirmed to work on MSYS2.
 
 In order to run the cmake file, I've been running the commands (these commands are also in the cmake file at the top):
 
