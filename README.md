@@ -109,14 +109,13 @@ The structure of the program is as follows:
 
 Within this structure, the all the files in the `headers` directory are C/C++ header files.
 (I just like the look of them without a file type extension), and they hold the prototypes for 
-functions and methods implemented in the `libraries` directory. So during compilation, the header 
-files in the `headers` directory must be linked to their counterparts in the `libraries` directory.
+functions and methods implemented in the `libraries` directory. The `include` file in the `headers` directory only serves as a header where all the basic macro definitions are defined that are used throughout the `libraries/*c++` files. During compilation, the header files in the `headers` directory must be linked to their counterparts in the `libraries` directory.
 
 In the CMakeLists.txt file, this line:
     `include_directories(${CMAKE_SOURCE_DIR}/headers)`
 
 tells the compiler to look at the files in the `headers` directory whenever an include statement 
-is called. Then the next code snippet in the `CMakeLists.txt` file, the line,
+is called. Then the next code snippet in the `CMakeLists.txt` file, this one,
     
     # Gather library sources
     file(GLOB LIB_SOURCES
@@ -130,13 +129,41 @@ is called. Then the next code snippet in the `CMakeLists.txt` file, the line,
 
 Is used to gather all the files that will be linked to the test executable. The test executable is created when the `make` command is executed and the executable object files are placed within the `objects` directory.
 
+This library works well, but to run it, OpenSSL will need to be installed on the system. In this code package here, I created a testing program that will run the networking code. It demonstrates how the code is structured and how to use the coding library. To view these tests, take a look in the `tests` directory.
 
-This library works well, but to run it, OpenSSL will need to be installed on the system. In this code package here, I created a testing program that will run the networking code. It demonstrates how the code is structured and how to use the coding library. The tests are located in the `tests` directory.
+To compile this library as part of your own application, be sure to link all the files in the
+`headers` & `libraries` directory. Also be sure to [OpenSSL](https://openssl-library.org/) installed 
+and findable by your compiler during compilation time.
 
-When any program is being compiled and you wish to include the networking library in it, be sure to link all the files in the
-    `headers` & `libraries` directory.
+In this testing environment, I've installed [OpenSSL](https://openssl-library.org/) and I've made sure it's findable by the compiler being used for compilation.
 
-The CMakeLists.txt file works well on unix systems and on windows systems too. Furthermore, the CMakeLists.txt file has been confirmed to work on MSYS2.
+If you want to ensure that the compiler can find where you have [OpenSSL](https://openssl-library.org/) installed, be sure to use use a good package manager for the installation of [OpenSSL](https://openssl-library.org/). 
+
+* On mac, [Homebrew](https://brew.sh/)
+* On linux (I used Ubuntu) - [Installing OpenSSL on Ubuntu](https://stackoverflow.com/questions/3016956/how-do-i-install-the-openssl-libraries-on-ubuntu)
+*  On Windows, I wasn't able to find a good reference. This is what worked for me instead:
+    
+        1.) Open MSYS2
+        2.) Upgrade the package installer:
+                pacman -Syu
+                pacman -S mingw-w64-x86_64-openssl
+        3.) The packages should be installed now. Verify by checking if:
+                Headers are in:
+                    /mingw64/include
+
+                Libraries are in:
+                    /mingw64/lib
+                
+                DLLs are in:
+                    /mingw64/bin
+
+Then in CMakeLists.txt, if you want the compiler to find the OpenSSL library, be sure to include these lines, no matter what system is being used:
+
+    find_package(OpenSSL REQUIRED)
+    target_link_libraries(your_target PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+
+
+The CMakeLists.txt file works well on unix systems and on windows systems too. Furthermore, the CMakeLists.txt file has been confirmed to work on MSYS2. 
 
 In order to run the cmake file, I've been running the commands (these commands are also in the cmake file at the top):
 
