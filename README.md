@@ -44,7 +44,7 @@
 
 I wrote this program to gain experience with network programming. This project has lead to a lot of learning 
 and I've come to see a whole new way to write code. I based a lot of what I did 
-in this project of Lewis Van Winkle's wonderful book, [Hands-On Network Programming with C](#[text](https://codeplea.com/)). If you're looking for a comprehensive, engaging, and easy to follow book on networking, I 
+in this project of Lewis Van Winkle's wonderful book, [Hands-On Network Programming with C](https://codeplea.com/). If you're looking for a comprehensive, engaging, and easy to follow book on networking, I 
 can't recommend this book enough.
 
 Not only is the book a great resource for network programming, Lewis Van Winkle himself is great at explaining complex ideas in a simple way that makes sense, is easy to follow, and is easy to replicate and advance. He is also willing to engage with his readers. When I was reading his book, I was struggling with wrapping my mind around the secure networking sections (Chapter 9/10), I sent him an email. He responded within a few days and was kind, supportive, helpful, and just overall wonderful. In summary, wondeful book and wonderful author! 😊
