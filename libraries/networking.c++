@@ -565,24 +565,66 @@ std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::st
     return the_answer;
 }
 
+// bool networking::socket_blocking(const socket_type& the_socket) {
+//     if (not valid_socket(the_socket)) {
+//         return false;
+//     }
+
+//     #if defined(crap_os)
+//         unsigned long mode = 0;
+//         if (not ioctlsocket(the_socket, FIONBIO, &mode)) {
+//             return not mode;
+//         }
+//     #else
+//         int flags = fcntl(the_socket, F_GETFL, 0);
+//         if (flags != 1) {
+//             return not (flags & O_NONBLOCK);
+//         }
+//     #endif
+//     return false;
+// }
 bool networking::socket_blocking(const socket_type& the_socket) {
-    if (not valid_socket(the_socket)) {
+    if (!valid_socket(the_socket)) {
         return false;
     }
 
     #if defined(crap_os)
         unsigned long mode = 0;
-        if (not ioctlsocket(the_socket, FIONBIO, &mode)) {
-            return not mode;
+        if (ioctlsocket(the_socket, FIONBIO, &mode) != 0) {
+            return false;
         }
+        return mode == 0;
     #else
         int flags = fcntl(the_socket, F_GETFL, 0);
-        if (flags != 1) {
-            return not (flags & O_NONBLOCK);
+        if (flags == -1) {
+            return false;
         }
+        return !(flags & O_NONBLOCK);
     #endif
-    return false;
 }
+
+// bool networking::set_blocking(socket_type& the_socket, const bool block) {
+//     if (not valid_socket(the_socket)) {
+//         return false;
+//     }
+
+//     #if defined(crap_os)
+//         unsigned long mode = (block) ? 0 : 1;
+//         if (ioctlsocket(the_socket, FIONBIO, &mode)) {
+//             return false;
+//         }
+
+//     #else
+//         int flags = fcntl(the_socket, F_GETFL, 0);
+//         if (flags == -1) {
+//             return false;
+//         }
+//         if (fcntl(the_socket, F_SETFL, block ? (flags & ~O_NONBLOCK) : (flags | O_NONBLOCK)) == -1) {
+//             return false;
+//         }
+//     #endif
+//     return true;
+// }
 
 bool networking::set_blocking(socket_type& the_socket, const bool block) {
     if (not valid_socket(the_socket)) {
@@ -594,7 +636,6 @@ bool networking::set_blocking(socket_type& the_socket, const bool block) {
         if (ioctlsocket(the_socket, FIONBIO, &mode)) {
             return false;
         }
-
     #else
         int flags = fcntl(the_socket, F_GETFL, 0);
         if (flags == -1) {
@@ -606,6 +647,7 @@ bool networking::set_blocking(socket_type& the_socket, const bool block) {
     #endif
     return true;
 }
+
 
 bool networking::socket_connected(socket_type& the_socket) {
     if (not valid_socket(the_socket)) {
