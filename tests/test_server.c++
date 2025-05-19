@@ -601,7 +601,7 @@ void test_multithread_server() {
 
     try {
 
-        server.block_clients(block_clients).certificate("../files/cert.pem").secure_key("../files/key.pem").secure(secure).listening_limit(listening_limit);
+        server.block_clients(block_clients).certificate("../files/cert.pem").secure_key("../files/key.pem").secure(secure).listening_limit(listening_limit).retrieve_hostname();
 
         if (not server.start()) {
             std::cerr << "Failed to started the server" << std::endl;
