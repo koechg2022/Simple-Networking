@@ -1562,8 +1562,9 @@ bool networking::network_structures::tcp_server::message(const networking::netwo
     fd_set reads;
     FD_ZERO(&reads);
     FD_SET(client.connect_socket, &reads);
+    
 
-    if (select(client.connect_socket + 1, &reads, 0, 0, &timeout)) {
+    if (select(client.connect_socket + 1, &reads, 0, 0, (timeout.tv_sec < 0 or timeout.tv_usec < 0) ? 0 : &timeout)) {
         throw networking::exceptions::select_failure("Failed to select for the connection socket for client \"" + client.host_information.hostname + "\"", unpack_exception_parameters(1));
     }
 
@@ -1580,16 +1581,16 @@ bool networking::network_structures::tcp_server::connected(const networking::net
         return false;
     }
     std::printf("client's socket is %s\n", valid_socket(client.connect_socket) ? "true" : "false");
-    return valid_socket(client.connect_socket);
-    // std::lock_guard<std::mutex> clients_lock(this->clients_mutex_);
-    // for (const auto& [host_, info_] : this->clients_) {
-    //     if (client == info_) {
-    //         if (valid_socket(info_.connect_socket)) {
-    //             return true;
-    //         }
-    //     }
-    // }
-    // return false;
+    // return valid_socket(client.connect_socket);
+    std::lock_guard<std::mutex> clients_lock(this->clients_mutex_);
+    for (const auto& [host_, info_] : this->clients_) {
+        if (client == info_) {
+            if (valid_socket(info_.connect_socket)) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 /***********************************************************************************************/
