@@ -452,6 +452,7 @@ void test_server() {
             if (not (clients = server.clients(false)).empty()) {
 
                 for (auto& client_ : clients) {
+                    message = misc_functions::get_current_time();
                     byte_count = (server.secure()) ? SSL_read(client_.secure_connect_socket, msg, __kilo_bytes__(count)) :
                                                     recv(client_.connect_socket, msg, __kilo_bytes__(count), flags);
 
@@ -459,6 +460,7 @@ void test_server() {
                         std::cerr << "Something went wrong with client \"" << client_.host_information.hostname << "\". Disconnecting client now" << std::endl;
                         server.disconnect_client(client_);
                     }
+                    std::cout << client_.host_information.hostname << "(" << message << ") : " << std::string(msg, byte_count) << std::endl;
                 }
                 clients.clear();
             }
@@ -771,6 +773,7 @@ void test_secure_server() {
             if (not (clients = server.clients(false)).empty()) {
 
                 for (auto& client_ : clients) {
+                    message = misc_functions::get_current_time();
                     byte_count = (server.secure()) ? SSL_read(client_.secure_connect_socket, msg, __kilo_bytes__(count)) :
                                                     recv(client_.connect_socket, msg, __kilo_bytes__(count), flags);
 
@@ -778,6 +781,7 @@ void test_secure_server() {
                         std::cerr << "Something went wrong with client \"" << client_.host_information.hostname << "\". Disconnecting client now" << std::endl;
                         server.disconnect_client(client_);
                     }
+                    std::cout << client_.host_information.hostname << "(" << message << ") : " << std::string(msg, byte_count) << std::endl;
                 }
                 clients.clear();
             }
