@@ -67,7 +67,8 @@ std::unordered_map<std::string, std::string> test_args_caps = {
     {TEST_SECURE_CLIENT, TEST_SECURE_CLIENT},
     {TEST_WINDOWS, TEST_WINDOWS},
     {TEST_WEB_CLIENT, TEST_WEB_CLIENT},
-    {TEST_MULTITHREAD_SERVER, TEST_MULTITHREAD_SERVER}
+    {TEST_MULTITHREAD_SERVER, TEST_MULTITHREAD_SERVER},
+    {TEST_SECURE_MULTITHREAD_SERVER, TEST_SECURE_MULTITHREAD_SERVER}
 };
 
 // For running file lower
@@ -82,7 +83,8 @@ std::unordered_map<std::string, std::string> test_args_lower = {
     {TEST_SECURE_CLIENT, TEST_SECURE_CLIENT_},
     {TEST_WINDOWS, TEST_WINDOWS_},
     {TEST_WEB_CLIENT, TEST_WEB_CLIENT_},
-    {TEST_MULTITHREAD_SERVER, TEST_MULTITHREAD_SERVER_}
+    {TEST_MULTITHREAD_SERVER, TEST_MULTITHREAD_SERVER_},
+    {TEST_SECURE_MULTITHREAD_SERVER, TEST_SECURE_MULTITHREAD_SERVER_}
 };
 
 
@@ -230,7 +232,7 @@ int main(int len, char** args) {
 
         else if (string_functions::same_string(args[index], test_args_caps[TEST_SECURE_MULTITHREAD_SERVER]) or
             string_functions::same_string(args[index], test_args_lower[TEST_SECURE_MULTITHREAD_SERVER])) {
-            test_multithread_server();
+            test_multithread_secure_server();
         }
 
         else if (string_functions::same_string(args[index], test_args_caps[TEST_CLIENT]) or 
