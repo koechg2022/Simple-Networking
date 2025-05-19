@@ -1033,12 +1033,16 @@ void test_client() {
     networking::network_structures::server_connection server;
     networking::network_structures::host_report report;
 
-    networking::network_structures::tcp_client client(misc_functions::get_input("Enter host to connect to : "));
-    client.port(connection_port).secure(SECURE).block(BLOCK);//
+    networking::network_structures::tcp_client client(
+        misc_functions::get_input("Enter host to connect to : ")
+    );
+    client.port(connection_port)
+    .secure(SECURE)
+    .block(BLOCK);
 
     try {
 
-        std::cout << "Connecting to \"" << client.hostname() << "\" on port \"" << client.port() << "\"" << std::endl;
+        // std::cout << "Connecting to \"" << client.hostname() << "\" on port \"" << client.port() << "\"" << std::endl;
         if (not client.start()) {
             std::cerr << "Failed to start the client and connect to remote host." << std::endl;
             return;
@@ -1135,12 +1139,17 @@ void test_secure_client() {
     networking::network_structures::server_connection server;
     networking::network_structures::host_report report;
 
-    networking::network_structures::tcp_client client(misc_functions::get_input("Enter host to connect to : "));
-    client.port(connection_port).secure(SECURE).block(BLOCK).server_name_indication(false);
+    networking::network_structures::tcp_client client(
+        misc_functions::get_input("Enter host to connect to : ")
+    );
+    client.port(connection_port)
+    .secure(SECURE)
+    .block(BLOCK)
+    .server_name_indication(true);
 
     try {
 
-        std::cout << "Connecting to \"" << client.hostname() << "\" on port \"" << client.port() << "\"" << std::endl;
+        // std::cout << "Connecting to \"" << client.hostname() << "\" on port \"" << client.port() << "\"" << std::endl;
         if (not client.start()) {
             std::cerr << "Failed to start the client and connect to remote host." << std::endl;
             return;

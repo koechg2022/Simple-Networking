@@ -582,14 +582,6 @@
 
         
         /**
-            @brief Check if a socket is conected or not.
-            @param the_socket (`socket_type&`) : The socket to check and see if it's connected or not.
-            @returns `true` if the socket is connected, `false` otherwise.
-         */
-        // bool socket_connected(socket_type& the_socket);
-
-        
-        /**
             @brief Get the name of this machine
          */
         std::string this_machine_name();
