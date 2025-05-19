@@ -645,7 +645,7 @@ void test_multithread_server() {
 
                         
                         // fd_set read_ready;
-                        while (server or server.connected(client)) {
+                        while (server and server.connected(client)) {
                             
                             if (server.message(client)) {
                                 // There is a message from the client
