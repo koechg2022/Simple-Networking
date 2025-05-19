@@ -1156,7 +1156,7 @@ void test_secure_client() {
                 report = client.message<char>(msg, __kilo_bytes__(count), flags, timeout);
 
                 if (not report.success) {
-                    std::cout << "Client is stopping" << std::endl;
+                    ((report.byte_count == 0) ? std::cout : std::cerr) << "Disconnecting client due to " << ((report.byte_count == 0) ? "client disconnecting" : "client connection error") << std::endl;
                     client.stop();
                     continue;
                 }
