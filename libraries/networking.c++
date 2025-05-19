@@ -1725,6 +1725,7 @@ bool networking::network_structures::tcp_client::connect_socket(const std::chron
                         throw networking::exceptions::connection_failure("A connection issue occured while trying to establish a connection with the remote machine.", unpack_exception_parameters(1));
                     }
                 #endif
+                std::printf("Did getsockopt finished.\n");
 
             }
             else {
