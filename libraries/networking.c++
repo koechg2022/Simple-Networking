@@ -2410,6 +2410,7 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
         // The rest of this is for a secure connection
         if (this->secure_) {
 
+            std::printf("Now creating secure socket...\n");
             // Create a secure socket
             if (not this->create_secure_socket()) {
                 ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
@@ -2417,18 +2418,21 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
             }
 
             if (this->sni_) {
+                std::printf("Now Running Server Name Indication.\n");
                 if (not this->set_server_name_indication()) {
                     ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
                     throw networking::exceptions::socket_information_failure("Failed to resolve the server name indication. Error \"" + std::string(msg) + "\"", unpack_secure_exception_parameters(2));
                 }
             }
 
+            std::printf("Now setting the secure socket's connection socket.\n");
             // Set the secure sockets communication socket
             if (not this->secure_file_descriptor()) {
                 ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
                 throw networking::exceptions::connection_failure("Failed to set the secure socket's network communication socket. Error \"" + std::string(msg) + "\"", unpack_secure_exception_parameters(2));
             }
 
+            std::printf("Now securing the secure handshake.\n");
             // Make the secure handshake
             if (not this->secure_handshake(timeout)) {
                 ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
