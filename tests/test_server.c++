@@ -648,6 +648,7 @@ void test_multithread_server() {
                             
                             if (server.message(client)) {
                                 // There is a message from the client
+                                std::cout << "Client has a message" << std::endl;
                                 message = misc_functions::get_current_time();
                                 report = server.message<char>(client, msg, __kilo_bytes__(count), flags, timeout);
                                 if (not report.success) {
