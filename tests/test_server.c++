@@ -14,7 +14,7 @@
 #include "../headers/string_functions"
 #include "../headers/misc_functions"
 #include "../headers/networking"
-#include "include"
+// #include "include"
 
 
 
@@ -36,6 +36,7 @@ const std::string
         TEST_WINDOWS = "test_windows", TEST_WINDOWS_ = "tw",
         TEST_WEB_CLIENT = "test_web_client", TEST_WEB_CLIENT_ = "twc",
         TEST_MULTITHREAD_SERVER = "test_multithread_server", TEST_MULTITHREAD_SERVER_ = "tmts",
+        TEST_SECURE_MULTITHREAD_SERVER = "test_secure_multithreaded_server", TEST_SECURE_MULTITHREAD_SERVER_ = "tsmts",
         
         // For server/clients
         EXIT = "exit()", EXIT_ = "exit",
@@ -227,6 +228,11 @@ int main(int len, char** args) {
             test_secure_server();
         }
 
+        else if (string_functions::same_string(args[index], test_args_caps[TEST_SECURE_MULTITHREAD_SERVER]) or
+            string_functions::same_string(args[index], test_args_lower[TEST_SECURE_MULTITHREAD_SERVER])) {
+            test_multithread_server();
+        }
+
         else if (string_functions::same_string(args[index], test_args_caps[TEST_CLIENT]) or 
             string_functions::same_string(args[index], test_args_lower[TEST_CLIENT])) {
             test_client();
@@ -260,7 +266,7 @@ int main(int len, char** args) {
     return 0;
 }
 
-
+// Passing!
 std::unordered_map<std::string, std::string> parse_url(const std::string url, const std::unordered_map<std::string, std::string> default_values) {
     std::unordered_map<std::string, std::string> the_answer = default_values;
     
@@ -300,6 +306,7 @@ std::unordered_map<std::string, std::string> parse_url(const std::string url, co
     return the_answer;
 }
 
+// Passing!
 std::unordered_map<std::string, std::string> parse_header(const std::string& raw_header, const std::string& separator) {
     std::unordered_map<std::string, std::string> the_answer;
 
@@ -370,6 +377,7 @@ std::unordered_map<std::string, std::string> parse_header(const std::string& raw
    
 }
 
+// Passing!
 void list_machine_adapters() {
     std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string> > > adapters = networking::machine_adapters();
 
@@ -386,6 +394,7 @@ void list_machine_adapters() {
     }
 }
 
+// Passing!
 void resolve_hostname() {
     std::string host = misc_functions::get_input("Hostname : ");
     std::unordered_set<std::string> addresses = networking::resolve_hostname(host, connection_port);
@@ -396,6 +405,7 @@ void resolve_hostname() {
     }
 }
 
+// Passing!
 void resolve_hostname_name() {
     std::string host = misc_functions::get_input("Hostname : ");
     std::unordered_set<std::string> addresses = networking::resolve_hostname(host, connection_port, true);
@@ -406,6 +416,7 @@ void resolve_hostname_name() {
     }
 }
 
+// Passing!
 void test_server() {
     
     const int count = 1, flags = 0;
@@ -593,6 +604,7 @@ void test_server() {
 
 }
 
+// Passing!
 void test_multithread_server() {
     
     const bool block_clients = true, secure = false;
@@ -607,7 +619,7 @@ void test_multithread_server() {
 
     try {
 
-        server.block_clients(block_clients).certificate("../files/cert.pem").secure_key("../files/key.pem").secure(secure).listening_limit(listening_limit).retrieve_hostname();
+        server.block_clients(block_clients).secure(secure).listening_limit(listening_limit).retrieve_hostname();
         server.port(connection_port);
         if (not server.start()) {
             std::cerr << "Failed to started the server" << std::endl;
@@ -622,7 +634,7 @@ void test_multithread_server() {
 
                 if ((client = server.new_client())) {
                     
-                    std::thread([&server, timeout](networking::network_structures::client_connection client){
+                    std::thread([&server, &timeout](networking::network_structures::client_connection client){
                         std::cout << "Inside thread " << std::this_thread::get_id() << std::endl;
                         std::cout << "New connection from \"" << client.host_information.hostname << "\" at \"" << client.host_information.connection_time << "\"" << std::endl;
                         
@@ -661,7 +673,7 @@ void test_multithread_server() {
                                 std::cout << "(" << message << ") Message from \"" << client.host_information.hostname << "\" : " << std::string(msg, report.byte_count) << std::endl;
                             }
                         }
-                        std::cout << "Out of the while loop for client : " << client.host_information.hostname << std::endl;
+                        // std::cout << "Out of the while loop for client : " << client.host_information.hostname << std::endl;
 
                     }, client).detach();
                 }
@@ -697,6 +709,7 @@ void test_multithread_server() {
     }
 }
 
+// Passing!
 void test_secure_server() {
     
     const int count = 1, flags = 0;
@@ -885,6 +898,110 @@ void test_secure_server() {
     }
 }
 
+void test_multithread_secure_server() {
+    const bool block_clients = true, secure = true;
+    const int flags = 0, listening_limit = 100;
+
+    const std::chrono::duration<int> timeout = std::chrono::duration<int>(10);
+    
+    
+    networking::network_structures::tcp_server server;
+    networking::network_structures::client_connection client;
+    networking::network_structures::complete_report reports;
+
+    try {
+
+        server.block_clients(block_clients).certificate("../files/cert.pem").secure_key("../files/key.pem").secure(secure).listening_limit(listening_limit).retrieve_hostname();
+        server.port(connection_port);
+        if (not server.start()) {
+            std::cerr << "Failed to started the server" << std::endl;
+            return;
+        }
+
+        std::cerr << "Server started. Connect to the server using \"" << server.hostname() << "\" and port \"" << server.port() << "\"" << std::endl;
+
+        while (server) {
+
+            try {
+
+                if ((client = server.new_client())) {
+                    
+                    std::thread([&server, &timeout](networking::network_structures::client_connection client){
+                        std::cout << "Inside thread " << std::this_thread::get_id() << std::endl;
+                        std::cout << "New connection from \"" << client.host_information.hostname << "\" at \"" << client.host_information.connection_time << "\"" << std::endl;
+                        
+                        const int count = 4, flags = 0;
+                        char msg[__kilo_bytes__(count)];
+                        bytes byte_count;
+                        // networking::network_structures::host_report report;
+                        
+                        int byte_error;
+                        #if defined(crap_os)
+                            const int block_read = (server.secure()) ? SSL_ERROR_WANT_READ : WSAWOULDBLOCK;
+                            const int block_write = (server.secure()) ? SSL_ERROR_WANT_WRITE : WSACONNRESET;
+                        #else
+                            const int block_write = (server.secure()) ? SSL_ERROR_WANT_WRITE : EWOULDBLOCK;
+                            const int block_read = (server.secure()) ? SSL_ERROR_WANT_READ : EAGAIN;
+                        #endif
+                        std::cout << "client's host evaluates to " << ((client.host_information) ? "true" : "false") << std::endl;
+                        std::string message;
+                        networking::network_structures::host_report report;
+
+                        
+                        // fd_set read_ready;
+                        while (server and server.connected(client)) {
+                            // std::cout << "In while loop..\n" << std::endl;
+                            if (server.message(client)) {
+                                // There is a message from the client
+                                // std::cout << "Client has a message" << std::endl;
+                                message = misc_functions::get_current_time();
+                                report = server.message<char>(client, msg, __kilo_bytes__(count), flags, timeout);
+                                if (not report.success) {
+                                    std::cerr << "Failed to receive data from client \"" << client.host_information.hostname << "\"" << std::endl;
+                                    server.disconnect_client(client);
+                                    break;
+                                }
+
+                                std::cout << "(" << message << ") Message from \"" << client.host_information.hostname << "\" : " << std::string(msg, report.byte_count) << std::endl;
+                            }
+                        }
+                        // std::cout << "Out of the while loop for client : " << client.host_information.hostname << std::endl;
+
+                    }, client).detach();
+                }
+
+            }
+
+            catch (networking::exceptions::secure_handshake_failure& except) {
+                continue;
+            }
+
+            if (misc_functions::has_keyboard_input()) {
+                std::string message = misc_functions::get_input();
+                if (string_functions::same_string(message, "close") or string_functions::same_string(message, "exit") or string_functions::same_string(message, "stop") or string_functions::same_string(message, "halt")) {
+                    server.stop();
+                }
+
+                else if (string_functions::same_string(message, "broadcast") or string_functions::same_string(message, "brdcst")) {
+                    message = misc_functions::get_input("Message to broadcast : ");
+                    reports = server.broadcast(message.data(), message.length(), flags, true, timeout);
+                }
+
+                else {
+                    std::cerr << "Unrecognized argument \"" << message << "\"" << std::endl;
+                }
+            }
+
+        }
+
+    }
+
+    catch (networking::exceptions::base_exception& except) {
+        std::cerr << "Exception caught \"" << except.message() << "\"" << std::endl;
+    }
+}
+
+// Passing!
 void test_client() {
     // std::cout << UNDER_CONSTRUCTION << std::endl;
     const bool SECURE = false, BLOCK = false;
@@ -985,6 +1102,7 @@ void test_client() {
     }
 }
 
+// Passing!
 void test_secure_client() {
     // std::cout << UNDER_CONSTRUCTION << std::endl;
     const bool SECURE = true, BLOCK = false;
@@ -1086,6 +1204,7 @@ void test_secure_client() {
 
 }
 
+// Windows sucks, but Passing!
 void windows_tests() {
 
     if (networking::initialize_network()) {
@@ -1104,6 +1223,7 @@ void windows_tests() {
     }
 }
 
+// Passing!
 void test_web_client() {
 
     // std::cout << (networking::cleans_on_excepts() ? "TRUEEEEE" : "FALSEEEEE");
