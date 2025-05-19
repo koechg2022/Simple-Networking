@@ -776,6 +776,9 @@ void test_secure_server() {
                                                     recv(client_.connect_socket, msg, __kilo_bytes__(count), flags);
 
                     if (byte_count < 1) {
+                        const auto start_time = std::chrono::steady_clock::now();
+                        std::cout << "Waiting to disconnect client after receiving " << byte_count << " bytes." << std::endl;
+                        while (std::chrono::steady_clock::now() - start_time < std::chrono::seconds(10)) {}
                         std::cerr << "Something went wrong with client \"" << client_.host_information.hostname << "\". Disconnecting client now" << std::endl;
                         server.disconnect_client(client_);
                     }
