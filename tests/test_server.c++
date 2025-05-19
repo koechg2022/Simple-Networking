@@ -693,6 +693,10 @@ void test_multithread_server() {
                 if (string_functions::same_string(message, "close") or string_functions::same_string(message, "exit") or string_functions::same_string(message, "stop") or string_functions::same_string(message, "halt")) {
                     server.stop();
                 }
+
+                else {
+                    std::cerr << "Unrecognized argument \"" << message << "\"" << std::endl;
+                }
             }
 
         }
