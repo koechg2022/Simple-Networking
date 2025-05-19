@@ -586,7 +586,7 @@
             @param the_socket (`socket_type&`) : The socket to check and see if it's connected or not.
             @returns `true` if the socket is connected, `false` otherwise.
          */
-        bool socket_connected(socket_type& the_socket);
+        // bool socket_connected(socket_type& the_socket);
 
         
         /**
@@ -863,9 +863,9 @@
                     data& tcp(const bool yes = true) {
                         
                         std::lock_guard lock(this->connect_socket_mutex_);
-                        const bool connected_ = networking::socket_connected(this->connect_socket_),
-                        valid = valid_socket(this->connect_socket_);
-                        if (not connected_ or not valid) {
+                        // const bool connected_ = networking::socket_connected(this->connect_socket_),
+                        const bool valid = valid_socket(this->connect_socket_);
+                        if (not valid) {
                             this->tcp_.store(yes);
                         }
                         return static_cast<data&>(*this);
@@ -1265,8 +1265,8 @@
                         
                         this->block_.store(blocking);
                         std::lock_guard<std::mutex> socket_lock(this->connect_socket_mutex_);
-                        const bool connected = networking::socket_connected(this->connect_socket_);
-                        if (connected) {
+                        // const bool connected = networking::socket_connected(this->connect_socket_);
+                        if (valid_socket(this->connect_socket_)) {
                             networking::set_blocking(this->connect_socket_, this->block_);
                         }
                         return static_cast<data&>(*this);

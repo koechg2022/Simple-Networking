@@ -565,66 +565,24 @@ std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::st
     return the_answer;
 }
 
-// bool networking::socket_blocking(const socket_type& the_socket) {
-//     if (not valid_socket(the_socket)) {
-//         return false;
-//     }
-
-//     #if defined(crap_os)
-//         unsigned long mode = 0;
-//         if (not ioctlsocket(the_socket, FIONBIO, &mode)) {
-//             return not mode;
-//         }
-//     #else
-//         int flags = fcntl(the_socket, F_GETFL, 0);
-//         if (flags != 1) {
-//             return not (flags & O_NONBLOCK);
-//         }
-//     #endif
-//     return false;
-// }
 bool networking::socket_blocking(const socket_type& the_socket) {
-    if (!valid_socket(the_socket)) {
+    if (not valid_socket(the_socket)) {
         return false;
     }
 
     #if defined(crap_os)
         unsigned long mode = 0;
-        if (ioctlsocket(the_socket, FIONBIO, &mode) != 0) {
-            return false;
+        if (not ioctlsocket(the_socket, FIONBIO, &mode)) {
+            return not mode;
         }
-        return mode == 0;
     #else
         int flags = fcntl(the_socket, F_GETFL, 0);
-        if (flags == -1) {
-            return false;
+        if (flags != 1) {
+            return not (flags & O_NONBLOCK);
         }
-        return !(flags & O_NONBLOCK);
     #endif
+    return false;
 }
-
-// bool networking::set_blocking(socket_type& the_socket, const bool block) {
-//     if (not valid_socket(the_socket)) {
-//         return false;
-//     }
-
-//     #if defined(crap_os)
-//         unsigned long mode = (block) ? 0 : 1;
-//         if (ioctlsocket(the_socket, FIONBIO, &mode)) {
-//             return false;
-//         }
-
-//     #else
-//         int flags = fcntl(the_socket, F_GETFL, 0);
-//         if (flags == -1) {
-//             return false;
-//         }
-//         if (fcntl(the_socket, F_SETFL, block ? (flags & ~O_NONBLOCK) : (flags | O_NONBLOCK)) == -1) {
-//             return false;
-//         }
-//     #endif
-//     return true;
-// }
 
 bool networking::set_blocking(socket_type& the_socket, const bool block) {
     if (not valid_socket(the_socket)) {
@@ -636,6 +594,7 @@ bool networking::set_blocking(socket_type& the_socket, const bool block) {
         if (ioctlsocket(the_socket, FIONBIO, &mode)) {
             return false;
         }
+
     #else
         int flags = fcntl(the_socket, F_GETFL, 0);
         if (flags == -1) {
@@ -648,54 +607,53 @@ bool networking::set_blocking(socket_type& the_socket, const bool block) {
     return true;
 }
 
+// bool networking::socket_connected(socket_type& the_socket) {
+//     if (not valid_socket(the_socket)) {
+//         return false;
+//     }
 
-bool networking::socket_connected(socket_type& the_socket) {
-    if (not valid_socket(the_socket)) {
-        return false;
-    }
+//     const bool was_blocking = networking::socket_blocking(the_socket);
 
-    const bool was_blocking = networking::socket_blocking(the_socket);
-
-    int retval = 0;
+//     int retval = 0;
     
-    #if defined(crap_os)
-        u_long mode = 1;
-        ioctlsocket(the_socket, FIONBIO, &mode);
-    #else
-        int flags = fcntl(the_socket, F_GETFL, 0);
-        fcntl(the_socket, F_SETFL, flags | O_NONBLOCK);
-    #endif
+//     #if defined(crap_os)
+//         u_long mode = 1;
+//         ioctlsocket(the_socket, FIONBIO, &mode);
+//     #else
+//         int flags = fcntl(the_socket, F_GETFL, 0);
+//         fcntl(the_socket, F_SETFL, flags | O_NONBLOCK);
+//     #endif
 
-    char buffer[1];
-    retval = recv(the_socket, buffer, 1, MSG_PEEK);
+//     char buffer[1];
+//     retval = recv(the_socket, buffer, 1, MSG_PEEK);
 
-    if (not retval) {
-        return false; // Connection closed
-    }
-    else if (retval < 0) {
-        #if defined(crap_os)
+//     if (not retval) {
+//         return false; // Connection closed
+//     }
+//     else if (retval < 0) {
+//         #if defined(crap_os)
             
-            if (socket_error != WSAWOULDBLOCK) {
-                if (was_blocking) {
-                    networking::set_blocking(the_socket, true);
-                }
-            }
-            return false; // An error occured.
-        #else
-            if (socket_error != EWOULDBLOCK and socket_error != EAGAIN) {
-                if (was_blocking) {
-                    networking::set_blocking(the_socket, true);
-                }
-            }
-            return false; // An error occured.
-        #endif
-    }
+//             if (socket_error != WSAWOULDBLOCK) {
+//                 if (was_blocking) {
+//                     networking::set_blocking(the_socket, true);
+//                 }
+//             }
+//             return false; // An error occured.
+//         #else
+//             if (socket_error != EWOULDBLOCK and socket_error != EAGAIN) {
+//                 if (was_blocking) {
+//                     networking::set_blocking(the_socket, true);
+//                 }
+//             }
+//             return false; // An error occured.
+//         #endif
+//     }
 
-    if (was_blocking) {
-        networking::set_blocking(the_socket, true);
-    }
-    return true;
-}
+//     if (was_blocking) {
+//         networking::set_blocking(the_socket, true);
+//     }
+//     return true;
+// }
 
 std::string networking::this_machine_name() {
     std::string the_answer;
@@ -1285,7 +1243,7 @@ bool networking::network_structures::tcp_server::disconnect_client(networking::n
     if (client_.host_information) {
         std::lock_guard<std::mutex> disconnect_mutex(this->clients_mutex_);
         networking::network_structures::client_connection connection = this->clients_[client_.host_information];
-        the_answer = networking::socket_connected(connection.connect_socket);
+        the_answer = valid_socket(connection.connect_socket); //networking::socket_connected(connection.connect_socket);
         this->clients_.erase(client_.host_information);
         this->drop_client(connection);
         the_answer = (the_answer and not valid_socket(connection.connect_socket));
