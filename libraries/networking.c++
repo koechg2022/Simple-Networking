@@ -1,6 +1,7 @@
 
 
 
+#include <cerrno>
 #include <vector>
 #include <chrono>
 #include <filesystem>
@@ -1669,69 +1670,94 @@ bool networking::network_structures::tcp_client::connect_socket(const std::chron
 
         // Consider adding a timeout setting for this aspect of the program
         std::scoped_lock socket_lock(this->connect_socket_mutex_, this->connect_address_mutex_, this->connect_time_mutex_);
-        if (not this->block_) {
-            if (not networking::set_blocking(this->connect_socket_, this->block_)) {
-                throw networking::exceptions::socket_information_failure("Failed to set the connection socket to non-blocking before establishing a connection.", unpack_exception_parameters(1));
-            }
-            std::printf("Socket is now %s\n", (networking::socket_blocking(this->connect_socket_) ? "blocking" : "non-blocking"));
-        }
-        int connect_return = connect(this->connect_socket_, this->active_address_->ai_addr, this->active_address_->ai_addrlen);
-        if (connect_return) {
 
+        // Must have non-blocking for timeout to work.
+        #if defined(unix_os)
+            const int connect_in_progress = EINPROGRESS;
+            int flags;
+            flags = fcntl(this->connect_socket_, F_GETFL, 0);
+            fcntl(this->connect_socket_, F_SETFL, flags | O_NONBLOCK);
+        #else
+            const int connect_in_progress = WSAEWOULDBLOCK;
+            unsigned long nonblock = 1;
+            ioctlsocket(this->connect_socket_, FIONBIO, &nonblock);
+        #endif
+
+        // Connecting now
+
+        int connect_line = __LINE__;
+        int connect_results = connect(this->connect_socket_, this->active_address_->ai_addr, this->active_address_->ai_addrlen);
+
+        if (not connect_results) {
+            std::printf("Connection successfully made.\n");
+
+            if (this->block_) {
+                // Set the socket back to blocking.
+                #if defined(unix_os)
+                    fcntl(this->connect_socket_, F_SETFL, (flags & (~O_NONBLOCK)));
+                #else
+                    nonblock = 0;
+                    ioctlsocket(this->connect_socket_, FIONBIO, &nonblock);
+                #endif
+            }
+        }
+        
+        else {
+
+            if (socket_error != connect_in_progress) {
+                throw networking::exceptions::connection_failure("Failed to connect to the remote machine not due to a connection timeout.", unpack_exception_parameters(__LINE__ - connect_line));
+            }
+            
+            struct timeval timeout_;
+            timeout_.tv_sec = std::chrono::duration_cast<std::chrono::seconds>(timeout).count();
+            timeout_.tv_usec = std::chrono::duration_cast<std::chrono::microseconds>(timeout).count() % 1'000'000;
+
+            // Something due to non-blocking socket
+            std::printf("Waiting for timeout duration...\n");
+            fd_set write_set, error_set;
+            FD_ZERO(&write_set), FD_ZERO(&error_set);
+            FD_SET(this->connect_socket_, &write_set), FD_SET(this->connect_socket_, &error_set);
+
+            if (select(this->connect_socket_ + 1, 0, &write_set, &error_set, &timeout_) < 0) {
+                throw networking::exceptions::select_failure("Failed to connect to remote host due to select function failure.", unpack_exception_parameters(1));
+            }
+
+            if (FD_ISSET(this->connect_socket_, &error_set)) {
+                // An error occured.
+                throw networking::exceptions::connection_failure("Failed to connect to remote machine, and an error was reported to the connection socket. \"" + std::string(socket_error_string(socket_error)) + "\"", unpack_exception_parameters(1));
+            }
+
+            if (not FD_ISSET(this->connect_socket_, &write_set)) {
+                throw networking::exceptions::connection_failure("Failed to connect to remote host. Timed out.", unpack_exception_parameters(1));
+            }
+
+            // Some systems set the write socket even on an error. So check the getsockopt to be sure.
             #if defined(unix_os)
-                int connect_error = EINPROGRESS;
+                socket_type connect_error = 0;
+                socklen_t len = sizeof(connect_error);
             #else
-                int connect_error = WSAEWOULDBLOCK;
+                char connect_error;
+                int len = sizeof(connect_error);
             #endif
 
-            if (not this->block_ and socket_error == connect_error) {
-                
-                // std::printf("waiting for timeout time again to establish the connection once more.\n");
+            if (getsockopt(this->connect_socket_, SOL_SOCKET, SO_ERROR, &connect_error, &len)) {
+                throw networking::exceptions::socket_information_failure("An error occurred while trying to connect this client to the remote host.", unpack_exception_parameters(1));
+            }
 
-                fd_set writes;
-                FD_ZERO(&writes);
-                FD_SET(this->connect_socket_, &writes);
-                struct timeval timeout_struct;
-                timeout_struct.tv_sec  = std::chrono::duration_cast<std::chrono::seconds>(timeout).count();
-                timeout_struct.tv_usec = std::chrono::duration_cast<std::chrono::microseconds>(timeout).count() % 1000000; //C++14+ : 1'000'000;
+            if (connect_error) {
+                throw networking::exceptions::connection_failure("Failed to connect to remote host. socket options retrieval revealed \"" + std::string(socket_error_string(connect_error)) + "\"", unpack_exception_parameters(1));
+            }
 
-                // This will wait for the timeout then try again.
-                // std::printf("About to use select.\n");
-                std::printf("Waiting for %ld.%d seconds\n", timeout_struct.tv_sec, timeout_struct.tv_usec);
-                if (select(this->connect_socket_ + 1, 0, &writes, 0, &timeout_struct) < 0) {
-                    throw networking::exceptions::connection_failure("Failed to establish a connection and exceeded timeout wait time.", unpack_exception_parameters(1));
-                }
-                std::printf("Now connecting...\n");
-                // std::printf("About to use FD_ISSET.\n");
-                if (not FD_ISSET(this->connect_socket_, &writes)) {
-                    throw networking::exceptions::connection_failure("Connection socket is not capable of communicating with remote host, even after timeout wait.", unpack_exception_parameters(1));
-                }
-
-
+            if (this->block_) {
+                // Set the socket back to blocking.
                 #if defined(unix_os)
-                    connect_error = 0;
-                    socklen_t len = sizeof(connect_error);
-                    // std::printf("About to use getsockopt.\n");
-                    if (getsockopt(this->connect_socket_, SOL_SOCKET, SO_ERROR, &connect_error, &len) < 0 or connect_error != 0) {
-                        throw networking::exceptions::connection_failure("A connection issue occured while trying to establish a connection with the remote machine.", unpack_exception_parameters(1));
-                    }
+                    fcntl(this->connect_socket_, F_SETFL, (flags & (~O_NONBLOCK)));
                 #else
-                // For Windows
-                    // int size;
-                    // int optlen = sizeof(size);
-                    // getsockopt(socket_descriptor, SOL_SOCKET, SO_RCVBUF, (char *)&size, &optlen);
-                    char con_err;
-                    int con_len = sizeof(con_err);
-                    if (getsockopt(this->connect_socket_, SOL_SOCKET, SO_RCVBUF, (char*) &connect_error, &con_len)) {
-                        throw networking::exceptions::connection_failure("A connection issue occured while trying to establish a connection with the remote machine.", unpack_exception_parameters(1));
-                    }
+                    nonblock = 0;
+                    ioctlsocket(this->connect_socket_, FIONBIO, &nonblock);
                 #endif
-                std::printf("Did getsockopt finished.\n");
+            }
 
-            }
-            else {
-                throw networking::exceptions::connection_failure("Failed to connect this tcp client to the remote host.", unpack_exception_parameters(1));
-            }
 
         }
 
