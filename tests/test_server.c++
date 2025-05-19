@@ -700,6 +700,11 @@ void test_multithread_server() {
 
                 else if (string_functions::same_string(message, "broadcast") or string_functions::same_string(message, "brdcst")) {
                     message = misc_functions::get_input("Message to broadcast : ");
+                    // for (const auto client_ : server.clients()) {
+                    //     std::thread([&server, &timeout](networking::network_structures::client_connection Client, const std::string message_){
+                    //         networking::network_structures::complete_report report = server.message<const char>(Client.host_information, message_.c_str(), message_.length(), flags, true, timeout);
+                    //     }, client_, message);
+                    // }
                     reports = server.broadcast(message.data(), message.length(), flags, true, timeout);
                 }
 
@@ -1042,7 +1047,7 @@ void test_client() {
         std::cout << "Connected to \"" << client.hostname() << "\" on port \"" << client.port() << "\"" << std::endl;
 
         while (client) {
-
+            // std::cout << "Client is still running..." << std::endl;
             if (client.message()) {
                 // There is a message from the server
                 
@@ -1117,7 +1122,7 @@ void test_client() {
     }
 }
 
-// Passing!
+// Keeps disconnecting now
 void test_secure_client() {
     // std::cout << UNDER_CONSTRUCTION << std::endl;
     const bool SECURE = true, BLOCK = false;

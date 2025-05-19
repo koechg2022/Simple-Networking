@@ -8,7 +8,7 @@
     #include <chrono>
     #include <atomic>
     #include <mutex>
-    // #include <thread>
+    #include <thread>
     #include "include"
     #include "string_functions"
     
@@ -1500,27 +1500,31 @@
                      */
                     template <typename data> networking::network_structures::complete_report broadcast(data* the_message, const bytes byte_count, const int flags = 0, const bool disconnect = true, const std::chrono::duration<int> timeout = std::chrono::seconds(10)) {
                         
+                        // This needs a lock because the map is being accessed.
+                        std::unique_lock<std::mutex> client_lock(this->clients_mutex_);
                         if (this->clients_.empty()) {
                             return {};
                         }
                         
                         networking::network_structures::complete_report the_answer;
-                        networking::network_structures::host_report report;
+                        std::vector<networking::network_structures::client_connection> to_remove;
+                        // networking::network_structures::host_report report;
                         for (const auto& [id, client] : this->clients_) {
-                            
-                            report = networking::send_message<data>(client, the_message, byte_count, flags, timeout);
-                            report.success = (report.byte_count == byte_count and report.byte_count >= 0) ? true : report.success;
+                            networking::network_structures::host_report report = networking::send_message<data>(client, the_message, byte_count, flags, timeout);
                             the_answer.add_report(report);
-                        }
-
-                        if (disconnect and the_answer.fails()) {
-                            for (const auto& host : the_answer.reports) {
-                                if (not host.success or not host.byte_count) {
-                                    this->disconnect_client(host.host.host_information);
-                                }
+                            if (not report.success and disconnect) {
+                                to_remove.push_back(client);
+                                continue;
                             }
                         }
 
+                        if (disconnect and not to_remove.empty()) {
+                            client_lock.unlock();
+
+                            for (auto& client : to_remove) {
+                                this->disconnect_client(client);
+                            }
+                        }
                         return the_answer;
                     }
 
@@ -1925,7 +1929,7 @@
 
                         networking::network_structures::host_report the_answer;
                         the_answer.host = remote;
-                        byte_error = 0;
+                        // byte_error = 0;
 
                         if (flags == MSG_PEEK) {
                             const auto start_time = std::chrono::steady_clock::now();
@@ -1955,7 +1959,7 @@
                         else {
                             const auto start_time = std::chrono::steady_clock::now();
                             while (*this and (std::chrono::steady_clock::now() - start_time < timeout)) {
-                                byte_error = 0;                            
+                                // byte_error = 0;
                                 byte_chunk = (this->secure_) ? SSL_read(this->secure_socket_, reinterpret_cast<char*>(msg) + total_bytes, length - total_bytes) :
                                             recv(this->connect_socket_, reinterpret_cast<char*>(msg) + total_bytes, length - total_bytes, flags);
                                 
