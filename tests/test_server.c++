@@ -407,7 +407,7 @@ void resolve_hostname_name() {
 }
 
 void test_server() {
-
+    
     const int count = 1, flags = 0;
     char msg[__kilo_bytes__(count)];
     bytes byte_count;
@@ -420,55 +420,174 @@ void test_server() {
 
     networking::network_structures::tcp_server server;
 
+
     server
         .retrieve_hostname()
-        .secure(false)
-        .block_clients(false)
-        .block(false);
+        .secure(false);
+
+    // std::cout << "Set all the attributes of the server." << std::endl;
 
     try {
 
         if (not server.start()) {
-            std::cerr << "Failed to start the server" << std::endl;
+            std::cerr << "Failed to successfully start the server" << std::endl;
             return;
         }
+        std::cout << "Successfully started the server. Connect to the " << ((server.secure()) ? "secure" : "non-secure") << "server using " << server.hostname() << ":" << server.port() << std::endl;
 
         while (server) {
 
             try {
-
-                if ((client = server.new_client(false, {0, 200}))) {
+                if ((client = server.new_client())) {
                     std::cout << "New connection from \"" << client.host_information.hostname << "\"" << std::endl;
                 }
-
             }
 
-            catch (networking::exceptions::base_exception& except) {
-                std::cerr << "Caught an exception of type \"" << except.type() << "\" while trying to receive a new client connection" << std::endl;
+            catch (networking::exceptions::secure_handshake_failure& except) {
+                continue;
             }
-
+            
 
             if (not (clients = server.clients(false)).empty()) {
-                
+
+                for (auto& client_ : clients) {
+                    byte_count = (server.secure()) ? SSL_read(client_.secure_connect_socket, msg, __kilo_bytes__(count)) :
+                                                    recv(client_.connect_socket, msg, __kilo_bytes__(count), flags);
+
+                    if (byte_count < 1) {
+                        std::cerr << "Something went wrong with client \"" << client_.host_information.hostname << "\". Disconnecting client now" << std::endl;
+                        server.disconnect_client(client_);
+                    }
+                }
+                clients.clear();
             }
 
             if (misc_functions::has_keyboard_input()) {
                 message = misc_functions::get_input();
 
-                if (string_functions::same_string(message, "exit")) {
+                if (string_functions::same_string(message, "close") or string_functions::same_string(message, "exit") or string_functions::same_string(message, "stop") or string_functions::same_string(message, "halt")) {
                     server.stop();
                 }
+
+                else if (string_functions::same_string(message, "list clients") or string_functions::same_string(message, "lc")) {
+                    
+                    if ((clients = server.clients()).empty()) {
+                        std::cout << "No clients to message" << std::endl;
+                        continue;
+                    }
+                    
+                    for (const auto& client_ : clients) {
+                        std::cout << client_.host_information.hostname << ":" << std::endl;
+                        std::cout << "\t" << client_.host_information.port << ":" << std::endl;
+                        std::cout << "\t" << client_.host_information.connection_time << ":" << std::endl;
+                    }
+                }
+
+                else if (string_functions::same_string(message, "broadcast message") or string_functions::same_string(message, "broadcast") or string_functions::same_string(message, "brdcst")) {
+                    
+                    if ((clients = server.clients()).empty()) {
+                        std::cout << "No clients to message" << std::endl;
+                        continue;
+                    }
+
+                    message = misc_functions::get_input("Broadcast message : ");
+                    
+                    reports = server.broadcast<const char>(message.c_str(), message.length(), flags, true, timeout);
+
+                    if (reports.fails()) {
+                        std::cerr << "Failed to send broadcast message to " << reports.fails() << " clients out of " << clients.size() << " clients" << std::endl;
+                        for (const auto& report_ : reports.reports) {
+                            std::cout << "\t\"" << report_.host.host_information.hostname << "\"" << std::endl;
+                        }
+                        continue;
+                    }
+                    std::cout << "Successfully sent \"" << message << "\" to " << reports.success() << " clients out of " << clients.size() << " clients" << std::endl;
+
+                }
+
+                else if (string_functions::same_string(message, "message client") or string_functions::same_string(message, "msgc") or string_functions::same_string(message, "mc")) {
+                    
+                    if ((clients = server.clients()).empty()) {
+                        std::cout << "No clients to message" << std::endl;
+                        continue;
+                    }
+                    
+                    std::cout << "Choose a client to message: " << std::endl;
+                    message = "";
+                    client = {};
+                    while (message.empty() and not client and not clients.empty()) {
+                        
+                        for (const auto& client_ : clients) {
+                            std::cout << "\t" << client_.host_information.hostname << ":" << std::endl;
+                            std::cout << "\t\t" << client_.host_information.port << ":" << std::endl;
+                            std::cout << "\t\t" << client_.host_information.connection_time << ":" << std::endl;
+                        }
+                        message = misc_functions::get_input("Client : ");
+
+                        if (string_functions::same_string(message, "stop")) {
+                            server.stop();
+                            break;
+                        }
+
+                        if (message.empty() or string_functions::same_string(message, "n/a")) {
+                            break;
+                        }
+                        
+                        for (const auto& client_ : clients) {
+                            if (string_functions::same_string(message, client_.host_information.hostname)) {
+                                client = client_;
+                            }
+
+                            else if (string_functions::same_string(message, client_.host_information.port)) {
+                                client = client_;
+                            }
+
+                            else if (string_functions::same_string(message, client_.host_information.connection_time)) {
+                                client = client_;
+                            }
+
+                            if (client) {
+                                break;
+                            }
+                        }
+
+                        if (client) {
+                            // client to message selected
+                            break;
+                        }
+
+                        message = "";
+                        clients = server.clients();
+                    }
+
+                    if (client) {
+                        byte_count = message.length();
+                        reports = server.message(client.host_information, message.c_str(), byte_count, flags, true, timeout);
+
+                        if (reports.success()) {
+                            std::cout << "Successfully sent the message to " << reports.reports.size() << " client" << (reports.reports.size() > 1 ? "s." : ".") << std::endl;
+                        }
+
+                        if (reports.fails()) {
+                            std::cout << "Failed to send a message to " << reports.fails() << " clients out of " << reports.reports.size() << " clients" << std::endl;
+                        }
+
+                    }
+                }
+
+                else {
+                    std::cerr << "Unrecognized command \"" << message << "\"" << std::endl;
+                }
+
             }
+
         }
-
-
     }
 
     catch (networking::exceptions::base_exception& except) {
-        std::cerr << "Caught an exception : " << except.message() << std::endl;
+        std::cerr << "Caught exception \"" << except.message() << "\"" << std::endl;
     }
 
-    std::cout << UNDER_CONSTRUCTION << std::endl;
 }
 
 void test_multithread_server() {
