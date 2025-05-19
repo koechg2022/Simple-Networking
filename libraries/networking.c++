@@ -1579,15 +1579,16 @@ bool networking::network_structures::tcp_server::connected(const networking::net
     if (not client) {
         return false;
     }
-    std::lock_guard<std::mutex> clients_lock(this->clients_mutex_);
-    for (const auto& [host_, info_] : this->clients_) {
-        if (client == info_) {
-            if (valid_socket(info_.connect_socket)) {
-                return true;
-            }
-        }
-    }
-    return false;
+    return valid_socket(client.connect_socket);
+    // std::lock_guard<std::mutex> clients_lock(this->clients_mutex_);
+    // for (const auto& [host_, info_] : this->clients_) {
+    //     if (client == info_) {
+    //         if (valid_socket(info_.connect_socket)) {
+    //             return true;
+    //         }
+    //     }
+    // }
+    // return false;
 }
 
 /***********************************************************************************************/
