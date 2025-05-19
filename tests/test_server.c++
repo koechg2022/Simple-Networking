@@ -894,7 +894,75 @@ void test_secure_server() {
 }
 
 void test_client() {
-    std::cout << UNDER_CONSTRUCTION << std::endl;
+    // std::cout << UNDER_CONSTRUCTION << std::endl;
+    const bool SECURE = false, BLOCK = false;
+
+    const int flags = 0, time_limit = 10, count = 1;
+    std::string message, file_name;
+    char msg[__kilo_bytes__(count)];
+    const std::chrono::duration<int> timeout = std::chrono::seconds(time_limit);
+
+    networking::network_structures::server_connection server;
+    networking::network_structures::host_report report;
+
+    networking::network_structures::tcp_client client(misc_functions::get_input("Enter host to connect to : "));
+    client.port(connection_port).secure(SECURE).block(BLOCK).server_name_indication(false);
+
+    try {
+
+        std::cout << "Connecting to \"" << client.hostname() << "\" on port \"" << client.port() << "\"" << std::endl;
+        if (not client.start()) {
+            std::cerr << "Failed to start the client and connect to remote host." << std::endl;
+            return;
+        }
+
+        std::cout << "Connected to \"" << client.hostname() << "\" on port \"" << client.port() << "\"" << std::endl;
+
+        while (client) {
+
+            if (client.message()) {
+                // There is a message from the server
+                
+                report = client.message<char>(msg, __kilo_bytes__(count), flags, timeout);
+
+                if (not report.success) {
+                    client.stop();
+                    continue;
+                }
+
+                // Successfully received a message
+                std::cout << "Received message at (" << misc_functions::get_current_time() << ") : " << std::endl << std::endl << "\"" << std::string(msg, report.byte_count) << "\"" << std::endl;
+            }
+
+            if (misc_functions::has_keyboard_input()) {
+
+                message = misc_functions::get_input();
+
+                if (string_functions::same_string(message, "close") or string_functions::same_string(message, "exit") or string_functions::same_string(message, "stop") or string_functions::same_string(message, "halt")) {
+                    client.stop();
+                }
+
+                else if (string_functions::same_string(message, "server information") or string_functions::same_string(message, "si")) {
+                    server = client.connection_information();
+                    std::cout << "Host information :" << std::endl;
+                    std::cout << "\tHostname : " << server.host_information.hostname << std::endl;
+                    std::cout << "\tPort : " << server.host_information.port << std::endl;
+                    std::cout << "\tConnection time : " << server.host_information.connection_time << std::endl;
+                }
+
+                else {
+                    std::cerr << "Unrecognized command \"" << message << "\"" << std::endl;
+                }
+
+            }
+
+        }
+
+    }
+
+    catch (networking::exceptions::base_exception& except) {
+        std::cerr << "Exception caught of type \"" << except.type() << "\"" << std::endl;
+    }
 }
 
 void test_secure_client() {
@@ -910,7 +978,7 @@ void test_secure_client() {
     networking::network_structures::host_report report;
 
     networking::network_structures::tcp_client client(misc_functions::get_input("Enter host to connect to : "));
-    client.secure(SECURE).block(BLOCK);
+    client.port(connection_port).secure(SECURE).block(BLOCK).server_name_indication(false);
 
     try {
 
