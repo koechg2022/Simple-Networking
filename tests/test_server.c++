@@ -702,6 +702,7 @@ void test_multithread_server() {
                             // }
 
                         }
+                        std::cout << "Out of the while loop for client : " << client.host_information.hostname << std::endl;
 
                     }, client).detach();
                 }
