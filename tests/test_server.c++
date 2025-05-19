@@ -646,7 +646,7 @@ void test_multithread_server() {
                         
                         // fd_set read_ready;
                         while (server and server.connected(client)) {
-                            
+                            std::cout << "In while loop..\n" << std::endl;
                             if (server.message(client)) {
                                 // There is a message from the client
                                 std::cout << "Client has a message" << std::endl;
