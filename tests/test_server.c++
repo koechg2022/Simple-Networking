@@ -8,6 +8,7 @@
 #include <iostream>
 #include <chrono>
 #include <filesystem>
+#include <thread>
 
 
 #include "../headers/string_functions"
@@ -159,7 +160,11 @@ void resolve_hostname_name();
 
 void test_server();
 
+void test_multithread_server();
+
 void test_secure_server();
+
+void test_multithread_secure_server();
 
 void test_client();
 
@@ -451,6 +456,53 @@ void test_server() {
     }
 
     std::cout << UNDER_CONSTRUCTION << std::endl;
+}
+
+void test_multithread_server() {
+    
+    const bool block_clients = false, secure = false;
+    const int flags = 0, listening_limit = 100;
+    networking::network_structures::tcp_server server;
+    networking::network_structures::client_connection client;
+
+    try {
+
+        server.block_clients(block_clients).certificate("../files/cert.pem").secure_key("../files/key.pem").secure(secure).listening_limit(listening_limit);
+
+        if (not server.start()) {
+            std::cerr << "Failed to started the server" << std::endl;
+            return;
+        }
+
+
+
+        while (server) {
+
+            if ((client = server.new_client())) {
+                std::thread([client](){
+                    std::cout << "New connection from \"" << client.host_information.hostname << "\" at \"" << client.host_information.connection_time << "\"" << std::endl;
+
+                    while (valid_socket(client.connect_socket)) {
+
+                        
+
+                    }
+
+                }).join();
+            }
+
+        }
+
+        // In a child thread instance
+        if (server) {
+
+        }
+
+    }
+
+    catch (networking::exceptions::base_exception& except) {
+        std::cerr << "Exception caught \"" << except.message() << "\"" << std::endl;
+    }
 }
 
 void test_secure_server() {
