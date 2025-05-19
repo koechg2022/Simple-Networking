@@ -423,7 +423,8 @@ void test_server() {
 
     server
         .retrieve_hostname()
-        .secure(false);
+        .secure(false)
+        .port(connection_port);
 
     // std::cout << "Set all the attributes of the server." << std::endl;
 
@@ -740,6 +741,7 @@ void test_secure_server() {
     server
         .retrieve_hostname()
         .secure(true)
+        .port(connection_port)
         .secure_key(project_root_directory + std::string(__sys_slash__) + "files" + std::string(__sys_slash__) + "key.pem")
         .certificate(project_root_directory + std::string(__sys_slash__) + "files" + std::string(__sys_slash__) + "cert.pem");
 
