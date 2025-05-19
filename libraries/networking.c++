@@ -2438,7 +2438,7 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
                 ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
                 throw networking::exceptions::connection_failure("Failed to establish a secure handshake with the remote host. Error\"" + std::string(msg) + "\"", unpack_secure_exception_parameters(2));
             }
-            
+            std::printf("Successfully established secure handshake.\n");
         }
 
     }
