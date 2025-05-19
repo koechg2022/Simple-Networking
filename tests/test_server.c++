@@ -608,7 +608,7 @@ void test_multithread_server() {
             return;
         }
 
-
+        std::cerr << "Server started. Connect to the server using \"" << server.hostname() << "\" and port \"" << server.port() << "\"" << std::endl;
 
         while (server) {
 
@@ -690,8 +690,7 @@ void test_multithread_server() {
 
             if (misc_functions::has_keyboard_input()) {
                 std::string message = misc_functions::get_input();
-
-                if (string_functions::same_string(message, "exit")) {
+                if (string_functions::same_string(message, "close") or string_functions::same_string(message, "exit") or string_functions::same_string(message, "stop") or string_functions::same_string(message, "halt")) {
                     server.stop();
                 }
             }
