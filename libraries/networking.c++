@@ -1759,7 +1759,7 @@ bool networking::network_structures::tcp_client::connect_socket(const std::chron
                     ioctlsocket(this->connect_socket_, FIONBIO, &nonblock);
                 #endif
             }
-
+            std::printf("FINISHED WITH TIMEOUT WAIT. CONNECTION NOW ESTABLISHED!\n");
 
         }
 
