@@ -1594,6 +1594,11 @@
                      */
                     unsigned long connections() const;
 
+                    /**
+                        @brief Check if the client passed in is still connected to the remote host or not.
+                     */
+                    bool connected(const networking::network_structures::client_connection& client) const;
+
             };
 
             class tcp_client : public host<tcp_client> {

@@ -14,6 +14,7 @@
 #include "../headers/string_functions"
 #include "../headers/misc_functions"
 #include "../headers/networking"
+#include "include"
 
 
 
@@ -34,6 +35,7 @@ const std::string
         TEST_SECURE_CLIENT = "test_secure_client", TEST_SECURE_CLIENT_ = "tsc",
         TEST_WINDOWS = "test_windows", TEST_WINDOWS_ = "tw",
         TEST_WEB_CLIENT = "test_web_client", TEST_WEB_CLIENT_ = "twc",
+        TEST_MULTITHREAD_SERVER = "test_multithread_server", TEST_MULTITHREAD_SERVER_ = "tmts",
         
         // For server/clients
         EXIT = "exit()", EXIT_ = "exit",
@@ -63,7 +65,8 @@ std::unordered_map<std::string, std::string> test_args_caps = {
     {TEST_SECURE_SERVER, TEST_SECURE_SERVER},
     {TEST_SECURE_CLIENT, TEST_SECURE_CLIENT},
     {TEST_WINDOWS, TEST_WINDOWS},
-    {TEST_WEB_CLIENT, TEST_WEB_CLIENT}
+    {TEST_WEB_CLIENT, TEST_WEB_CLIENT},
+    {TEST_MULTITHREAD_SERVER, TEST_MULTITHREAD_SERVER}
 };
 
 // For running file lower
@@ -77,7 +80,8 @@ std::unordered_map<std::string, std::string> test_args_lower = {
     {TEST_SECURE_SERVER, TEST_SECURE_SERVER_},
     {TEST_SECURE_CLIENT, TEST_SECURE_CLIENT_},
     {TEST_WINDOWS, TEST_WINDOWS_},
-    {TEST_WEB_CLIENT, TEST_WEB_CLIENT_}
+    {TEST_WEB_CLIENT, TEST_WEB_CLIENT_},
+    {TEST_MULTITHREAD_SERVER, TEST_MULTITHREAD_SERVER_}
 };
 
 
@@ -211,6 +215,11 @@ int main(int len, char** args) {
         else if (string_functions::same_string(args[index], test_args_caps[TEST_SERVER]) or 
             string_functions::same_string(args[index], test_args_lower[TEST_SERVER])) {
             test_server();
+        }
+
+        else if (string_functions::same_string(args[index], test_args_caps[TEST_MULTITHREAD_SERVER]) or
+            string_functions::same_string(args[index], test_args_lower[TEST_MULTITHREAD_SERVER_])) {
+            test_multithread_server();
         }
 
         else if (string_functions::same_string(args[index], test_args_caps[TEST_SECURE_SERVER]) or 
@@ -445,6 +454,10 @@ void test_server() {
 
             if (misc_functions::has_keyboard_input()) {
                 message = misc_functions::get_input();
+
+                if (string_functions::same_string(message, "exit")) {
+                    server.stop();
+                }
             }
         }
 
@@ -460,8 +473,10 @@ void test_server() {
 
 void test_multithread_server() {
     
-    const bool block_clients = false, secure = false;
+    const bool block_clients = true, secure = false;
     const int flags = 0, listening_limit = 100;
+
+    const std::chrono::duration<int> timeout = std::chrono::duration<int>(10);
     networking::network_structures::tcp_server server;
     networking::network_structures::client_connection client;
 
@@ -478,23 +493,89 @@ void test_multithread_server() {
 
         while (server) {
 
-            if ((client = server.new_client())) {
-                std::thread([client](){
-                    std::cout << "New connection from \"" << client.host_information.hostname << "\" at \"" << client.host_information.connection_time << "\"" << std::endl;
+            try {
 
-                    while (valid_socket(client.connect_socket)) {
+                if ((client = server.new_client())) {
+                    
+                    std::thread([&server, timeout](networking::network_structures::client_connection client){
+                        std::cout << "Inside thread " << std::this_thread::get_id() << std::endl;
+                        std::cout << "New connection from \"" << client.host_information.hostname << "\" at \"" << client.host_information.connection_time << "\"" << std::endl;
+                        
+                        const int count = 4, flags = 0;
+                        char msg[__kilo_bytes__(count)];
+                        bytes byte_count;
+                        
+                        int byte_error;
+                        #if defined(crap_os)
+                            const int block_read = (server.secure()) ? SSL_ERROR_WANT_READ : WSAWOULDBLOCK;
+                            const int block_write = (server.secure()) ? SSL_ERROR_WANT_WRITE : WSACONNRESET;
+                        #else
+                            const int block_write = (server.secure()) ? SSL_ERROR_WANT_WRITE : EWOULDBLOCK;
+                            const int block_read = (server.secure()) ? SSL_ERROR_WANT_READ : EAGAIN;
+                        #endif
+                        std::string message;
 
                         
+                        fd_set read_ready;
+                        while ((server.connected(client))) {
+                            message.erase();
+                            FD_ZERO(&read_ready);
+                            FD_SET(client.connect_socket, &read_ready);
+                            if (select(client.connect_socket + 1, &read_ready, 0, 0, nullptr) < 0) {
+                                std::cerr << "Failed to select for client \"" << client.host_information.hostname << "\"" << std::endl;
+                                break;
+                            }
 
-                    }
+                            if (FD_ISSET(client.connect_socket, &read_ready)) {
+                                // There is data to be read.
+                                std::cout << "Update from " << client.host_information.hostname << std::endl;
 
-                }).join();
+                                byte_count = 0;
+                                const auto start_time = std::chrono::steady_clock::now();
+
+                                while (server and client and std::chrono::steady_clock::now() - start_time < timeout) {
+                                    byte_count = (server.secure()) ? SSL_read(client.secure_connect_socket, msg, __kilo_bytes__(count)) : recv(client.connect_socket, msg, __kilo_bytes__(count), flags);
+
+                                    if (byte_count < 0) {
+                                        // There was either an error, or there was a false negative due to blocking
+                                        byte_error = (server.secure()) ? SSL_get_error(client.secure_connect_socket, byte_count) : socket_error;
+                                        if (byte_error == block_write or byte_error == block_read) {
+                                            continue;
+                                        }
+                                    }
+
+                                    if (not byte_count) {
+                                        // Connection closed by client
+                                        server.disconnect_client(client);
+                                        break;
+                                    }
+
+                                    // byte_count is greater than 0, there is data
+                                    message = std::string(msg, byte_count);
+                                    break;
+                                }
+
+
+                            }
+
+                        }
+
+                    }, client).detach();
+                }
+
             }
 
-        }
+            catch (networking::exceptions::secure_handshake_failure& except) {
+                continue;
+            }
 
-        // In a child thread instance
-        if (server) {
+            if (misc_functions::has_keyboard_input()) {
+                std::string message = misc_functions::get_input();
+
+                if (string_functions::same_string(message, "exit")) {
+                    server.stop();
+                }
+            }
 
         }
 
