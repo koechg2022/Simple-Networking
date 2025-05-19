@@ -1715,8 +1715,10 @@ bool networking::network_structures::tcp_client::connect_socket(const std::chron
             // Something due to non-blocking socket
             std::printf("Waiting for timeout duration...\n");
             fd_set write_set, error_set;
-            FD_ZERO(&write_set), FD_ZERO(&error_set);
-            FD_SET(this->connect_socket_, &write_set), FD_SET(this->connect_socket_, &error_set);
+            FD_ZERO(&write_set);
+            FD_ZERO(&error_set);
+            FD_SET(this->connect_socket_, &write_set);
+            FD_SET(this->connect_socket_, &error_set);
 
             if (select(this->connect_socket_ + 1, 0, &write_set, &error_set, &timeout_) < 0) {
                 throw networking::exceptions::select_failure("Failed to connect to remote host due to select function failure.", unpack_exception_parameters(1));
@@ -1745,7 +1747,7 @@ bool networking::network_structures::tcp_client::connect_socket(const std::chron
             }
 
             if (connect_error) {
-                throw networking::exceptions::connection_failure("Failed to connect to remote host. socket options retrieval revealed \"" + std::string(socket_error_string(connect_error)) + "\"", unpack_exception_parameters(1));
+                throw networking::exceptions::connection_failure("Failed to connect to remote host. socket options retrieval revealed \"" + std::string(socket_error_string(socket_error)) + "\"", unpack_exception_parameters(1));
             }
 
             if (this->block_) {
