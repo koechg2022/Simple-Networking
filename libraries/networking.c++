@@ -600,7 +600,7 @@ bool networking::set_blocking(socket_type& the_socket, const bool block) {
         if (flags == -1) {
             return false;
         }
-        if (fcntl(the_socket, F_SETFL, block ? (flags | O_NONBLOCK) : (flags & ~O_NONBLOCK)) == -1) {
+        if (fcntl(the_socket, F_SETFL, block ? (flags & ~O_NONBLOCK) : (flags | O_NONBLOCK)) == -1) {
             return false;
         }
     #endif
