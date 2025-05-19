@@ -951,7 +951,7 @@ void test_multithread_secure_server() {
                             const int block_write = (server.secure()) ? SSL_ERROR_WANT_WRITE : EWOULDBLOCK;
                             const int block_read = (server.secure()) ? SSL_ERROR_WANT_READ : EAGAIN;
                         #endif
-                        std::cout << "client's host evaluates to " << ((client.host_information) ? "true" : "false") << std::endl;
+                        // std::cout << "client's host evaluates to " << ((client.host_information) ? "true" : "false") << std::endl;
                         std::string message;
                         networking::network_structures::host_report report;
 
@@ -1150,6 +1150,7 @@ void test_secure_client() {
                 report = client.message<char>(msg, __kilo_bytes__(count), flags, timeout);
 
                 if (not report.success) {
+                    std::cout << "Client is stopping" << std::endl;
                     client.stop();
                     continue;
                 }
