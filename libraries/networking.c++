@@ -2290,6 +2290,17 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
 // Self Check Operator
 networking::network_structures::tcp_client::operator bool() const {
     std::scoped_lock locks(this->context_mutex_, this->secure_socket_mutex_, connect_socket_mutex_);
+    if (not ((this->secure_) ? valid_context(this->context_) and 
+                                valid_secure_socket(this->secure_socket_) and 
+                                valid_socket(this->connect_socket_) and 
+                                this->connected_
+                                        :
+                                this->connected_ and valid_socket(this->connect_socket_))) {
+        std::printf("About to return false on the self check for the client.\n");
+        std::printf("the context is %s\n", valid_context(this->context_) ? "valid" : "invalid");
+        std::printf("the secure socket is %s\n", valid_secure_socket(this->secure_socket_) ? "valid" : "invalid");
+        std::printf("the connection socket is %s\n", valid_socket(this->connect_socket_) ? "valid" : "invalid");
+        }
     return  (this->secure_) ? valid_context(this->context_) and 
                                 valid_secure_socket(this->secure_socket_) and 
                                 valid_socket(this->connect_socket_) and 
