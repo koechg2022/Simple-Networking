@@ -2411,6 +2411,8 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
             throw networking::exceptions::connection_failure("Failed to connect the client to the remote host over with the newly created socket.", unpack_exception_parameters(1));
         }
 
+        std::printf("Connection established. Client is now connected to the remote host\n");
+
         // The rest of this is for a secure connection
         if (this->secure_) {
 
