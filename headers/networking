@@ -1614,7 +1614,7 @@
                     template <typename data> networking::network_structures::host_report message(const networking::network_structures::client_connection& client, data* the_message, const bytes byte_count, const int flags = 0, const std::chrono::duration<int> timeout = std::chrono::seconds(10)) {
 
                         if (std::is_const<data>()) {
-                            static_assert(std::is_const<data>(), "data type cannot be const if it's meant to receive data.");
+                            // static_assert(std::is_const<data>(), "data type cannot be const if it's meant to receive data.");
                             throw networking::exceptions::unexpected_failure("Cannot receive a message into a const data type pointer. The data in there cannot be tweaked.", unpack_exception_parameters(2));
                         }
 
