@@ -639,11 +639,12 @@ void test_multithread_server() {
                             const int block_write = (server.secure()) ? SSL_ERROR_WANT_WRITE : EWOULDBLOCK;
                             const int block_read = (server.secure()) ? SSL_ERROR_WANT_READ : EAGAIN;
                         #endif
+                        std::cout << "client's host evaluates to " << ((client.host_information) ? "true" : "false") << std::endl;
                         std::string message;
                         networking::network_structures::host_report report;
 
                         
-                        fd_set read_ready;
+                        // fd_set read_ready;
                         while ((server.connected(client))) {
                             
                             if (server.message(client)) {
