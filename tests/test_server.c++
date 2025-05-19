@@ -1048,7 +1048,8 @@ void test_client() {
                 
                 report = client.message<char>(msg, __kilo_bytes__(count), flags, timeout);
 
-                if (not report.success) {
+                if (report.byte_count < 1) {
+                    ((report.byte_count == 0) ? std::cout : std::cerr) << "Disconnecting client due to " << ((report.byte_count == 0) ? "client disconnecting" : "client connection error") << std::endl;
                     client.stop();
                     continue;
                 }
