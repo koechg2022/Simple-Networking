@@ -1034,7 +1034,7 @@ void test_client() {
     networking::network_structures::host_report report;
 
     networking::network_structures::tcp_client client(misc_functions::get_input("Enter host to connect to : "));
-    client.port(connection_port).secure(SECURE).block(BLOCK).server_name_indication(false);
+    client.port(connection_port).secure(SECURE).block(BLOCK);//
 
     try {
 

@@ -1707,10 +1707,6 @@ bool networking::network_structures::tcp_client::connect_socket(const std::chron
                 }
 
 
-                // For Windows
-                    // int size;
-                    // int optlen = sizeof(size);
-                    // getsockopt(socket_descriptor, SOL_SOCKET, SO_RCVBUF, (char *)&size, &optlen);
                 #if defined(unix_os)
                     connect_error = 0;
                     socklen_t len = sizeof(connect_error);
@@ -1719,6 +1715,10 @@ bool networking::network_structures::tcp_client::connect_socket(const std::chron
                         throw networking::exceptions::connection_failure("A connection issue occured while trying to establish a connection with the remote machine.", unpack_exception_parameters(1));
                     }
                 #else
+                // For Windows
+                    // int size;
+                    // int optlen = sizeof(size);
+                    // getsockopt(socket_descriptor, SOL_SOCKET, SO_RCVBUF, (char *)&size, &optlen);
                     char con_err;
                     int con_len = sizeof(con_err);
                     if (getsockopt(this->connect_socket_, SOL_SOCKET, SO_RCVBUF, (char*) &connect_error, &con_len)) {
@@ -2288,13 +2288,6 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
 // Self Check Operator
 networking::network_structures::tcp_client::operator bool() const {
     std::scoped_lock locks(this->context_mutex_, this->secure_socket_mutex_, connect_socket_mutex_);
-    // if (this->secure_) {
-    //     std::printf("---------------------------------------------------------------------------------------\n");
-    //     std::printf("valid_context is %s\n", valid_context(this->context_) ? "true" : "false");
-    //     std::printf("valid_secure_socket is %s\n", valid_secure_socket(this->secure_socket_) ? "true" : "false");
-    //     std::printf("valid_socket_ is %s\n", valid_socket(this->connect_socket_) ? "true" : "false");
-    //     std::printf("---------------------------------------------------------------------------------------\n");
-    // }
     return  (this->secure_) ? valid_context(this->context_) and 
                                 valid_secure_socket(this->secure_socket_) and 
                                 valid_socket(this->connect_socket_) and 
