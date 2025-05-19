@@ -218,7 +218,7 @@ int main(int len, char** args) {
         }
 
         else if (string_functions::same_string(args[index], test_args_caps[TEST_MULTITHREAD_SERVER]) or
-            string_functions::same_string(args[index], test_args_lower[TEST_MULTITHREAD_SERVER_])) {
+            string_functions::same_string(args[index], test_args_lower[TEST_MULTITHREAD_SERVER])) {
             test_multithread_server();
         }
 
