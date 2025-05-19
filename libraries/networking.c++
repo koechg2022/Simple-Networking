@@ -1697,10 +1697,11 @@ bool networking::network_structures::tcp_client::connect_socket(const std::chron
 
                 // This will wait for the timeout then try again.
                 // std::printf("About to use select.\n");
+                std::printf("Waiting for %ld.%d seconds\n", timeout_struct.tv_sec, timeout_struct.tv_usec);
                 if (select(this->connect_socket_ + 1, 0, &writes, 0, &timeout_struct) < 0) {
                     throw networking::exceptions::connection_failure("Failed to establish a connection and exceeded timeout wait time.", unpack_exception_parameters(1));
                 }
-
+                std::printf("Now connecting...\n");
                 // std::printf("About to use FD_ISSET.\n");
                 if (not FD_ISSET(this->connect_socket_, &writes)) {
                     throw networking::exceptions::connection_failure("Connection socket is not capable of communicating with remote host, even after timeout wait.", unpack_exception_parameters(1));
