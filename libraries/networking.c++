@@ -1585,10 +1585,10 @@ bool networking::network_structures::tcp_server::connected(const networking::net
     // return valid_socket(client.connect_socket);
     std::lock_guard<std::mutex> clients_lock(this->clients_mutex_);
     for (const auto& [host_, info_] : this->clients_) {
-        std::printf("\tInside for loop for connected\n");
-        std::printf("\tAbout to compare\n%s : %s : %s\nAnd\n%s : %s : %s\n", 
-                        host_.hostname.c_str(), host_.port.c_str(), host_.connection_time.c_str(),
-                        client.host_information.hostname.c_str(), client.host_information.port.c_str(), client.host_information.connection_time.c_str());
+        // std::printf("\tInside for loop for connected\n");
+        // std::printf("\tAbout to compare\n%s : %s : %s\nAnd\n%s : %s : %s\n", 
+        //                 host_.hostname.c_str(), host_.port.c_str(), host_.connection_time.c_str(),
+        //                 client.host_information.hostname.c_str(), client.host_information.port.c_str(), client.host_information.connection_time.c_str());
         if (client.host_information == host_) {
             if (valid_socket(info_.connect_socket)) {
                 std::printf("About to return true from connected()\n");
