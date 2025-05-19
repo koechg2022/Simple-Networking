@@ -1706,13 +1706,24 @@ bool networking::network_structures::tcp_client::connect_socket(const std::chron
                     throw networking::exceptions::connection_failure("Connection socket is not capable of communicating with remote host, even after timeout wait.", unpack_exception_parameters(1));
                 }
 
-                connect_error = 0;
-                socklen_t len = sizeof(connect_error);
 
-                // std::printf("About to use getsockopt.\n");
-                if (getsockopt(this->connect_socket_, SOL_SOCKET, SO_ERROR, &connect_error, &len) < 0 or connect_error != 0) {
-                    throw networking::exceptions::connection_failure("A connection issue occured while trying to establish a connection with the remote machine.", unpack_exception_parameters(1));
-                }
+                // For Windows
+                    // int size;
+                    // int optlen = sizeof(size);
+                    // getsockopt(socket_descriptor, SOL_SOCKET, SO_RCVBUF, (char *)&size, &optlen);
+                socklen_t len = sizeof(connect_error);
+                #if defined(unix_os)
+                    connect_error = 0;
+                    // std::printf("About to use getsockopt.\n");
+                    if (getsockopt(this->connect_socket_, SOL_SOCKET, SO_ERROR, &connect_error, &len) < 0 or connect_error != 0) {
+                        throw networking::exceptions::connection_failure("A connection issue occured while trying to establish a connection with the remote machine.", unpack_exception_parameters(1));
+                    }
+                #else
+                    if (getsockopt(this->connect_socket_, SOL_SOCKET, SORCVBUF, (char*) &connect_error, &len)) {
+                        throw networking::exceptions::connection_failure("A connection issue occured while trying to establish a connection with the remote machine.", unpack_exception_parameters(1));
+                    }
+                #endif
+
             }
             else {
                 throw networking::exceptions::connection_failure("Failed to connect this tcp client to the remote host.", unpack_exception_parameters(1));
