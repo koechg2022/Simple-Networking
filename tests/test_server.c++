@@ -959,7 +959,12 @@ void test_multithread_secure_server() {
                                 message = misc_functions::get_current_time();
                                 report = server.message<char>(client, msg, __kilo_bytes__(count), flags, timeout);
                                 if (not report.success) {
-                                    std::cerr << "Failed to receive data from client \"" << client.host_information.hostname << "\"" << std::endl;
+                                    if (not report.byte_count) {
+                                        std::cout << "Client closed connection" << std::endl;
+                                    }
+                                    else {
+                                        std::cerr << "Client disconnected from client \"" << client.host_information.hostname << "\"" << std::endl;
+                                    }
                                     server.disconnect_client(client);
                                     break;
                                 }
