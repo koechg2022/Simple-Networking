@@ -596,8 +596,11 @@ void test_multithread_server() {
     const int flags = 0, listening_limit = 100;
 
     const std::chrono::duration<int> timeout = std::chrono::duration<int>(10);
+    
+    
     networking::network_structures::tcp_server server;
     networking::network_structures::client_connection client;
+    networking::network_structures::complete_report reports;
 
     try {
 
@@ -623,6 +626,7 @@ void test_multithread_server() {
                         const int count = 4, flags = 0;
                         char msg[__kilo_bytes__(count)];
                         bytes byte_count;
+                        // networking::network_structures::host_report report;
                         
                         int byte_error;
                         #if defined(crap_os)
@@ -638,6 +642,9 @@ void test_multithread_server() {
                         fd_set read_ready;
                         while ((server.connected(client))) {
                             message.erase();
+
+
+
                             FD_ZERO(&read_ready);
                             FD_SET(client.connect_socket, &read_ready);
                             if (select(client.connect_socket + 1, &read_ready, 0, 0, nullptr) < 0) {
@@ -673,8 +680,10 @@ void test_multithread_server() {
                                     message = std::string(msg, byte_count);
                                     break;
                                 }
+                            }
 
-
+                            if (not message.empty()) {
+                                std::cerr << "Message from \"" << client.host_information.hostname << "\"" << std::endl;
                             }
 
                         }
@@ -692,6 +701,11 @@ void test_multithread_server() {
                 std::string message = misc_functions::get_input();
                 if (string_functions::same_string(message, "close") or string_functions::same_string(message, "exit") or string_functions::same_string(message, "stop") or string_functions::same_string(message, "halt")) {
                     server.stop();
+                }
+
+                else if (string_functions::same_string(message, "broadcast") or string_functions::same_string(message, "brdcst")) {
+                    message = misc_functions::get_input("Message to broadcast : ");
+                    reports = server.broadcast(message.data(), message.length(), flags, true, timeout);
                 }
 
                 else {
@@ -950,6 +964,34 @@ void test_client() {
                     std::cout << "\tConnection time : " << server.host_information.connection_time << std::endl;
                 }
 
+                else if (string_functions::same_string(message, "message server") or string_functions::same_string(message, "ms")) {
+                    message = misc_functions::get_input("Message for server : ");
+
+                    if (message.empty() or string_functions::same_string(message, "n/a")) {
+                        continue;
+                    }
+
+                    report = client.message<const char>(message.c_str(), message.length(), flags, timeout);
+                    if (not report.success) {
+                        std::cerr << "Failed to send message." << std::endl;
+                        if (report.byte_count > 0) {
+                            std::cout << "Did a partial send of " << report.byte_count << " bytes out of " << message.length() << " bytes. Trying to send the rest of the bytes now." << std::endl;
+                            report = client.message<const char>(message.data() + report.byte_count, message.length() - report.byte_count, flags, timeout);
+                            if (report.success) {
+                                std::cout << "Successfully sent the rest of the bytes." << std::endl;
+                            }
+                            else {
+                                std::cerr << "Failed to send the rest of the bytes." << std::endl;
+                            }
+                            continue;
+                        }
+                        // Complete failure
+                        std::cerr << "Complete failure to send the message." << std::endl;
+                        continue;
+                    }
+                    std::cout << "Successfully sent " << report.byte_count << " bytes out of " << message.length() << " bytes." << std::endl;
+                }
+
                 else {
                     std::cerr << "Unrecognized command \"" << message << "\"" << std::endl;
                 }
@@ -1020,6 +1062,34 @@ void test_secure_client() {
                     std::cout << "\tHostname : " << server.host_information.hostname << std::endl;
                     std::cout << "\tPort : " << server.host_information.port << std::endl;
                     std::cout << "\tConnection time : " << server.host_information.connection_time << std::endl;
+                }
+
+                else if (string_functions::same_string(message, "message server") or string_functions::same_string(message, "ms")) {
+                    message = misc_functions::get_input("Message for server : ");
+
+                    if (message.empty() or string_functions::same_string(message, "n/a")) {
+                        continue;
+                    }
+
+                    report = client.message<const char>(message.c_str(), message.length(), flags, timeout);
+                    if (not report.success) {
+                        std::cerr << "Failed to send message." << std::endl;
+                        if (report.byte_count > 0) {
+                            std::cout << "Did a partial send of " << report.byte_count << " bytes out of " << message.length() << " bytes. Trying to send the rest of the bytes now." << std::endl;
+                            report = client.message<const char>(message.data() + report.byte_count, message.length() - report.byte_count, flags, timeout);
+                            if (report.success) {
+                                std::cout << "Successfully sent the rest of the bytes." << std::endl;
+                            }
+                            else {
+                                std::cerr << "Failed to send the rest of the bytes." << std::endl;
+                            }
+                            continue;
+                        }
+                        // Complete failure
+                        std::cerr << "Complete failure to send the message." << std::endl;
+                        continue;
+                    }
+                    std::cout << "Successfully sent " << report.byte_count << " bytes out of " << message.length() << " bytes." << std::endl;
                 }
 
                 else {
