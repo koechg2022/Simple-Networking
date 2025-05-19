@@ -1960,6 +1960,7 @@
                                             recv(this->connect_socket_, reinterpret_cast<char*>(msg) + total_bytes, length - total_bytes, flags);
                                 
                                 if (byte_chunk < 1) {
+                                    std::printf("byte_chunk is %d\n", byte_chunk);
                                     byte_error = (this->secure_) ? SSL_get_error(this->secure_socket_, byte_chunk) : socket_error;
 
                                     if (byte_error == block_read or byte_error == block_write) continue;
