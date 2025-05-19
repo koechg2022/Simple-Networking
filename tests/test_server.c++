@@ -640,54 +640,65 @@ void test_multithread_server() {
                             const int block_read = (server.secure()) ? SSL_ERROR_WANT_READ : EAGAIN;
                         #endif
                         std::string message;
+                        networking::network_structures::host_report report;
 
                         
                         fd_set read_ready;
                         while ((server.connected(client))) {
-                            message.erase();
-
-
-
-                            FD_ZERO(&read_ready);
-                            FD_SET(client.connect_socket, &read_ready);
-                            if (select(client.connect_socket + 1, &read_ready, 0, 0, nullptr) < 0) {
-                                std::cerr << "Failed to select for client \"" << client.host_information.hostname << "\"" << std::endl;
-                                break;
-                            }
-
-                            if (FD_ISSET(client.connect_socket, &read_ready)) {
-                                // There is data to be read.
-                                std::cout << "Update from " << client.host_information.hostname << std::endl;
-
-                                byte_count = 0;
-                                const auto start_time = std::chrono::steady_clock::now();
-
-                                while (server and client and std::chrono::steady_clock::now() - start_time < timeout) {
-                                    byte_count = (server.secure()) ? SSL_read(client.secure_connect_socket, msg, __kilo_bytes__(count)) : recv(client.connect_socket, msg, __kilo_bytes__(count), flags);
-
-                                    if (byte_count < 0) {
-                                        // There was either an error, or there was a false negative due to blocking
-                                        byte_error = (server.secure()) ? SSL_get_error(client.secure_connect_socket, byte_count) : socket_error;
-                                        if (byte_error == block_write or byte_error == block_read) {
-                                            continue;
-                                        }
-                                    }
-
-                                    if (not byte_count) {
-                                        // Connection closed by client
-                                        server.disconnect_client(client);
-                                        break;
-                                    }
-
-                                    // byte_count is greater than 0, there is data
-                                    message = std::string(msg, byte_count);
+                            
+                            if (server.message(client)) {
+                                // There is a message from the client
+                                message = misc_functions::get_current_time();
+                                report = server.message<char>(client, msg, __kilo_bytes__(count), flags, timeout);
+                                if (not report.success) {
+                                    std::cerr << "Failed to receive data from client \"" << client.host_information.hostname << "\"" << std::endl;
+                                    server.disconnect_client(client);
                                     break;
                                 }
+
+                                std::cout << "(" << message << ") Message from \"" << client.host_information.hostname << "\" : " << std::string(msg, report.byte_count) << std::endl;
                             }
 
-                            if (not message.empty()) {
-                                std::cerr << "Message from \"" << client.host_information.hostname << "\"" << std::endl;
-                            }
+                            // FD_ZERO(&read_ready);
+                            // FD_SET(client.connect_socket, &read_ready);
+                            // if (select(client.connect_socket + 1, &read_ready, 0, 0, nullptr) < 0) {
+                            //     std::cerr << "Failed to select for client \"" << client.host_information.hostname << "\"" << std::endl;
+                            //     break;
+                            // }
+
+                            // if (FD_ISSET(client.connect_socket, &read_ready)) {
+                            //     // There is data to be read.
+                            //     std::cout << "Update from " << client.host_information.hostname << std::endl;
+
+                            //     byte_count = 0;
+                            //     const auto start_time = std::chrono::steady_clock::now();
+
+                            //     while (server and client and std::chrono::steady_clock::now() - start_time < timeout) {
+                            //         byte_count = (server.secure()) ? SSL_read(client.secure_connect_socket, msg, __kilo_bytes__(count)) : recv(client.connect_socket, msg, __kilo_bytes__(count), flags);
+
+                            //         if (byte_count < 0) {
+                            //             // There was either an error, or there was a false negative due to blocking
+                            //             byte_error = (server.secure()) ? SSL_get_error(client.secure_connect_socket, byte_count) : socket_error;
+                            //             if (byte_error == block_write or byte_error == block_read) {
+                            //                 continue;
+                            //             }
+                            //         }
+
+                            //         if (not byte_count) {
+                            //             // Connection closed by client
+                            //             server.disconnect_client(client);
+                            //             break;
+                            //         }
+
+                            //         // byte_count is greater than 0, there is data
+                            //         message = std::string(msg, byte_count);
+                            //         break;
+                            //     }
+                            // }
+
+                            // if (not message.empty()) {
+                            //     std::cerr << "Message from \"" << client.host_information.hostname << "\"" << std::endl;
+                            // }
 
                         }
 

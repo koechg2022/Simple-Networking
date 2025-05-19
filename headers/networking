@@ -1590,6 +1590,121 @@
                     }
 
                     /**
+                        @brief Check if the `client` object passed in has a message to be interpreted or not.
+                        @param client (`networking::network_structures::client_connection&`) : The client to be checked 
+                        for a connection.
+                        @param timeout (`struct timeval`) : The wait time for the select function to wait for the socket.
+                        @returns `true` if there is a connection, `false` if there is not.
+                     */
+                    bool message(const networking::network_structures::client_connection& client, struct timeval timeout = {0, 200});
+
+                    /**
+                        @brief Retrieve the data from the `client` passed in. This method does not check if the `client` is 
+                        connected to this server. It only checks that this client is live. It doesn't even check if the client is ready 
+                        to be read from or not, so always use it in conjunction with the message(client_connection, struct timeval) method 
+                        to avoid infinite waits.
+                        @param client (`const networking::network_structures::client_connection&`) : The client to receive a message from.
+                        @param the_message (`data*`) : The buffer space that holds where the data will be placed.
+                        @param byte_count (`const bytes`) : The total number of bytes that the bufferspace can hold (the size of the buffer space).
+                        @param flags (`const int`) : Defaults to `0`. The flags to be used when receiving the data. (For example use MSG_PEEK
+                         to peek at the data and not remove it from the socket read).
+                        @param timeout (`const std::chrono::duration<int>`) : Defaults to `std::chrono::seconds(10)`. This is the maximum waittime that 
+                        this method will wait before timing out with a receiving failure (if no data is received, a failure is returned.)
+                     */
+                    template <typename data> networking::network_structures::host_report message(const networking::network_structures::client_connection& client, data* the_message, const bytes byte_count, const int flags = 0, const std::chrono::duration<int> timeout = std::chrono::seconds(10)) {
+
+                        if (std::is_const<data>()) {
+                            static_assert(std::is_const<data>(), "data type cannot be const if it's meant to receive data.");
+                            throw networking::exceptions::unexpected_failure("Cannot receive a message into a const data type pointer. The data in there cannot be tweaked.", unpack_exception_parameters(2));
+                        }
+
+                        networking::network_structures::host_report the_answer;
+                        if (not valid_socket(client.connect_socket)) {
+                            return the_answer;
+                        }
+
+                        the_answer.host = client;
+                        the_answer.byte_count = 0;
+                        the_answer.success = false;
+
+                        int byte_error = 0;
+                        #if defined(crap_os)
+                            const int block_read = (this->secure_) ? SSL_ERROR_WANT_READ : WSAWOULDBLOCK;
+                            const int block_write = (this->secure_) ? SSL_ERROR_WANT_WRITE : WSACONNRESET;
+                        #else
+                            const int block_write = (this->secure_) ? SSL_ERROR_WANT_WRITE : EWOULDBLOCK;
+                            const int block_read = (this->secure_) ? SSL_ERROR_WANT_READ : EAGAIN;
+                        #endif
+                        bytes byte_chunk, total_bytes = 0;
+
+                        if (MSG_PEEK == flags) {
+                            const auto start_time = std::chrono::steady_clock::now();
+                            re_read:
+
+                            if (std::chrono::steady_clock::now() - start_time > timeout) {
+                                the_answer.byte_count = byte_chunk;
+                                return the_answer;
+                            }
+
+                            byte_chunk = (valid_secure_socket(client.secure_connect_socket)) ? SSL_read(client.secure_connect_socket, reinterpret_cast<char*>(the_message), byte_count) :
+                                            recv(client.connect_socket, reinterpret_cast<char*>(the_message), byte_count, flags);
+                            
+                            if (byte_chunk < 1) {
+                                byte_error = (valid_secure_socket(client.secure_connect_socket)) ? SSL_get_error(client.secure_connect_socket, byte_chunk) : socket_error;
+
+                                if (byte_error == block_write or byte_error == block_read) goto re_read;
+
+                                // An actual error occured
+                                byte_chunk = -1;
+                            }
+                            total_bytes = byte_chunk;
+                        }
+
+                        else {
+                            
+                            const auto start_time = std::chrono::steady_clock::now();
+                            while (valid_socket(client.connect_socket) and (std::chrono::steady_clock::now() - start_time < timeout)) {
+                                
+                                byte_chunk = (valid_secure_socket(client.secure_connect_socket)) ? SSL_read(client.secure_connect_socket,reinterpret_cast<char*>(the_message) + total_bytes, byte_count - total_bytes) :
+                                                recv(client.connect_socket, reinterpret_cast<char*>(the_message) + total_bytes, byte_count - total_bytes, flags);
+
+                                if (byte_chunk < 1) {
+                                    byte_error = (valid_secure_socket(client.secure_connect_socket)) ? SSL_get_error(client.secure_connect_socket, byte_chunk) : socket_error;
+
+                                   if (byte_error == block_read or byte_error == block_write) continue;
+
+                                    // Connection was either closed 
+                                    if (not byte_chunk) break;
+                                    
+                                    
+                                    // or an actual error occured.
+                                    
+                                    // To track the errors
+                                    if (byte_chunk < 0) byte_error = byte_error;
+
+                                    // std::printf("Inside error branch of receiving message method. byte_chunk is \"%ld\"\n", byte_chunk);
+                                    break;
+                                }
+
+                                total_bytes = total_bytes + byte_chunk;
+                                
+                                // Out of buffer space
+                                if (total_bytes == byte_count) break;
+
+                                
+                                if (not this->message(client)) break;
+
+                            }
+                        }
+
+                        
+                        the_answer.byte_count = total_bytes;
+                        the_answer.success = (0 < total_bytes);
+
+                        return the_answer;
+                    }
+
+                    /**
                         @brief Get the total number of connected clients.
                      */
                     unsigned long connections() const;

@@ -1554,6 +1554,21 @@ networking::network_structures::tcp_server& networking::network_structures::tcp_
     return *this;
 }
 
+bool networking::network_structures::tcp_server::message(const networking::network_structures::client_connection& client, struct timeval timeout) {
+    if (not valid_socket(client.connect_socket)) {
+        return false;
+    }
+
+    fd_set reads;
+    FD_ZERO(&reads);
+    FD_SET(client.connect_socket, &reads);
+
+    if (select(client.connect_socket + 1, &reads, 0, 0, &timeout)) {
+        throw networking::exceptions::select_failure("Failed to select for the connection socket for client \"" + client.host_information.hostname + "\"", unpack_exception_parameters(1));
+    }
+
+    return FD_ISSET(client.connect_socket, &reads);
+}
 
 unsigned long networking::network_structures::tcp_server::connections() const {
     std::lock_guard<std::mutex> client_lock(this->clients_mutex_);
