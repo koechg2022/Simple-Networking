@@ -1578,7 +1578,7 @@ unsigned long networking::network_structures::tcp_server::connections() const {
 
 bool networking::network_structures::tcp_server::connected(const networking::network_structures::client_connection& client) const {
     if (not client) {
-        std::printf("About to return false from connected()\n");
+        std::printf("About to return false from connected(1)\n");
         return false;
     }
     // std::printf("client's socket is %s\n", valid_socket(client.connect_socket) ? "true" : "false");
@@ -1592,7 +1592,7 @@ bool networking::network_structures::tcp_server::connected(const networking::net
             }
         }
     }
-    std::printf("About to return false from connected()\n");
+    std::printf("About to return false from connected(2)\n");
     return false;
 }
 
