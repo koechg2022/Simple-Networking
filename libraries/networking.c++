@@ -1721,7 +1721,7 @@ bool networking::network_structures::tcp_client::connect_socket(const std::chron
                 #else
                     char con_err;
                     int con_len = sizeof(con_err);
-                    if (getsockopt(this->connect_socket_, SOL_SOCKET, SO_RCVBUF, (char*) &connect_error, &con_err)) {
+                    if (getsockopt(this->connect_socket_, SOL_SOCKET, SO_RCVBUF, (char*) &connect_error, &con_len)) {
                         throw networking::exceptions::connection_failure("A connection issue occured while trying to establish a connection with the remote machine.", unpack_exception_parameters(1));
                     }
                 #endif
