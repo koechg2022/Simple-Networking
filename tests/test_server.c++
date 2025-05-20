@@ -177,8 +177,6 @@ void test_client();
 
 void test_secure_client();
 
-void windows_tests();
-
 void test_web_client();
 
 void print_socket_configs(socket_type the_socket);
@@ -243,12 +241,6 @@ int main(int len, char** args) {
         else if (string_functions::same_string(args[index], test_args_caps[TEST_SECURE_CLIENT]) or 
             string_functions::same_string(args[index], test_args_lower[TEST_SECURE_CLIENT])) {
             test_secure_client();
-        }
-
-        else if (string_functions::same_string(args[index], test_args_caps[TEST_WINDOWS]) or 
-            string_functions::same_string(args[index], test_args_lower[TEST_WINDOWS])) {
-            std::printf("Running windows tests:\n");
-            windows_tests();
         }
 
         else if (string_functions::same_string(args[index], test_args_caps[TEST_WEB_CLIENT]) or 
@@ -617,6 +609,7 @@ void test_multithread_server() {
     
     networking::network_structures::tcp_server server;
     networking::network_structures::client_connection client;
+    std::unordered_set<networking::network_structures::client_connection> clients;
     networking::network_structures::complete_report reports;
 
     try {
@@ -706,6 +699,29 @@ void test_multithread_server() {
                     //     }, client_, message);
                     // }
                     reports = server.broadcast(message.data(), message.length(), flags, true, timeout);
+                }
+
+                else if (string_functions::same_string(message, "list clients") or string_functions::same_string(message, "lc")) {
+                    if ((clients = server.clients()).empty()) {
+                        std::cout << "No clients connected" << std::endl;
+                        continue;
+                    }
+
+                    for (const auto& client_ : clients) {
+                        // std::cout << client_.host_information.hostname << std::endl;
+                        // std::cout << "\tConnection port : " << client_.host_information.port << std::endl;
+                        // std::cout << "\tConnection time : " << client_.host_information.connection_time << std::endl;
+                        // std::cout << "\t" << valid_socket(client_.connect_socket) << std::endl;
+
+                        std::cout << client_.host_information.hostname << std::endl;
+                        std::cout << "\tConnection port : " << client_.host_information.port << std::endl;
+                        std::cout << "\tConnection time : " << client_.host_information.connection_time << std::endl;
+                        std::cout << "\t"
+                                << (valid_socket(client_.connect_socket) ? "\033[32m" : "\033[31m")
+                                << std::boolalpha << valid_socket(client_.connect_socket)
+                                << "\033[0m" << std::endl;
+                    }
+
                 }
 
                 else {
@@ -1238,25 +1254,6 @@ void test_secure_client() {
         std::cerr << "Exception caught of type \"" << except.type() << "\"" << std::endl;
     }
 
-}
-
-// Windows sucks, but Passing!
-void windows_tests() {
-
-    if (networking::initialize_network()) {
-        std::printf("Successfully initialized entwork.\n");
-    }
-
-    else {
-        std::printf("Failed to initialize network.\n");
-    }
-
-    if (networking::uninitialize_network()) {
-        std::printf("Successfully uninitialize network.\n");
-    }
-    else {
-        std::printf("Failed to uninitialize network.\n");
-    }
 }
 
 // Passing!
