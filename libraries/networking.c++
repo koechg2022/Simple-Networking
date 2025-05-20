@@ -1755,6 +1755,8 @@ bool networking::network_structures::tcp_client::connect_socket(const std::chron
                 throw networking::exceptions::connection_failure("Failed to connect to remote machine, and an error was reported to the connection socket. \"" + std::string(socket_error_string(socket_error)) + "\"", unpack_exception_parameters(1));
             }
 
+            // TODO : THis is failing on linux with clients. Suggested approach is on perplexity.
+            // Look into this tomorrow morning
             if (not FD_ISSET(this->connect_socket_, &write_set)) {
                 throw networking::exceptions::connection_failure("Failed to connect to remote host. Timed out.", unpack_exception_parameters(1));
             }
