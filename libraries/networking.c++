@@ -2594,15 +2594,6 @@ bool networking::network_structures::tcp_client::message(const std::chrono::dura
             }
             return byte_count >= 0;
         }
-
-        // To get there the socket is blocking
-
-        // std::printf("Evaluating that there is a message from the server...\n");
-        
-        // if (this->secure_ and valid_secure_socket(this->secure_socket_)) {
-        //     the_answer = (SSL_pending(this->secure_socket_) > 0 and SSL_pending(this->secure_socket_));
-        //     if (not the_answer) std::printf("Actually, not I'm gonna say there isn't a message from the server...\n");
-        // }
     }
 
     return the_answer;
