@@ -718,7 +718,7 @@ void test_multithread_server() {
                         std::cout << "\tConnection time : " << client_.host_information.connection_time << std::endl;
                         std::cout << "\t"
                                 << (valid_socket(client_.connect_socket) ? "\033[32m" : "\033[31m")
-                                << std::boolalpha << valid_socket(client_.connect_socket)
+                                << (valid_socket(client_.connect_socket) ? "LIVE" : "DISCONNECTED")
                                 << "\033[0m" << std::endl;
                     }
 
