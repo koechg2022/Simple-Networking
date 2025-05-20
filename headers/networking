@@ -1834,7 +1834,7 @@
                         @brief Check if here is a message from the server or not.
                         @returns `true` if there is a message from the connected server, `false` otherwise.
                      */
-                    bool message();
+                    bool message(const std::chrono::duration<int> timeout = std::chrono::seconds(10));
 
                     /**
                         @brief Send a message to the connected server machine.

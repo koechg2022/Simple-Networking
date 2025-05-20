@@ -12,6 +12,7 @@
 #include "../headers/networking"
 #include "../headers/string_functions"
 #include "../headers/misc_functions"
+#include "include"
 
 
 
@@ -2550,30 +2551,58 @@ std::string networking::network_structures::tcp_client::get_issuer() {
     return the_answer;
 }
 
-bool networking::network_structures::tcp_client::message() {
+bool networking::network_structures::tcp_client::message(const std::chrono::duration<int> timeout) {
     if (not *this) {
         return false;
     }
 
     std::lock_guard<std::mutex> sock_lock(this->connect_socket_mutex_);
     fd_set read_set;
-    struct timeval timeout = {0, 10};
+    struct timeval timeout_ = {0, 10};
     FD_ZERO(&read_set);
     FD_SET(this->connect_socket_, &read_set);
 
-    if (select(this->connect_socket_ + 1, &read_set, 0, 0, &timeout) < 0) {
+    if (select(this->connect_socket_ + 1, &read_set, 0, 0, &timeout_) < 0) {
         throw networking::exceptions::select_failure("Failed to select for the tcp client's listening socket.", unpack_exception_parameters(1));
     }
 
     bool the_answer = false;
     if (FD_ISSET(this->connect_socket_, &read_set)) {
         the_answer = true;
-        // std::printf("Evaluating that there is a message from the server...\n");
         std::lock_guard<std::mutex> secure_sock_lock(this->secure_socket_mutex_);
-        if (this->secure_ and valid_secure_socket(this->secure_socket_)) {
-            the_answer = (SSL_pending(this->secure_socket_) > 0 and SSL_pending(this->secure_socket_));
-            if (not the_answer) std::printf("Actually, not I'm gonna say there isn't a message from the server...\n");
+        if (not this->block_) {
+            const int count = 2;
+            char msg[count];
+            int byte_error = 0;
+            #if defined(crap_os)
+                const int block_read = (this->secure_) ? SSL_ERROR_WANT_READ : WSAWOULDBLOCK;
+                const int block_write = (this->secure_) ? SSL_ERROR_WANT_WRITE : WSACONNRESET;
+            #else
+                const int block_write = (this->secure_) ? SSL_ERROR_WANT_WRITE : EWOULDBLOCK;
+                const int block_read = (this->secure_) ? SSL_ERROR_WANT_READ : EAGAIN;
+            #endif
+            const auto start_time = std::chrono::steady_clock::now();
+            return_:
+            bytes byte_count = (this->secure_) ? SSL_peek(this->secure_socket_, msg, count) : 
+                                                    recv(this->connect_socket_, msg, count, MSG_PEEK);
+            
+            if (byte_count < 0) {
+                byte_error = (this->secure_) ? SSL_get_error(this->secure_socket_, byte_count) : socket_error;
+
+                if (byte_error == block_read or byte_error == block_write) return false;
+                return true;
+            }
+            return byte_count >= 0;
         }
+
+        // To get there the socket is blocking
+
+        // std::printf("Evaluating that there is a message from the server...\n");
+        
+        // if (this->secure_ and valid_secure_socket(this->secure_socket_)) {
+        //     the_answer = (SSL_pending(this->secure_socket_) > 0 and SSL_pending(this->secure_socket_));
+        //     if (not the_answer) std::printf("Actually, not I'm gonna say there isn't a message from the server...\n");
+        // }
     }
 
     return the_answer;
