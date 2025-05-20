@@ -2568,10 +2568,10 @@ bool networking::network_structures::tcp_client::message() {
     bool the_answer = false;
     if (FD_ISSET(this->connect_socket_, &read_set)) {
         the_answer = true;
-        std::printf("Evaluating that there is a message from the server...\n");
+        // std::printf("Evaluating that there is a message from the server...\n");
         std::lock_guard<std::mutex> secure_sock_lock(this->secure_socket_mutex_);
         if (this->secure_ and valid_secure_socket(this->secure_socket_)) {
-            the_answer = (SSL_pending(this->secure_socket_) > 0);
+            the_answer = (SSL_pending(this->secure_socket_) > 0 and SSL_pending(this->secure_socket_));
             if (not the_answer) std::printf("Actually, not I'm gonna say there isn't a message from the server...\n");
         }
     }
