@@ -1743,16 +1743,19 @@ bool networking::network_structures::tcp_client::connect_socket(const std::chron
 
             // Some systems set the write socket even on an error. So check the getsockopt to be sure.
             #if defined(unix_os)
-                socket_type connect_error = 0;
+                int connect_error = 0;
                 socklen_t len = sizeof(connect_error);
+                if (getsockopt(this->connect_socket_, SOL_SOCKET, SO_ERROR, &connect_error, &len)) {
+                    throw networking::exceptions::socket_information_failure("An error occurred while trying to connect this client to the remote host. Error \"" + std::string(socket_error_string(socket_error)), unpack_exception_parameters(1));
+                }
             #else
-                char connect_error;
+                int connect_error;
                 int len = sizeof(connect_error);
+                if (getsockopt(this->connect_socket_, SOL_SOCKET, SO_ERROR, (char*) &connect_error, &len)) {
+                    throw networking::exceptions::socket_information_failure("An error occurred while trying to connect this client to the remote host. Error \"" + std::string(socket_error_string(socket_error)), unpack_exception_parameters(1));
+                }
             #endif
 
-            if (getsockopt(this->connect_socket_, SOL_SOCKET, SO_ERROR, &connect_error, &len)) {
-                throw networking::exceptions::socket_information_failure("An error occurred while trying to connect this client to the remote host. Error \"" + std::string(socket_error_string(socket_error)), unpack_exception_parameters(1));
-            }
 
             if (connect_error) {
                 throw networking::exceptions::connection_failure("Failed to connect to remote host. socket options retrieval revealed \"" + std::string(socket_error_string(socket_error)) + "\"", unpack_exception_parameters(1));
