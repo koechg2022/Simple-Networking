@@ -2526,9 +2526,9 @@ bool networking::network_structures::tcp_client::message() {
     if (not *this) {
         return false;
     }
-    std::lock_guard<std::mutex> sock_lock(this->connect_socket_mutex_);
 
     if (not this->secure_) {
+        std::lock_guard<std::mutex> sock_lock(this->connect_socket_mutex_);
         fd_set reads;
         struct timeval timeout = {0, 0};
         FD_ZERO(&reads);
@@ -2541,7 +2541,8 @@ bool networking::network_structures::tcp_client::message() {
         return FD_ISSET(this->connect_socket_, &reads);
     }
 
-    return SSL_pending(this->secure_socket_);
+    std::lock_guard<std::mutex> secure_lock(this->secure_socket_mutex_);
+    return SSL_pending(this->secure_socket_) > 0 or SSL_has_pending(this->secure_socket_);
 }
 
 networking::network_structures::server_connection networking::network_structures::tcp_client::connection_information() const {
