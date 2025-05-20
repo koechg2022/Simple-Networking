@@ -1751,7 +1751,7 @@ bool networking::network_structures::tcp_client::connect_socket(const std::chron
             #endif
 
             if (getsockopt(this->connect_socket_, SOL_SOCKET, SO_ERROR, &connect_error, &len)) {
-                throw networking::exceptions::socket_information_failure("An error occurred while trying to connect this client to the remote host.", unpack_exception_parameters(1));
+                throw networking::exceptions::socket_information_failure("An error occurred while trying to connect this client to the remote host. Error \"" + std::string(socket_error_string(socket_error)), unpack_exception_parameters(1));
             }
 
             if (connect_error) {
