@@ -723,6 +723,9 @@ void test_multithread_server() {
 }
 
 // Passing!
+// The receiving of data 
+// from the clients is not 
+// working though
 void test_secure_server() {
     
     const int count = 1, flags = 0;

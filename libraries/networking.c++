@@ -1358,80 +1358,94 @@ networking::network_structures::client_connection networking::network_structures
 
 std::unordered_set<networking::network_structures::client_connection> networking::network_structures::tcp_server::clients(const bool all) {
     std::unordered_set<networking::network_structures::client_connection> the_answer;
+
+
     if (all) {
-        
         std::lock_guard<std::mutex> clients_lock(this->clients_mutex_);
-        for (const auto& [id, connection] : this->clients_) {
-            the_answer.insert(connection);
+        for (const auto& [id, client] : this->clients_) {
+            the_answer.insert(client);
         }
     }
+
     else {
-        // std::printf("Checking for clients with data..\n");
-        if (this->secure_) {
+        const unsigned long client_count = this->connections();
+        if (not client_count) {
+            return the_answer; // No clients connected
+        }
+        
+        if (client_count <= select_poll_threshold) {
             std::lock_guard<std::mutex> clients_lock(this->clients_mutex_);
-            for (const auto& [host_, client] : this->clients_) {
-                if (SSL_pending(client.secure_connect_socket) > 0 or SSL_has_pending(client.secure_connect_socket)) {
+            
+            // select_poll_threshold is set to 512, so this will never overflow.
+            struct timeval timeout = {0, static_cast<__darwin_suseconds_t>(10 * client_count)};
+            fd_set read_ready;
+            FD_ZERO(&read_ready);
+            socket_type max_socket = this->clients_.begin()->second.connect_socket;
+            for (const auto& [id, client] : this->clients_) {
+                max_socket = (client.connect_socket > max_socket) ? client.connect_socket : max_socket;
+                FD_SET(client.connect_socket, &read_ready);
+            }
+
+            // All sockets loaded.
+            if (select(max_socket + 1, &read_ready, 0, 0, &timeout) < 0) {
+                throw networking::exceptions::select_failure("Failed to select for ready client connection sockets. Error \"" + std::string(socket_error_string(socket_error)) + "\"", unpack_exception_parameters(1));
+            }
+
+            for (const auto& [id, client] : this->clients_) {
+                if (FD_ISSET(client.connect_socket, &read_ready)) {
+                    if (this->secure_ and valid_secure_socket(client.secure_connect_socket)) {
+
+                        if (SSL_pending(client.secure_connect_socket) == 0) {
+                            continue;
+                        }
+                        // SSL_has_pending is newer and not implemented in all version of OPENSSL, so holding off on this for now.
+                        // if (not (SSL_pending(client.secure_connect_socket) > 0) and SSL_has_pending(client.secure_connect_socket)) {
+                        //     continue;
+                        // }
+                    }
                     the_answer.insert(client);
                 }
             }
         }
-        
-        else if (this->connections()) {
-            
-            if (this->connections() <= select_poll_threshold) {
-                fd_set reads;
-                struct timeval timeout = {0, 200};
-                FD_ZERO(&reads);
-                std::lock_guard<std::mutex> clients_lock(this->clients_mutex_);
-                if (this->clients_.empty()) {
-                    return the_answer;
-                }
-                socket_type max_socket = this->clients_.begin()->second.connect_socket;
-                for (const auto& [id, connection] : this->clients_) {
-                    max_socket = (connection.connect_socket > max_socket) ? connection.connect_socket : max_socket;
-                    FD_SET(connection.connect_socket, &reads);
-                }
 
-                if (select(max_socket + 1, &reads, 0, 0, &timeout) < 0) {
-                    throw networking::exceptions::select_failure("Failed to select for active sockets that are in a listening state.", unpack_exception_parameters(1));
-                }
+        // Exceeding the select_pool_threshold.
+        // Using poll for more efficient checking.
+        else {
+            size_t index;
+            networking::network_structures::client_connection client_;
+            std::unordered_map<socket_type, networking::network_structures::client_id> clients;
+            std::vector<pollfd> sockets;
+            std::lock_guard<std::mutex> clients_lock(this->clients_mutex_);
 
-                for (const auto& [id, connection] : this->clients_) {
-                    if (FD_ISSET(connection.connect_socket, &reads)) {
-                        the_answer.insert(connection);
+            for (const auto& [id, client] : this->clients_) {
+                pollfd poll_ = {client.connect_socket, POLLIN, 0};
+                sockets.push_back(poll_);
+                clients.insert({client.connect_socket, id});
+            }
+
+            int results = poll(sockets.data(), sockets.size(), 0);
+
+            if (results < 0) {
+                throw networking::exceptions::select_failure("Failed to poll for client connection sockets that have data to be read from", unpack_exception_parameters(1));
+            }
+
+            for (index = 0; index < sockets.size(); index++) {
+                if (sockets[index].revents & POLLIN) {
+                    client_ = this->clients_[clients[sockets[index].fd]];
+                    if (this->secure_ and valid_secure_socket(client_.secure_connect_socket)) {
+                        if (SSL_pending(client_.secure_connect_socket) == 0) {
+                            continue;
+                        }
+                        // SSL_has_pending is newer and not implemented in all version of OPENSSL, so holding off on this for now.
+                        // if ((not (SSL_pending(client_.secure_connect_socket) > 0) and SSL_has_pending(client_.secure_connect_socket))) {
+                        //     continue;
+                        // }
                     }
+                    the_answer.insert(client_);
                 }
             }
-            
-            else {
-                std::vector<pollfd> sockets;
-                size_t index;
-                std::unordered_map<socket_type, client_id> clients;
-                std::lock_guard<std::mutex> clients_lock(this->clients_mutex_);
-                for (const auto& [id, client] : this->clients_) {
-                    pollfd poll_ = {client.connect_socket, POLLIN, 0};
-                    sockets.push_back(poll_);
-                    clients.insert({client.connect_socket, id});
-                }
 
-                #if defined(crap_os)
-                    int results = WSAPoll(sockets.data(), sockets.size(), 0);
-                #else
-                    int results = poll(sockets.data(), sockets.size(), 0);
-                #endif
-
-                if (results < 0) {
-                    throw networking::exceptions::select_failure("Failed to poll for client connection sockets that have data to be read from", unpack_exception_parameters(1));
-                }
-
-                for (index = 0; index < sockets.size(); index++) {
-                    if (sockets[index].revents & POLLIN) {
-                        the_answer.insert(this->clients_[clients[sockets[index].fd]]);
-                    }
-                }
-            }
         }
-        // std::printf("Done checking for clients with data...\n");
     }
     return the_answer;
 }

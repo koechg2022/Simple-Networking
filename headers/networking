@@ -72,6 +72,7 @@
         #define invalid_socket INVALID_SOCKET
         #define valid_socket(this_socket) (this_socket != invalid_socket)
         #define close_socket(the_socket) closesocket(the_socket)
+        #define poll(socket_list, socket_list_size, flags) WSAPoll(sockets.data(), sockets.size(), 0)
 
 
         inline std::string wchar_to_string(const wchar_t* wstr) {
@@ -85,7 +86,6 @@
             strTo.pop_back(); // Remove the null terminator
             return strTo;
         }
-
 
     #else
 
