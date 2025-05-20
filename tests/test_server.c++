@@ -1051,7 +1051,7 @@ void test_client() {
             return;
         }
 
-        std::cout << "Connected to \"" << client.hostname() << "\" on port \"" << client.port() << "\"" << std::endl;
+        std::cout << "Connected to \"" << client.hostname() << "\" on port \"" << client.port() << "\" " << ((client.secure()) ? "securely" : "unsecurely") << std::endl;
 
         while (client) {
             // std::cout << "Client is still running..." << std::endl;
@@ -1158,7 +1158,7 @@ void test_secure_client() {
             return;
         }
 
-        std::cout << "Connected to \"" << client.hostname() << "\" on port \"" << client.port() << "\"" << std::endl;
+        std::cout << "Connected to \"" << client.hostname() << "\" on port \"" << client.port() << "\" " << ((client.secure()) ? "securely" : "unsecurely") << std::endl;
 
         while (client) {
 
