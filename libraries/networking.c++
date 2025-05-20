@@ -2527,16 +2527,21 @@ bool networking::network_structures::tcp_client::message() {
         return false;
     }
     std::lock_guard<std::mutex> sock_lock(this->connect_socket_mutex_);
-    fd_set reads;
-    struct timeval timeout = {0, 0};
-    FD_ZERO(&reads);
-    FD_SET(this->connect_socket_, &reads);
 
-    if (select(this->connect_socket_ + 1, &reads, 0,  0, &timeout) < 0) {
-        throw networking::exceptions::select_failure("Failed to select for the tcp client's listening socket.", unpack_exception_parameters(1));
+    if (not this->secure_) {
+        fd_set reads;
+        struct timeval timeout = {0, 0};
+        FD_ZERO(&reads);
+        FD_SET(this->connect_socket_, &reads);
+
+        if (select(this->connect_socket_ + 1, &reads, 0,  0, &timeout) < 0) {
+            throw networking::exceptions::select_failure("Failed to select for the tcp client's listening socket.", unpack_exception_parameters(1));
+        }
+
+        return FD_ISSET(this->connect_socket_, &reads);
     }
 
-    return FD_ISSET(this->connect_socket_, &reads);
+    return SSL_pending(this->secure_socket_);
 }
 
 networking::network_structures::server_connection networking::network_structures::tcp_client::connection_information() const {
