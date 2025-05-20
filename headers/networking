@@ -1986,7 +1986,7 @@
                         }
 
 
-                        
+                        std::printf("About to return %ld bytes\n", total_bytes);
                         the_answer.byte_count = total_bytes;
                         the_answer.success = (0 < total_bytes);
 
