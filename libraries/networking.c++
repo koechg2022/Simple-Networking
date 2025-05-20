@@ -1377,7 +1377,11 @@ std::unordered_set<networking::network_structures::client_connection> networking
             std::lock_guard<std::mutex> clients_lock(this->clients_mutex_);
             
             // select_poll_threshold is set to 512, so this will never overflow.
-            struct timeval timeout = {0, static_cast<__darwin_suseconds_t>(10 * client_count)};
+            #if defined(unix_os)
+                struct timeval timeout = {0, static_cast<suseconds_t>(10 * client_count)};
+            #else
+                struct timeval timeout = {0, static_cast<long>(10 * client_count)};
+            #endif
             fd_set read_ready;
             FD_ZERO(&read_ready);
             socket_type max_socket = this->clients_.begin()->second.connect_socket;
