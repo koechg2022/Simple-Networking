@@ -708,16 +708,10 @@ void test_multithread_server() {
                     }
 
                     for (const auto& client_ : clients) {
-                        // std::cout << client_.host_information.hostname << std::endl;
-                        // std::cout << "\tConnection port : " << client_.host_information.port << std::endl;
-                        // std::cout << "\tConnection time : " << client_.host_information.connection_time << std::endl;
-                        // std::cout << "\t" << valid_socket(client_.connect_socket) << std::endl;
-
                         std::cout << client_.host_information.hostname << std::endl;
                         std::cout << "\tConnection port : " << client_.host_information.port << std::endl;
                         std::cout << "\tConnection time : " << client_.host_information.connection_time << std::endl;
-                        std::cout << "\tConnection      :"
-                                << (valid_socket(client_.connect_socket) ? "\033[32m" : "\033[31m")
+                        std::cout << "\tConnection      :" << (valid_socket(client_.connect_socket) ? " \033[32m" : " \033[31m")
                                 << (valid_socket(client_.connect_socket) ? "LIVE" : "DISCONNECTED")
                                 << "\033[0m" << std::endl;
                     }
