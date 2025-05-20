@@ -1359,7 +1359,6 @@ networking::network_structures::client_connection networking::network_structures
 std::unordered_set<networking::network_structures::client_connection> networking::network_structures::tcp_server::clients(const bool all) {
     std::unordered_set<networking::network_structures::client_connection> the_answer;
 
-
     if (all) {
         std::lock_guard<std::mutex> clients_lock(this->clients_mutex_);
         for (const auto& [id, client] : this->clients_) {
@@ -2556,22 +2555,26 @@ bool networking::network_structures::tcp_client::message() {
         return false;
     }
 
-    if (not this->secure_) {
-        std::lock_guard<std::mutex> sock_lock(this->connect_socket_mutex_);
-        fd_set reads;
-        struct timeval timeout = {0, 0};
-        FD_ZERO(&reads);
-        FD_SET(this->connect_socket_, &reads);
+    std::lock_guard<std::mutex> sock_lock(this->connect_socket_mutex_);
+    fd_set read_set;
+    struct timeval timeout = {0, 10};
+    FD_ZERO(&read_set);
+    FD_SET(this->connect_socket_, &read_set);
 
-        if (select(this->connect_socket_ + 1, &reads, 0,  0, &timeout) < 0) {
-            throw networking::exceptions::select_failure("Failed to select for the tcp client's listening socket.", unpack_exception_parameters(1));
-        }
-
-        return FD_ISSET(this->connect_socket_, &reads);
+    if (select(this->connect_socket_ + 1, &read_set, 0, 0, &timeout) < 0) {
+        throw networking::exceptions::select_failure("Failed to select for the tcp client's listening socket.", unpack_exception_parameters(1));
     }
 
-    std::lock_guard<std::mutex> secure_lock(this->secure_socket_mutex_);
-    return SSL_pending(this->secure_socket_) > 0 or SSL_has_pending(this->secure_socket_);
+    bool the_answer = false;
+    if (FD_ISSET(this->connect_socket_, &read_set)) {
+        the_answer = true;
+        std::lock_guard<std::mutex> secure_sock_lock(this->secure_socket_mutex_);
+        if (this->secure_ and valid_secure_socket(this->secure_socket_)) {
+            the_answer = (SSL_pending(this->secure_socket_) > 0);
+        }
+    }
+
+    return the_answer;
 }
 
 networking::network_structures::server_connection networking::network_structures::tcp_client::connection_information() const {
