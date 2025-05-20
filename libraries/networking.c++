@@ -1367,8 +1367,16 @@ std::unordered_set<networking::network_structures::client_connection> networking
     }
     else {
         // std::printf("Checking for clients with data..\n");
+        if (this->secure_) {
+            std::lock_guard<std::mutex> clients_lock(this->clients_mutex_);
+            for (const auto& [host_, client] : this->clients_) {
+                if (SSL_pending(client.secure_connect_socket) > 0 or SSL_has_pending(client.secure_connect_socket)) {
+                    the_answer.insert(client);
+                }
+            }
+        }
         
-        if (this->connections()) {
+        else if (this->connections()) {
             
             if (this->connections() <= select_poll_threshold) {
                 fd_set reads;
