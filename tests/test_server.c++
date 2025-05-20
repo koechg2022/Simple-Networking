@@ -1326,49 +1326,55 @@ void test_web_client() {
     const auto start_time = std::chrono::steady_clock::now();
 
     
-    response = client.message<char>(msg, __kilo_bytes__(count), flags, timeout);
+    response = client.message<char>(msg, __kilo_bytes__(count), 0, timeout);
 
     if (not response.success) {
         std::cerr << "Failed to retrieve data from server" << std::endl;
         return;
     }
-
     message = std::string(msg, response.byte_count);
-    index = message.find(ending + ending);
+    std::cout << "Message from server " << "(" << misc_functions::get_current_time() << ") : " << std::endl << std::endl;
+    // std::cout << message << std::endl;
+    // index = message.find(ending + ending);
 
-    if (index == std::string::npos) {
-        std::cerr << "Failed to parse the headers out of the response" << std::endl;
-        return;
-    }
+    // if (index == std::string::npos) {
+    //     std::cerr << "Failed to parse the headers out of the response" << std::endl;
+    //     return;
+    // }
 
-    std::unordered_map<std::string, std::string> headers = parse_header(message);
-    if (not headers.empty()) {
-        message_length = 0;
-        std::cout << "Parsed out headers : " << std::endl;
-        for (const auto& [tag, value] : headers) {
-            std::cout << tag << " : " << value << std::endl;
-            if (string_functions::same_string(tag, "content-length")) {
-                message_length = std::stoul(value, nullptr, 10);
-            }
-        }
-        client.message<char>(msg, message.length(), 0, timeout);
-        std::cout << std::endl << std::endl << std::endl;
-        char complete_message[message_length];
-        response = client.message<char>(complete_message, index + message_length, 0, timeout);
+    // std::unordered_map<std::string, std::string> headers = parse_header(message);
+    // if (not headers.empty()) {
+    //     message_length = 0;
+    //     std::cout << "Parsed out headers : " << std::endl;
+    //     for (const auto& [tag, value] : headers) {
+    //         std::cout << tag << " : " << value << std::endl;
+    //         if (string_functions::same_string(tag, "content-length")) {
+    //             message_length = std::stoul(value, nullptr, 10);
+    //         }
+    //     }
+    //     if (message_length == 0) {
+    //         std::cerr << "Failed to retrieve message length" << std::endl;
+    //         return;
+    //     }
+    //     client.message<char>(msg, message.length(), 0, timeout);
+    //     std::cout << std::endl << std::endl << std::endl;
+    //     char complete_message[message_length];
+    //     response = client.message<char>(complete_message, index + message_length, 0, timeout);
 
-        if (not response.success) {
-            std::cerr << "Failed to retrieve the complete response" << std::endl;
-            return;
-        }
+    //     if (not response.success) {
+    //         std::cerr << "Failed to retrieve the complete response" << std::endl;
+    //         return;
+    //     }
 
-        message = std::string(msg, index, message_length);
+    //     message = std::string(msg, index + (ending.length() * 2), message_length);
 
-        std::cout << "And the message is:" << std::endl;
-        std::cout << message << std::endl;
-        client.stop();
-        std::cout << "Client connection closed after " << std::chrono::duration<double>(std::chrono::steady_clock::now() - start_time).count() << " seconds." << std::endl;
-        return;
-    }
+    //     std::cout << "And the message is:" << std::endl;
+    //     std::cout << message << std::endl;
+    //     client.stop();
+    //     std::cout << "Client connection closed after " << std::chrono::duration<double>(std::chrono::steady_clock::now() - start_time).count() << " seconds." << std::endl;
+    //     return;
+    // }
+    // std::cout << "Failed to retrieve headers." << std::endl;
 
     client.stop();
     std::cout << "Client connection closed after " << std::chrono::duration<double>(std::chrono::steady_clock::now() - start_time).count() << " seconds." << std::endl;
