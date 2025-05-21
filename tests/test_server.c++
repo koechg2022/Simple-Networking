@@ -937,6 +937,7 @@ void test_multithread_secure_server() {
     networking::network_structures::tcp_server server;
     networking::network_structures::client_connection client;
     networking::network_structures::complete_report reports;
+    std::unordered_set<networking::network_structures::client_connection> clients;
 
     try {
 
@@ -1020,6 +1021,22 @@ void test_multithread_secure_server() {
                 else if (string_functions::same_string(message, "broadcast") or string_functions::same_string(message, "brdcst")) {
                     message = misc_functions::get_input("Message to broadcast : ");
                     reports = server.broadcast(message.data(), message.length(), flags, true, timeout);
+                }
+
+                else if (string_functions::same_string("list clients", message) or string_functions::same_string("lc", message)) {
+                    if ((clients = server.clients()).empty()) {
+                        std::cout << "No clients connected" << std::endl;
+                        continue;
+                    }
+
+                    for (const auto& client_ : clients) {
+                        std::cout << client_.host_information.hostname << std::endl;
+                        std::cout << "\tConnection port : " << client_.host_information.port << std::endl;
+                        std::cout << "\tConnection time : " << client_.host_information.connection_time << std::endl;
+                        std::cout << "\tConnection      :" << (valid_socket(client_.connect_socket) ? " \033[32m" : " \033[31m")
+                                << (valid_socket(client_.connect_socket) ? "LIVE" : "DISCONNECTED")
+                                << "\033[0m" << std::endl;
+                    }
                 }
 
                 else {
@@ -1332,57 +1349,55 @@ void test_web_client() {
         std::cerr << "Failed to retrieve data from server" << std::endl;
         return;
     }
-    message = std::string(msg, response.byte_count);
-    std::cout << "Message from server " << "(" << misc_functions::get_current_time() << ") : " << std::endl << std::endl;
-    // std::cout << message << std::endl;
-    // index = message.find(ending + ending);
 
-    // if (index == std::string::npos) {
-    //     std::cerr << "Failed to parse the headers out of the response" << std::endl;
-    //     return;
-    // }
-
-    // std::unordered_map<std::string, std::string> headers = parse_header(message);
-    // if (not headers.empty()) {
-    //     message_length = 0;
-    //     std::cout << "Parsed out headers : " << std::endl;
-    //     for (const auto& [tag, value] : headers) {
-    //         std::cout << tag << " : " << value << std::endl;
-    //         if (string_functions::same_string(tag, "content-length")) {
-    //             message_length = std::stoul(value, nullptr, 10);
-    //         }
-    //     }
-    //     if (message_length == 0) {
-    //         std::cerr << "Failed to retrieve message length" << std::endl;
-    //         return;
-    //     }
-    //     client.message<char>(msg, message.length(), 0, timeout);
-    //     std::cout << std::endl << std::endl << std::endl;
-    //     char complete_message[message_length];
-    //     response = client.message<char>(complete_message, index + message_length, 0, timeout);
-
-    //     if (not response.success) {
-    //         std::cerr << "Failed to retrieve the complete response" << std::endl;
-    //         return;
-    //     }
-
-    //     message = std::string(msg, index + (ending.length() * 2), message_length);
-
-    //     std::cout << "And the message is:" << std::endl;
-    //     std::cout << message << std::endl;
-    //     client.stop();
-    //     std::cout << "Client connection closed after " << std::chrono::duration<double>(std::chrono::steady_clock::now() - start_time).count() << " seconds." << std::endl;
-    //     return;
-    // }
-    // std::cout << "Failed to retrieve headers." << std::endl;
-
-    client.stop();
-    std::cout << "Client connection closed after " << std::chrono::duration<double>(std::chrono::steady_clock::now() - start_time).count() << " seconds." << std::endl;
-
-    if (response.success) {
-        // message = std::string(msg, response.byte_count);
-        std::cout << "Message from server" << ending << "\"" << std::string(msg, response.byte_count) << "\"" << std::endl;
+    if (not response.byte_count) {
+        std::cout << "Connection closed." << std::endl;
+        return;
     }
+
+    std::cout << "Received " << response.byte_count << " bytes" << std::endl;
+
+    index = 0;
+    message = std::string(msg, response.byte_count);
+
+    // if ((index = message.find(ending + ending)) != std::string::npos and index < message.length()) {
+    //     // Found the index of the headers ending
+    //     const std::unordered_map<std::string, std::string> headers = parse_header(message.substr(0, index));
+    //     message = message.substr(index + (ending + ending).length());
+    //     std::cout << std::endl << std::endl << std::endl << std::endl;
+    //     std::cout << "Received message headers :" << std::endl;
+    //     for (const auto& [attr, data] : headers) {
+    //         std::cout << attr << " : " << data << std::endl;
+    //     }
+
+    //     std::cout << "-----------------------------------------------------------------" << std::endl << std::endl << std::endl;
+    //     std::cout << "Received message body : " << std::endl << std::endl;
+    //     std::cout << message << std::endl;
+    // }
+
+    // else {
+    //     std::cout << "Message from server " << "(" << misc_functions::get_current_time() << ") : " << std::endl << std::endl;
+    // }
+
+    while (client.message()) {
+        response = client.message<char>(msg, __kilo_bytes__(count), 0, timeout);
+        
+        if (response.success and response.byte_count > 0) {
+            message = message + std::string(msg, response.byte_count);
+        }
+
+        else if (response.byte_count == 0 or not response.success) {
+            std::cerr << "Failed to retrieve the rest of the data" << std::endl;
+            break;
+        }
+    }
+    
+    std::cout << "Message from server " << "(" << misc_functions::get_current_time() << ") : " << std::endl << std::endl;
+    std::cout << message << std::endl;
+
+    
+    client.stop();
+    // std::cout << "Client connection closed after " << std::chrono::duration<double>(std::chrono::steady_clock::now() - start_time).count() << " seconds." << std::endl;
 }
 
 void print_socket_configs(socket_type the_socket) {

@@ -1739,7 +1739,7 @@ bool networking::network_structures::tcp_client::connect_socket(const std::chron
             timeout_.tv_usec = std::chrono::duration_cast<std::chrono::microseconds>(timeout).count() % 1'000'000;
 
             // Something due to non-blocking socket
-            std::printf("Waiting for timeout duration...\n");
+            // std::printf("Waiting for timeout duration...\n");
             fd_set write_set, error_set;
             FD_ZERO(&write_set);
             FD_ZERO(&error_set);
@@ -1755,7 +1755,7 @@ bool networking::network_structures::tcp_client::connect_socket(const std::chron
                 throw networking::exceptions::connection_failure("Failed to connect to remote machine, and an error was reported to the connection socket. \"" + std::string(socket_error_string(socket_error)) + "\"", unpack_exception_parameters(1));
             }
 
-            // TODO : THis is failing on linux with clients. Suggested approach is on perplexity.
+            // TODO : This is failing on linux with clients. Suggested approach is on perplexity.
             // Look into this tomorrow morning
             if (not FD_ISSET(this->connect_socket_, &write_set)) {
                 throw networking::exceptions::connection_failure("Failed to connect to remote host. Timed out.", unpack_exception_parameters(1));
@@ -1790,7 +1790,7 @@ bool networking::network_structures::tcp_client::connect_socket(const std::chron
                     ioctlsocket(this->connect_socket_, FIONBIO, &nonblock);
                 #endif
             }
-            std::printf("FINISHED WITH TIMEOUT WAIT. CONNECTION NOW ESTABLISHED!\n");
+            // std::printf("FINISHED WITH TIMEOUT WAIT. CONNECTION NOW ESTABLISHED!\n");
 
         }
 
@@ -2436,12 +2436,12 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
             throw networking::exceptions::connection_failure("Failed to connect the client to the remote host over with the newly created socket.", unpack_exception_parameters(1));
         }
 
-        std::printf("Connection established. Client is now connected to the remote host\n");
+        // std::printf("Connection established. Client is now connected to the remote host\n");
 
         // The rest of this is for a secure connection
         if (this->secure_) {
 
-            std::printf("Now creating secure socket...\n");
+            // std::printf("Now creating secure socket...\n");
             // Create a secure socket
             if (not this->create_secure_socket()) {
                 ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
@@ -2449,27 +2449,27 @@ networking::network_structures::tcp_client& networking::network_structures::tcp_
             }
 
             if (this->sni_) {
-                std::printf("Now Running Server Name Indication.\n");
+                // std::printf("Now Running Server Name Indication.\n");
                 if (not this->set_server_name_indication()) {
                     ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
                     throw networking::exceptions::socket_information_failure("Failed to resolve the server name indication. Error \"" + std::string(msg) + "\"", unpack_secure_exception_parameters(2));
                 }
             }
 
-            std::printf("Now setting the secure socket's connection socket.\n");
+            // std::printf("Now setting the secure socket's connection socket.\n");
             // Set the secure sockets communication socket
             if (not this->secure_file_descriptor()) {
                 ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
                 throw networking::exceptions::connection_failure("Failed to set the secure socket's network communication socket. Error \"" + std::string(msg) + "\"", unpack_secure_exception_parameters(2));
             }
 
-            std::printf("Now securing the secure handshake.\n");
+            // std::printf("Now securing the secure handshake.\n");
             // Make the secure handshake
             if (not this->secure_handshake(timeout)) {
                 ERR_error_string_n(ERR_get_error(), msg, __kilo_bytes__(count));
                 throw networking::exceptions::connection_failure("Failed to establish a secure handshake with the remote host. Error\"" + std::string(msg) + "\"", unpack_secure_exception_parameters(2));
             }
-            std::printf("Successfully established secure handshake.\n");
+            // std::printf("Successfully established secure handshake.\n");
         }
 
     }
