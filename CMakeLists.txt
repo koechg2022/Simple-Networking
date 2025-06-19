@@ -9,12 +9,12 @@
 #           cmake -S .. -B build -G "MinGW Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENSSL_ROOT_DIR="C:/OpenSSL-Win64"
 #           cmake -S .. -B build -G "MinGW Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENSSL_ROOT_DIR="C:/openssl-mingw64"
 #           
-#           cmake --build build
+#           cmake --build .
 #
 #     MSYS2:
 #           cmake .. -G "MinGW Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENSSL_ROOT_DIR=/mingw64
 #           
-#           cmake --build buid
+#           cmake --build .
 
 
 
