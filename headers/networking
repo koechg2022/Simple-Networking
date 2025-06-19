@@ -2204,7 +2204,7 @@
                                 the_answer.byte_count = byte_chunk;
                                 return the_answer;
                             }
-                            byte_chunk = (this->secure_) ? SSL_peek(this->secure_socket_, reinterpret_cast<char*>(msg), length) :
+                            byte_chunk = (this->secure_) ? ((flags == MSG_PEEK) ? SSL_peek(this->secure_socket_, reinterpret_cast<char*>(msg), length) : SSL_read(this->secure_socket_, reinterpret_cast<char*>(msg), length)) :
                                         recv(this->connect_socket_, reinterpret_cast<char*>(msg) + total_bytes, length - total_bytes, flags);
                             
                             // std::printf("Just peeked at %ld bytes\n", byte_chunk);
