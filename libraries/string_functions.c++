@@ -223,3 +223,27 @@ std::string string_functions::generate_random_string(size_t length) {
 
     return the_answer;
 }
+
+bool string_functions::same_string_for_sets(const std::string& first, const std::string& second) {
+    return string_functions::same_string(first, second);
+}
+
+bool string_functions::less_string_for_sets(const std::string& first, const std::string& second) {
+    if (first.length() < second.length()) {
+        return true;
+    }
+    if (first.length() > second.length()) {
+        return false;
+    }
+    const_it_type(std::string) first_it = first.begin();
+    const_it_type(std::string) second_it = second.begin();
+
+
+    while (first_it != first.end() and second_it != second.end()) {
+        if (string_functions::to_caps(*first_it) >= string_functions::to_caps(*second_it)) {
+            return false;
+        }
+        first_it++, second_it++;
+    }
+    return true;
+}

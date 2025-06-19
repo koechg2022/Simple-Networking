@@ -46,4 +46,12 @@
         #endif
     #endif
 
+    #if not defined(it_type)
+        #define it_type(_type_) _type_::iterator
+    #endif
+
+    #if not defined(const_it_type)
+        #define const_it_type(_type_) _type_::const_iterator
+    #endif
+
 #endif

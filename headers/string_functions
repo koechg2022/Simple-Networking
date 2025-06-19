@@ -125,6 +125,23 @@
         std::string generate_random_string(size_t length = 12);
 
 
+        /**
+            @brief Compare two strings using with the equal comparison and ignoring case.
+            @param first (const std::string&) : The first string to be compared (should be less).
+            @param second (const std::string&) : The second string to be compared (should be more).
+            @returns `true` if first and second are the same string, case ignored, `false` if not.
+        */
+        bool same_string_for_sets(const std::string& first, const std::string& second);
+
+
+        /**
+            @brief Compare two strings using with the less comparison and ignoring case.
+            @param first (const std::string&) : The first string to be compared (should be less).
+            @param second (const std::string&) : The second string to be compared (should be more).
+            @returns `true` if first < second, `false` if not.
+        */
+        bool less_string_for_sets(const std::string& first, const std::string& second);
+
     }
 
 

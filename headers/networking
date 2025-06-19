@@ -818,6 +818,37 @@
             }
         };
 
+        struct ignore_case_unordered_hash {
+            size_t operator()(const std::string& s) const {
+                std::string lower;
+                lower.reserve(s.size());
+                std::transform(s.begin(), s.end(), std::back_inserter(lower), ::tolower);
+                return std::hash<std::string>{}(lower);
+            }
+        };
+
+        struct ignore_case_unordered_equal {
+            bool operator()(const std::string& a, const std::string& b) const {
+                return string_functions::same_string(a, b);
+                // return a.size() == b.size() &&
+                //     std::equal(a.begin(), a.end(), b.begin(),
+                //                 [](char a, char b) { return ::tolower(a) == ::tolower(b); });
+            }
+        };
+
+        struct ignore_case_ordered_equal {
+            bool operator()(const std::string& first, const std::string& second) const {
+                return string_functions::same_string(first, second);
+            }
+        };
+
+        struct ignore_case_ordered_less {
+            bool operator()(const std::string& first, const std::string& second) const {
+                
+                return string_functions::less_string_for_sets(first, second);
+            }
+        };
+
     }
 
 
@@ -2022,6 +2053,353 @@
             };
 
         }
+
+        namespace http {
+    
+            // HTTP status codes
+            typedef enum {
+    
+                // The default value
+                Nothing, 
+                
+                
+                
+                // [100, 199) codes
+                Continue = 100,
+                Switching_Protocols = 101,
+                Processing = 102,
+                Early_Hints = 103,
+                
+                
+                
+                // [200, 299) codes
+                OK = 200,
+                Created = 201,
+                Accepted = 202,
+                Non_Authoritative_Information = 203,
+                No_Content = 204,
+                Reset_Content = 205,
+                Partial_Content = 206,
+                Multi_Status = 207,
+                Already_Reported = 208,
+                IM_Used = 226,
+                
+                
+                
+                // [300, 399) codes
+                Multiple_Choices = 300,
+                Moved_Permanently = 301,
+                Found = 302,
+                See_Other = 303,
+                Not_Modified = 304,
+                Use_Proxy = 305,
+                Unused = 306,
+                Temporary_Redirect = 307,
+                Permanent_Redirect = 308,
+                
+                
+                
+                // [400, 499) codes
+                Bad_Request = 400,
+                Unauthorized = 401,
+                Payment_Required = 402,
+                Forbidden = 403,
+                Not_Found = 404,
+                Method_Not_Allowed = 405,
+                Not_Acceptable = 406,
+                Proxy_Authentication_Required = 407,
+                Request_Timeout = 408,
+                Conflict = 409,
+                Gone = 410,
+                Length_Required = 411,
+                Precondition_Failed = 412,
+                Content_Too_Large = 413,
+                URI_Too_Long = 414,
+                Unsupported_Media_Type = 415,
+                Range_Not_Satisfiable = 416,
+                Expectation_Failed = 417,
+                Im_a_teapot = 418,
+                Misdirected_Request = 421,
+                Unprocessable_Content = 422,
+                Locked = 423,
+                Failed_Dependency = 424,
+                Too_Early = 425,
+                Upgrade_Required = 426,
+                Precondition_Required = 428,
+                Too_Many_Requests = 429,
+                Request_Header_Fields_Too_Large = 431,
+                Unavailable_For_Legal_Reasons = 451,
+                
+                
+                
+                // [500, 599) codes
+                Internal_Server_Error = 500,
+                Not_Implemented = 501,
+                Bad_Gateway = 502,
+                Service_Unavailable = 503,
+                Gateway_Timeout = 504,
+                HTTP_Version_Not_Supported = 505,
+                Variant_Also_Negotiates = 506,
+                Insufficient_Storage = 507,
+                Loop_Detected = 508,
+                Not_Extended = 510,
+                Network_Authentication_Required = 511,
+            } status_code;
+    
+            // HTTP status messages (translates the HTTP status to a it's status text)
+            const std::unordered_map<status_code, const std::string> status_messages = [](){
+                std::unordered_map<status_code, const std::string> the_answer;
+                
+                
+                
+                // [100, 199) codes
+                the_answer.insert({Continue, (const std::string) "Continue"});
+                the_answer.insert({Switching_Protocols, (const std::string) "Switching Protocols"});
+                the_answer.insert({Processing, (const std::string) "Processing"});
+                the_answer.insert({Early_Hints, (const std::string) "Early Hints"});
+                
+                
+                
+                // [200, 299) codes
+                the_answer.insert({OK, (const std::string) "OK"});
+                the_answer.insert({Created, (const std::string) "Created"});
+                the_answer.insert({Accepted, (const std::string) "Accepted"});
+                the_answer.insert({Non_Authoritative_Information, (const std::string) "Non-Authoritative Information"});
+                the_answer.insert({No_Content, (const std::string) "No Content"});
+                the_answer.insert({Reset_Content, (const std::string) "Reset Content"});
+                the_answer.insert({Partial_Content, (const std::string) "Partial Content"});
+                the_answer.insert({Multi_Status, (const std::string) "Multi-Status"});
+                the_answer.insert({Already_Reported, (const std::string) "Already Reported"});
+                the_answer.insert({IM_Used, (const std::string) "IM Used"});
+                
+                
+                
+                // [300, 399) codes
+                the_answer.insert({Multiple_Choices, (const std::string) "Multiple Choices"});
+                the_answer.insert({Moved_Permanently, (const std::string) "Moved Permanently"});
+                the_answer.insert({Found, (const std::string) "Found"});
+                the_answer.insert({See_Other, (const std::string) "See Other"});
+                the_answer.insert({Not_Modified, (const std::string) "Not Modified"});
+                the_answer.insert({Use_Proxy, (const std::string) "Use Proxy"});
+                the_answer.insert({Unused, (const std::string) "Unused"});
+                the_answer.insert({Temporary_Redirect, (const std::string) "Temporary Redirect"});
+                the_answer.insert({Permanent_Redirect, (const std::string) "Permanent Redirect"});
+                
+                
+                
+                // [400, 499) codes
+                the_answer.insert({Bad_Request, (const std::string) "Bad Request"});
+                the_answer.insert({Unauthorized, (const std::string) "Unauthorized"});
+                the_answer.insert({Payment_Required, (const std::string) "Payment Required"});
+                the_answer.insert({Forbidden, (const std::string) "Forbidden"});
+                the_answer.insert({Not_Found, (const std::string) "Not Found"});
+                the_answer.insert({Method_Not_Allowed, (const std::string) "Method Not Allowed"});
+                the_answer.insert({Not_Acceptable, (const std::string) "Not Acceptable"});
+                the_answer.insert({Proxy_Authentication_Required, (const std::string) "Proxy Authentication Required"});
+                the_answer.insert({Request_Timeout, (const std::string) "Request Timeout"});
+                the_answer.insert({Conflict, (const std::string) "Conflict"});
+                the_answer.insert({Gone, (const std::string) "Gone"});
+                the_answer.insert({Length_Required, (const std::string) "Length Required"});
+                the_answer.insert({Precondition_Failed, (const std::string) "Precondition Failed"});
+                the_answer.insert({Content_Too_Large, (const std::string) "Content Too Large"});
+                the_answer.insert({URI_Too_Long, (const std::string) "URI Too Long"});
+                the_answer.insert({Unsupported_Media_Type, (const std::string) "Unsupported Media Type"});
+                the_answer.insert({Range_Not_Satisfiable, (const std::string) "Range Not Satisfiable"});
+                the_answer.insert({Expectation_Failed, (const std::string) "Expectation Failed"});
+                the_answer.insert({Im_a_teapot, (const std::string) "I'm a teapot"});
+                the_answer.insert({Misdirected_Request, (const std::string) "Misdirected Request"});
+                the_answer.insert({Unprocessable_Content, (const std::string) "Unprocessable Content"});
+                the_answer.insert({Locked, (const std::string) "Locked"});
+                the_answer.insert({Failed_Dependency, (const std::string) "Failed Dependency"});
+                the_answer.insert({Too_Early, (const std::string) "Too Early"});
+                the_answer.insert({Upgrade_Required, (const std::string) "Upgrade Required"});
+                the_answer.insert({Precondition_Required, (const std::string) "Precondition Required"});
+                the_answer.insert({Too_Many_Requests, (const std::string) "Too Many Requests"});
+                the_answer.insert({Request_Header_Fields_Too_Large, (const std::string) "Request Header Fields Too Large"});
+                the_answer.insert({Unavailable_For_Legal_Reasons, (const std::string) "Unavailable For Legal Reasons"});
+                
+                
+                
+                // [500, 599) codes
+                the_answer.insert({Internal_Server_Error, (const std::string) "Internal Server Error"});
+                the_answer.insert({Not_Implemented, (const std::string) "Not Implemented"});
+                the_answer.insert({Bad_Gateway, (const std::string) "Bad Gateway"});
+                the_answer.insert({Service_Unavailable, (const std::string) "Service Unavailable"});
+                the_answer.insert({Gateway_Timeout, (const std::string) "Gateway Timeout"});
+                the_answer.insert({HTTP_Version_Not_Supported, (const std::string) "HTTP Version Not Supported"});
+                the_answer.insert({Variant_Also_Negotiates, (const std::string) "Variant Also Negotiates"});
+                the_answer.insert({Insufficient_Storage, (const std::string) "Insufficient Storage"});
+                the_answer.insert({Loop_Detected, (const std::string) "Loop Detected"});
+                the_answer.insert({Not_Extended, (const std::string) "Not Extended"});
+                the_answer.insert({Network_Authentication_Required, (const std::string) "Network Authentication Required"});
+                return the_answer;
+            }();
+    
+            typedef  std::unordered_map<std::string, const std::string, std::ignore_case_unordered_hash, std::ignore_case_unordered_equal> extension_map_content_type;
+            const extension_map_content_type extension_to_content_type_map = {
+                {".css", "text/css"},
+                {".csv", "text/csv"},
+                {".gif", "image/gif"},
+                {".html", "text/html"},
+                {".htm", "text/html"},
+                {".ico", "image/x-icon"},
+                {".jpeg", "image/jpeg"},
+                {".jpg", "image/jpeg"},
+                {".js", "application/javascript"},
+                {".json", "application/json"},
+                {".png", "image/png"},
+                {".pdf", "application/pdf"},
+                {".svg", "image/svg+xml"},
+                {".txt", "text/plain"},
+                {".xml", "application/xml"},
+                {".ttf", "font/ttf"},
+                {".woff", "font/woff"},
+                {".woff2", "font/woff2"},
+                {".eot", "application/vnd.ms-fontobject"},
+                {".otf", "font/otf"},
+                {".webp", "image/webp"},
+                {".mp3", "audio/mpeg"},
+                {".mp4", "video/mp4"},
+                {".webm", "video/webm"},
+                {".ogg", "audio/ogg"},
+                {".oga", "audio/ogg"},
+                {".ogv", "video/ogg"},
+                {".wasm", "application/wasm"},
+                {".zip", "application/zip"},
+                {".tar", "application/x-tar"},
+                {".gz", "application/gzip"},
+                {".bz2", "application/x-bzip2"},
+                {".7z", "application/x-7z-compressed"},
+                {".rar", "application/vnd.rar"},
+                {".doc", "application/msword"},
+                {".docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"},
+                {".xls", "application/vnd.ms-excel"},
+                {".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"},
+                {".ppt", "application/vnd.ms-powerpoint"},
+                {".pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation"},
+                {".bin", "application/octet-stream"}
+            };
+    
+            typedef std::unordered_map<std::string, std::set<std::string, std::ignore_case_ordered_less>, std::ignore_case_unordered_hash, std::ignore_case_unordered_equal> content_type_to_extension_type;
+            const content_type_to_extension_type content_type_to_extension = [](const extension_map_content_type& feeder){
+                content_type_to_extension_type the_answer;
+                for (const auto& [extension, content_type] : feeder) {
+                    if (the_answer.contains(content_type)) {
+                        the_answer[content_type].insert(extension);
+                        continue;
+                    }
+                    // std::set<std::string, std::ignore_case_ordered_less> new_set;
+                    the_answer.insert({content_type, std::set<std::string, std::ignore_case_ordered_less>{extension}});
+                }
+    
+                return (const content_type_to_extension_type) the_answer;
+            }(extension_to_content_type_map);
+            
+            class http_response {
+    
+                private:
+                    const size_t max_header_size = (__kilo_bytes__(32)) + 1;
+                    status_code response_status_ = Nothing;
+                    extension_map_content_type headers_;
+                    // std::unordered_map<std::string, const std::string, std::ignore_case_unordered_hash, std::ignore_case_unordered_equal> headers_;
+                    std::string body_, http_version_, http_type_;
+                    const std::string ending_ = "\r\n", status_line_ = "Status Line";
+    
+                    void parse_raw_response(const std::string& response);
+    
+                    void parse_direct_response(networking::network_structures::tcp_client& client);
+    
+                public:
+    
+                    http_response();
+    
+                    http_response(const std::string& raw_response);
+    
+                    http_response(const http_response& other);
+    
+                    http_response(http_response&& other) noexcept;
+    
+                    ~http_response();
+    
+                    status_code status() const;
+    
+                    std::unordered_map<std::string, const std::string, std::ignore_case_unordered_hash, std::ignore_case_unordered_equal> headers() const;
+    
+                    std::unordered_set<std::string, std::ignore_case_unordered_hash, std::ignore_case_unordered_equal> header_tags() const;
+    
+                    std::string headers_value(const std::string the_header) const;
+    
+                    std::string body() const;
+    
+                    status_code get_status() const;
+    
+                    const std::string& operator[](const std::string& tag_name);
+    
+                    http_response& operator=(const http_response& other);
+    
+                    http_response& operator=(http_response&& other) noexcept;
+    
+            };
+    
+            class http_client {
+                
+                
+                private:
+                    const std::string 
+                        
+                        Protocol_ = "Protocol",
+                        Host_ = "Host",
+                        Port_ = "Port",
+                        Path_ = "Path",
+                        Hash_ = "Hash",
+                        User_Agent_ = "User-Agent",
+                        Accept_ = "Accept",
+                        ending_ = "\r\n";
+    
+                        
+                    const std::set<std::string> necessary_send_tags_ = {this->Host_, this->Path_, User_Agent_, Accept_};
+                    std::map<std::string, const std::string> request_tags_;
+                    std::string http_version_ = "1.1";
+                    networking::network_structures::tcp_client client_;
+    
+    
+                    networking::network_structures::host_report send_message();
+    
+    
+    
+                public:
+    
+                    http_client(const std::string hostname, const std::string port = default_port, const std::string http_version = "1.1", const bool secure = true, const bool sni = true, const bool blocking = false);
+    
+                    http_client(const http_client& other);
+    
+                    http_client(http_client&& other) noexcept;
+    
+                    ~http_client();
+    
+                    http_client& operator=(const http_client& other);
+    
+                    http_client& operator=(http_client&& other);
+    
+                    bool operator==(const http_client& other) const;
+    
+                    operator bool() const;
+    
+                    networking::http::http_response fetch(std::unordered_map<std::string, const std::string> requests);
+    
+                    networking::http::http_response fetch(std::unordered_map<std::string, std::string> requests);
+                    
+                    networking::http::http_response fetch(std::unordered_map<std::string, std::set<std::string> > requests);
+    
+                    networking::http::http_response fetch(std::unordered_map<std::string, std::unordered_set<std::string> > requests);
+    
+                    networking::http::http_response fetch(std::unordered_map<std::string, std::vector<std::string> > requests);
+    
+    
+            };
+        }
+
+
     }
 
 #endif
