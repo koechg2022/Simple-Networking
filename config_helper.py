@@ -19,4 +19,4 @@ def print_tree(start_path, prefix="", ignore=None):
 
 if __name__ == "__main__":
     print(".")
-    print_tree("./", ignore=[f".git", f"build", f"config_helper.py", f".gitignore"])
+    print_tree("./", ignore=[".git", "build", "config_helper.py", ".gitignore"])
